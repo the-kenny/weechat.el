@@ -1,8 +1,34 @@
-;; I'm here to serve you, master.
+;;; weechat-relay --- Implementation of Weechat's relay protocol
+
+;; Copyright (C) 2012 Moritz Ulrich
+
+;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
+;; Version: 0.1
+;; Created 30. Dec 2012
+;; Keywords: irc chat network weechat
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
+;; 
 
 (require 'bindat)
 (require 'ert)
 (require 's)
+
+;;; Code:
 
 (defvar weechat-relay-buffer-name "*weechat-relay*")
 
@@ -148,7 +174,7 @@ Optional second return value contains length of parsed data. "
     (dotimes (i h-path-length)
       (multiple-value-bind (el offset*) (weechat--relay-unpack-ptr (substring data offset))
         (setq p-path (cons el p-path))
-        (setq offset (+ offset offset*)))) 
+        (setq offset (+ offset offset*))))
     (dolist (name-type name-type-alist)
       (let ((fun (symbol-function (intern (concat "weechat--relay-unpack-" (cdr name-type))))))
         (multiple-value-bind (obj offset*) (funcall fun (substring data offset))
@@ -201,7 +227,7 @@ Optional second return value contains length of parsed data. "
         (data vec (eval (let ((l (- (bindat-get-field struct 'length)
                                     4   ;length
                                     1   ;compression
-                                    (+ 4 (length (bindat-get-field struct 'id 'val)))))) 
+                                    (+ 4 (length (bindat-get-field struct 'id 'val))))))
                           l)))))
 
 (defun weechat--unpack-message-contents (data)
@@ -212,7 +238,7 @@ Optional second return value contains length of parsed data. "
               (+ len 3)))))
 
 (defun weechat-unpack-message (message-data)
-  (let* ((msg (bindat-unpack weechat--relay-message-spec message-data)) 
+  (let* ((msg (bindat-unpack weechat--relay-message-spec message-data))
          (data (concat (bindat-get-field msg 'data)))
          (msg-id (bindat-get-field msg 'id 'val))
          (offset 0)
@@ -344,3 +370,9 @@ Optional second return value contains length of parsed data. "
 
 
 
+
+(provide 'weechat-relay)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; weechat-relay.el ends here
