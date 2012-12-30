@@ -263,7 +263,7 @@ Optional second return value contains length of parsed data. "
 (defun weechat--relay-message-filter (proc string)
   (with-current-buffer (process-buffer proc)
     (let ((inhibit-read-only t))
-      (insert string)
+      (insert (string-as-unibyte string))
       (while (weechat-message-available-p)
         (let ((data (weechat--relay-parse-new-message)))
           (when (bufferp (get-buffer weechat-relay-log-buffer-name))
