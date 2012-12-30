@@ -126,6 +126,30 @@ bytes consumed."
               (bindat-get-field obj 'val)))
             (bindat-length weechat--relay-tim-spec obj))))
 
+(setq weechat--relay-htb-spec
+      '((key-type str 3)
+        (val-type str 3)
+        (count u32)))
+
+(defun weechat--relay-unpack-htb (data)
+  (let* ((obj (bindat-unpack weechat--relay-htb-spec data))
+         (count (weechat--bindat-unsigned-to-signed
+                 (bindat-get-field obj 'count)
+                 4))
+         (key-type (bindat-get-field obj 'key-type))
+         (val-type (bindat-get-field obj 'val-type))
+         (key-fn (symbol-function (intern (concat "weechat--relay-unpack-" key-type))))
+         (val-fn (symbol-function (intern (concat "weechat--relay-unpack-" val-type))))
+         (offset (bindat-length weechat--relay-htb-spec obj))
+         (acc ()))
+    (dotimes (i count)
+      (multiple-value-bind (key key-len) (funcall key-fn (substring data offset))
+        (multiple-value-bind (val val-len) (funcall val-fn (substring data (+ offset key-len)))
+          (setq acc (cons (cons key val) acc))
+          (setq offset (+ offset key-len val-len)))))
+    (values acc
+            offset)))
+
 (defun weechat--relay-parse-inf (data)
   (multiple-value-bind (name len) (weechat--relay-unpack-str data)
     (multiple-value-bind (value len*) (weechat--relay-unpack-str (substring data len))
