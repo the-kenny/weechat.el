@@ -40,7 +40,7 @@
                (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
 
 (defun weechat-relay-authenticate (password)
-  (weechat--send-message (format "init password=%s,compression=off\n" password)))
+  (weechat--relay-send-message (format "init password=%s,compression=off\n" password)))
 
 (defun weechat--bindat-unsigned-to-signed (num bytes)
   (if (> num (- (expt 2 (- (* 8 bytes) 1)) 1))
