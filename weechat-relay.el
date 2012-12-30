@@ -277,24 +277,23 @@ Optional second return value contains length of parsed data. "
                        weechat-relay-buffer-name
                        host
                        port)
-  (when weechat-relay-log-buffer-name
-    (with-current-buffer (get-buffer-create weechat-relay-log-buffer-name)
-      (read-only-mode 1)))
+  (get-buffer-create weechat-relay-log-buffer-name)
   (with-current-buffer (get-buffer weechat-relay-buffer-name)
     (read-only-mode 1)
     (set-buffer-multibyte nil)
     (set-process-filter (get-buffer-process (current-buffer))
                         #'weechat--relay-message-filter)))
 
-(defun weechat-relay-disconnect (&optional cleanup)
+(defun weechat-relay-disconnect ()
   (when (get-buffer weechat-relay-buffer-name)
-    (with-current-buffer weechat-relay-buffer-name
+    (weechat--relay-send-message "quit")
+    (with-current-buffer weechat-relay-b
+uffer-name
       (delete-process
        (get-buffer-process (current-buffer)))
-      (when cleanup
-        (kill-buffer)
-        (when (get-buffer weechat-relay-log-buffer-name)
-          (kill-buffer weechat-relay-log-buffer-name))))))
+      (kill-buffer))
+    (when (get-buffer weechat-relay-log-buffer-name)
+      (kill-buffer weechat-relay-log-buffer-name))))
 
 (defun weechat--message-id (message)
   (car message))
