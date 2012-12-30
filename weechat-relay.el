@@ -32,9 +32,14 @@
 
 (defvar weechat-relay-buffer-name "*weechat-relay*"
   "Buffer holding the connection to the host weechat instance.")
+
 (defvar weechat-relay-log-buffer-name "*weechat-relay-log*"
   "Buffer name to use as debug log. Set to `nil' to disable
   logging.")
+
+(defvar weechat-relay-message-function nil
+  "Function to call when receiving a new weechat message.")
+
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message `test' with optional id `id'. Trims `text' prior
@@ -284,11 +289,15 @@ available in `buffer'. `buffer' defaults to current buffer."
       (insert (string-as-unibyte string))
       (while (weechat-message-available-p)
         (let ((data (weechat--relay-parse-new-message)))
+          ;; If buffer is available, log message
           (when (bufferp (get-buffer weechat-relay-log-buffer-name))
             (with-current-buffer weechat-relay-log-buffer-name
               (goto-char (point-max))
-              (insert "Received message: " (format "%S" data))
-              (newline))))))))
+              (insert (format "%S" data))
+              (newline)))
+          ;; Call `weechat-relay-message-function'
+          (when (functionp weechat-relay-message-function)
+            (funcall weechat-relay-message-function data)))))))
 
 (defun weechat-relay-connect (host port)
   "Opens a new weechat relay connection to `host' at port `port'."
