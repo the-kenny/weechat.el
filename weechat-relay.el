@@ -108,7 +108,7 @@ Optional second return value contains length of parsed data. "
 from unibyte string `data'. Returns string-value and number of
 bytes consumed."
   (let ((obj (bindat-unpack weechat--relay-ptr-spec data)))
-    (values (bindat-get-field obj 'val)
+    (values (concat "0x" (bindat-get-field obj 'val))
             (bindat-length weechat--relay-ptr-spec obj))))
 
 (setq weechat--relay-tim-spec
