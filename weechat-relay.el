@@ -311,7 +311,8 @@ available in `buffer'. `buffer' defaults to current buffer."
 (defun weechat--relay-message-filter (proc string)
   (with-current-buffer (process-buffer proc)
     (let ((inhibit-read-only t))
-      (insert (string-as-unibyte string))
+      (goto-char (point-max))
+      (insert (string-make-unibyte string))
       (while (weechat-message-available-p)
         (let ((data (weechat--relay-parse-new-message)))
           ;; If buffer is available, log message
@@ -326,10 +327,12 @@ available in `buffer'. `buffer' defaults to current buffer."
 
 (defun weechat-relay-connect (host port)
   "Opens a new weechat relay connection to `host' at port `port'."
-  (open-network-stream "weechat-relay"
-                       weechat-relay-buffer-name
-                       host
-                       port)
+  (make-network-process :name "weechat-relay"
+                        :buffer weechat-relay-buffer-name
+                        :host host
+                        :service port
+                        :filter-multibyte nil
+                        :coding 'binary)
   (get-buffer-create weechat-relay-log-buffer-name)
   (with-current-buffer (get-buffer weechat-relay-buffer-name)
     (read-only-mode 1)
@@ -342,8 +345,7 @@ available in `buffer'. `buffer' defaults to current buffer."
 buffers."
   (when (get-buffer weechat-relay-buffer-name)
     (weechat--relay-send-message "quit")
-    (with-current-buffer weechat-relay-b
-uffer-name
+    (with-current-buffer weechat-relay-buffer-name 
       (delete-process
        (get-buffer-process (current-buffer)))
       (kill-buffer))
