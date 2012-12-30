@@ -41,6 +41,8 @@ Set to nil to disable logging.")
 (defvar weechat-relay-message-function nil
   "Function to call when receiving a new weechat message.")
 
+(defvar weechat-relay-ignored-message-ids '("_nicklist")
+  "IDs to ignore.")
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message `TEXT' with optional ID `id'.
@@ -275,16 +277,18 @@ Returns a list: (id data)."
   (let* ((msg (bindat-unpack weechat--relay-message-spec message-data))
          (data (concat (bindat-get-field msg 'data)))
          (msg-id (bindat-get-field msg 'id 'val))
+         (ignore-msg (member msg-id weechat-relay-ignored-message-ids))
          (offset 0)
-         (acc ()))
+         (acc ())) 
     ;; Only no-compression is supported atm
     (assert (eq 0 (bindat-get-field msg 'compression)))
-    (while (< offset (length data))
-      (multiple-value-bind (obj offset*) (weechat--unpack-message-contents
-                                          (substring data offset))
-        (setq offset (+ offset offset*))
-        (setq acc (cons obj acc))))
-    (values (cons msg-id acc)
+    (when (not ignore-msg)
+      (while (< offset (length data))
+        (multiple-value-bind (obj offset*) (weechat--unpack-message-contents
+                                            (substring data offset))
+          (setq offset (+ offset offset*))
+          (setq acc (cons obj acc)))))
+    (values (cons msg-id (if ignore-msg '(ignored) acc))
             (bindat-get-field msg 'length))))
 
 (defun weechat--message-available-p (&optional buffer)
