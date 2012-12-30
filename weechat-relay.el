@@ -80,13 +80,13 @@ value and bytes consumed."
     'val)
    1))
 
-(setq weechat--relay-str-spec
-      '((len u32)
-        (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
-                                   (bindat-get-field struct 'len)
-                                   4)))
-                         ;; Hack for signed/unsigned problems
-                         (if (<= len 0) 0 len))))))
+(defconst weechat--relay-str-spec
+  '((len u32)
+    (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
+                               (bindat-get-field struct 'len)
+                               4)))
+                     ;; Hack for signed/unsigned problems
+                     (if (<= len 0) 0 len))))))
 
 (defun weechat--relay-unpack-str (data)
   "Unpacks a weechat-relay-string from unibyte string `data'.
@@ -95,13 +95,13 @@ Optional second return value contains length of parsed data. "
     (values (decode-coding-string (bindat-get-field obj 'val) 'utf-8)
             (bindat-length weechat--relay-str-spec obj))))
 
-(setq weechat--relay-ptr-spec
-      '((len u8)
-        (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
-                                   (bindat-get-field struct 'len)
-                                   1)))
-                         ;; Hack for signed/unsigned problems
-                         (if (<= len 0) 0 len))))))
+(defconst weechat--relay-ptr-spec
+  '((len u8)
+    (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
+                               (bindat-get-field struct 'len)
+                               1)))
+                     ;; Hack for signed/unsigned problems
+                     (if (<= len 0) 0 len))))))
 
 (defun weechat--relay-unpack-ptr (data)
   "Unpack a string encoded in weechat's binary representation
@@ -111,13 +111,13 @@ bytes consumed."
     (values (concat "0x" (bindat-get-field obj 'val))
             (bindat-length weechat--relay-ptr-spec obj))))
 
-(setq weechat--relay-tim-spec
-      '((len u8)
-        (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
-                                   (bindat-get-field struct 'len)
-                                   1)))
-                         ;; Hack for signed/unsigned problems
-                         (if (<= len 0) 0 len))))))
+(defconst weechat--relay-tim-spec
+  '((len u8)
+    (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
+                               (bindat-get-field struct 'len)
+                               1)))
+                     ;; Hack for signed/unsigned problems
+                     (if (<= len 0) 0 len))))))
 
 (defun weechat--relay-unpack-tim (data)
   (let ((obj (bindat-unpack weechat--relay-tim-spec data)))
@@ -126,10 +126,10 @@ bytes consumed."
               (bindat-get-field obj 'val)))
             (bindat-length weechat--relay-tim-spec obj))))
 
-(setq weechat--relay-htb-spec
-      '((key-type str 3)
-        (val-type str 3)
-        (count u32)))
+(defconst weechat--relay-htb-spec
+  '((key-type str 3)
+    (val-type str 3)
+    (count u32)))
 
 (defun weechat--relay-unpack-htb (data)
   (let* ((obj (bindat-unpack weechat--relay-htb-spec data))
@@ -156,9 +156,9 @@ bytes consumed."
       (values (cons name value)
               (+ len len*)))))
 
-(setq weechat--relay-inl-item-spec
-      '((name struct weechat--relay-str-spec)
-        (type str 3)))
+(defconst weechat--relay-inl-item-spec
+  '((name struct weechat--relay-str-spec)
+    (type str 3)))
 
 (defun weechat--relay-parse-inl-item (data)
   (let* ((count (weechat--bindat-unsigned-to-signed
@@ -181,9 +181,9 @@ bytes consumed."
     (values acc
             offset)))
 
-(setq weechat--relay-inl-spec
-      '((name struct weechat--relay-str-spec)
-        (count u32)))
+(defconst weechat--relay-inl-spec
+  '((name struct weechat--relay-str-spec)
+    (count u32)))
 
 (defun weechat--relay-parse-inl (data)
   (let* ((obj (bindat-unpack weechat--relay-inl-spec data))
@@ -215,10 +215,10 @@ bytes consumed."
     (values (cons p-path result)
             offset)))
 
-(setq weechat--relay-hdh-spec
-      '((h-path struct weechat--relay-str-spec)
-        (keys struct weechat--relay-str-spec)
-        (count u32)))
+(defconst weechat--relay-hdh-spec
+  '((h-path struct weechat--relay-str-spec)
+    (keys struct weechat--relay-str-spec)
+    (count u32)))
 
 ;;; from http://lists.gnu.org/archive/html/help-gnu-emacs/2009-06/msg00764.html
 (defun weechat--partition-list (list length)
@@ -252,15 +252,15 @@ bytes consumed."
       (values (list h-path acc)
               offset))))
 
-(setq weechat--relay-message-spec
-      '((length u32)
-        (compression u8)
-        (id struct weechat--relay-str-spec)
-        (data vec (eval (let ((l (- (bindat-get-field struct 'length)
-                                    4   ;length
-                                    1   ;compression
-                                    (+ 4 (length (bindat-get-field struct 'id 'val))))))
-                          l)))))
+(defconst weechat--relay-message-spec
+  '((length u32)
+    (compression u8)
+    (id struct weechat--relay-str-spec)
+    (data vec (eval (let ((l (- (bindat-get-field struct 'length)
+                                4   ;length
+                                1   ;compression
+                                (+ 4 (length (bindat-get-field struct 'id 'val))))))
+                      l)))))
 
 (defun weechat--unpack-message-contents (data)
   (let* ((type (substring data 0 3))
@@ -287,7 +287,7 @@ list: (id data)."
     (values (cons msg-id acc)
             (bindat-get-field msg 'length))))
 
-(defun weechat-message-available-p (&optional buffer)
+(defun weechat--message-available-p (&optional buffer)
   "Predicate checking if there is a weechat relay message
 available in `buffer'. `buffer' defaults to current buffer."
   (with-current-buffer (get-buffer (or buffer
@@ -302,7 +302,7 @@ available in `buffer'. `buffer' defaults to current buffer."
 (defun weechat--relay-parse-new-message (&optional buffer)
   (with-current-buffer (get-buffer (or buffer
                                        weechat-relay-buffer-name))
-    (when (weechat-message-available-p (current-buffer))
+    (when (weechat--message-available-p (current-buffer))
       (multiple-value-bind (ret len) (weechat-unpack-message
                                       (buffer-string))
         (delete-region (point-min) (+ (point-min) len))
@@ -313,7 +313,7 @@ available in `buffer'. `buffer' defaults to current buffer."
     (let ((inhibit-read-only t))
       (goto-char (point-max))
       (insert (string-make-unibyte string))
-      (while (weechat-message-available-p)
+      (while (weechat--message-available-p)
         (let ((data (weechat--relay-parse-new-message)))
           ;; If buffer is available, log message
           (when (bufferp (get-buffer weechat-relay-log-buffer-name))
