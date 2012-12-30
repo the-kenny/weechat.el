@@ -31,21 +31,9 @@
 ;;; Code:
 
 (defvar weechat-relay-buffer-name "*weechat-relay*")
-
-(defun weechat-relay-connect (host port)
-  (open-network-stream "weechat-relay"
-                       weechat-relay-buffer-name
-                       host
-                       port)
-  (with-current-buffer (get-buffer weechat-relay-buffer-name)
-    (set-buffer-multibyte nil)))
-
-(defun weechat-relay-disconnect ()
-  (when (get-buffer weechat-relay-buffer-name)
-    (with-current-buffer weechat-relay-buffer-name
-      (delete-process
-       (get-buffer-process (current-buffer)))
-      (kill-buffer))))
+(defvar weechat-relay-log-buffer-name "*weechat-relay-log*"
+  "Buffer name to use as debug log. Set to `nil' to disable
+  logging.")
 
 (defun weechat--relay-send-message (text &optional id)
   (send-string (get-buffer-process weechat-relay-buffer-name)
@@ -271,6 +259,42 @@ Optional second return value contains length of parsed data. "
                                       (buffer-string))
         (delete-region (point-min) (+ (point-min) len))
         ret))))
+
+(defun weechat--relay-message-filter (proc string)
+  (with-current-buffer (process-buffer proc)
+    (let ((inhibit-read-only t))
+      (insert string)
+      (while (weechat-message-available-p)
+        (let ((data (weechat--relay-parse-new-message)))
+          (when (bufferp (get-buffer weechat-relay-log-buffer-name))
+            (with-current-buffer weechat-relay-log-buffer-name
+              (goto-char (point-max))
+              (insert "Received message: " (format "%S" data))
+              (newline))))))))
+
+(defun weechat-relay-connect (host port)
+  (open-network-stream "weechat-relay"
+                       weechat-relay-buffer-name
+                       host
+                       port)
+  (when weechat-relay-log-buffer-name
+    (with-current-buffer (get-buffer-create weechat-relay-log-buffer-name)
+      (read-only-mode 1)))
+  (with-current-buffer (get-buffer weechat-relay-buffer-name)
+    (read-only-mode 1)
+    (set-buffer-multibyte nil)
+    (set-process-filter (get-buffer-process (current-buffer))
+                        #'weechat--relay-message-filter)))
+
+(defun weechat-relay-disconnect (&optional cleanup)
+  (when (get-buffer weechat-relay-buffer-name)
+    (with-current-buffer weechat-relay-buffer-name
+      (delete-process
+       (get-buffer-process (current-buffer)))
+      (when cleanup
+        (kill-buffer)
+        (when (get-buffer weechat-relay-log-buffer-name)
+          (kill-buffer weechat-relay-log-buffer-name))))))
 
 (defun weechat--message-id (message)
   (car message))
