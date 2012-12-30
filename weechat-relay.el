@@ -355,24 +355,27 @@ uffer-name
       (should (equal '("version" . "0.3.8")
                      (weechat--message-data data))))))
 
-(progn
-  (send-string (get-buffer-process "*weechat-relay*")
-               "(42) info version\n")
-  (sleep-for 0 200)
-  (weechat--relay-parse-new-message))
+(quote
+ (progn
+   (send-string (get-buffer-process "*weechat-relay*")
+                "(42) info version\n")
+   (sleep-for 0 200)
+   (weechat--relay-parse-new-message)))
 
-(progn
-  (send-string (get-buffer-process "*weechat-relay*")
-               "infolist buffer\n")
-  (sleep-for 0 200)
-  (weechat--relay-parse-new-message))
+(quote
+ (progn
+   (send-string (get-buffer-process "*weechat-relay*")
+                "infolist buffer\n")
+   (sleep-for 0 200)
+   (weechat--relay-parse-new-message)))
 
-(progn
-  (send-string (get-buffer-process "*weechat-relay*")
-               "(42) hdata buffer:gui_buffers(3) full_name\n")
-  (sleep-for 0 200)
-  (print (weechat--relay-parse-new-message))
-  nil)
+(quote
+ (progn
+   (send-string (get-buffer-process "*weechat-relay*")
+                "(42) hdata buffer:gui_buffers(3) full_name\n")
+   (sleep-for 0 200)
+   (print (weechat--relay-parse-new-message))
+   nil))
 
 (quote
  (progn
