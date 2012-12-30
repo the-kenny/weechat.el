@@ -35,33 +35,33 @@
   "Buffer holding the connection to the host weechat instance.")
 
 (defvar weechat-relay-log-buffer-name "*weechat-relay-log*"
-  "Buffer name to use as debug log. Set to `nil' to disable
-  logging.")
+  "Buffer name to use as debug log.
+Set to nil to disable logging.")
 
 (defvar weechat-relay-message-function nil
   "Function to call when receiving a new weechat message.")
 
 
 (defun weechat--relay-send-message (text &optional id)
-  "Send message `test' with optional id `id'. Trims `text' prior
-sending it."
+  "Send message `TEXT' with optional ID `id'.
+Trims `text' prior sending it."
   (send-string (get-buffer-process weechat-relay-buffer-name)
                (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
 
 (defun weechat-relay-authenticate (password)
-  "Authenticates to weechat with password `password'."
+  "Authenticates to weechat with PASSWORD `password'."
   (weechat--relay-send-message (format "init password=%s,compression=off\n" password)))
 
 (defun weechat--bindat-unsigned-to-signed (num bytes)
-  "Converts an unsigned int `num' in two-complement
-representation with `bytes' bytes to a signed int. Useful because
-bindat doesn't support signed numbers."
+  "Convert an unsigned int `NUM' to signed int.
+`num' is in two-complement representation with `BYTES' bytes.
+Useful because bindat doesn't support signed numbers."
   (if (> num (- (expt 2 (- (* 8 bytes) 1)) 1))
       (- num (expt 2 (* 8 bytes)))
     num))
 
 (defun weechat--relay-unpack-int (data)
-  "Unpack a four-byte signed integer from unibyte-string `data'.
+  "Unpack a four-byte signed integer from unibyte-string `DATA'.
 Returns the value and number of bytes consumed."
   (values
    (weechat--bindat-unsigned-to-signed
@@ -72,8 +72,8 @@ Returns the value and number of bytes consumed."
    4))
 
 (defun weechat--relay-unpack-chr (data)
-  "Unpack a one byte char from unibyte string `data'. Returns
-value and bytes consumed."
+  "Unpack a one byte char from unibyte string `DATA'.
+Returns value and bytes consumed."
   (values
    (bindat-get-field
     (bindat-unpack '((val u8)) data)
@@ -89,8 +89,8 @@ value and bytes consumed."
                      (if (<= len 0) 0 len))))))
 
 (defun weechat--relay-unpack-str (data)
-  "Unpacks a weechat-relay-string from unibyte string `data'.
-Optional second return value contains length of parsed data. "
+  "Unpacks a weechat-relay-string from unibyte string `DATA'.
+Optional second return value contains length of parsed data."
   (let ((obj (bindat-unpack weechat--relay-str-spec data)))
     (values (decode-coding-string (bindat-get-field obj 'val) 'utf-8)
             (bindat-length weechat--relay-str-spec obj))))
@@ -104,9 +104,9 @@ Optional second return value contains length of parsed data. "
                      (if (<= len 0) 0 len))))))
 
 (defun weechat--relay-unpack-ptr (data)
-  "Unpack a string encoded in weechat's binary representation
-from unibyte string `data'. Returns string-value and number of
-bytes consumed."
+  "Unpack a string encoded in weechat's binary representation.
+`DATA' must be an unibyte string. Returns string-value and number
+of bytes consumed."
   (let ((obj (bindat-unpack weechat--relay-ptr-spec data)))
     (values (concat "0x" (bindat-get-field obj 'val))
             (bindat-length weechat--relay-ptr-spec obj))))
@@ -270,8 +270,8 @@ bytes consumed."
               (+ len 3)))))
 
 (defun weechat-unpack-message (message-data)
-  "Unpack weechat relay message in `message-data'. Returns a
-list: (id data)."
+  "Unpack weechat relay message in `MESSAGE-DATA'.
+Returns a list: (id data)."
   (let* ((msg (bindat-unpack weechat--relay-message-spec message-data))
          (data (concat (bindat-get-field msg 'data)))
          (msg-id (bindat-get-field msg 'id 'val))
@@ -288,8 +288,8 @@ list: (id data)."
             (bindat-get-field msg 'length))))
 
 (defun weechat--message-available-p (&optional buffer)
-  "Predicate checking if there is a weechat relay message
-available in `buffer'. `buffer' defaults to current buffer."
+  "Check if a weechat relay message available in `BUFFER'.
+`buffer' defaults to current buffer."
   (with-current-buffer (get-buffer (or buffer
                                        weechat-relay-buffer-name))
     (and (> (buffer-size) 5)
@@ -326,7 +326,7 @@ available in `buffer'. `buffer' defaults to current buffer."
             (funcall weechat-relay-message-function data)))))))
 
 (defun weechat-relay-connect (host port)
-  "Opens a new weechat relay connection to `host' at port `port'."
+  "Opens a new weechat relay connection to `HOST' at PORT `port'."
   (make-network-process :name "weechat-relay"
                         :buffer weechat-relay-buffer-name
                         :host host
@@ -345,7 +345,7 @@ available in `buffer'. `buffer' defaults to current buffer."
 buffers."
   (when (get-buffer weechat-relay-buffer-name)
     (weechat--relay-send-message "quit")
-    (with-current-buffer weechat-relay-buffer-name 
+    (with-current-buffer weechat-relay-buffer-name
       (delete-process
        (get-buffer-process (current-buffer)))
       (kill-buffer))
