@@ -27,6 +27,7 @@
 (require 'bindat)
 (require 'ert)
 (require 's)
+(require 'pp)
 
 ;;; Code:
 
@@ -293,7 +294,7 @@ available in `buffer'. `buffer' defaults to current buffer."
           (when (bufferp (get-buffer weechat-relay-log-buffer-name))
             (with-current-buffer weechat-relay-log-buffer-name
               (goto-char (point-max))
-              (insert (format "%S" data))
+              (insert (pp-to-string data))
               (newline)))
           ;; Call `weechat-relay-message-function'
           (when (functionp weechat-relay-message-function)
