@@ -66,7 +66,7 @@ Trims `text' prior sending it."
   "Authenticates to weechat with PASSWORD `password'."
   (weechat--relay-send-message (format "init password=%s,compression=off\n" password)))
 
-(defun weechat--bindat-unsigned-to-signed (num bytes)
+(defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int `NUM' to signed int.
 `num' is in two-complement representation with `BYTES' bytes.
 Useful because bindat doesn't support signed numbers."
@@ -78,7 +78,7 @@ Useful because bindat doesn't support signed numbers."
   "Unpack a four-byte signed integer from unibyte string `DATA'.
 Returns the value and number of bytes consumed."
   (values
-   (weechat--bindat-unsigned-to-signed
+   (weechat--relay-bindat-unsigned-to-signed
     (bindat-get-field
      (bindat-unpack '((val u32)) data)
      'val)
@@ -96,7 +96,7 @@ Returns value and bytes consumed."
 
 (defconst weechat--relay-str-spec
   '((len u32)
-    (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
+    (val str (eval (let ((len (weechat--relay-bindat-unsigned-to-signed
                                (bindat-get-field struct 'len)
                                4)))
                      ;; Hack for signed/unsigned problems
@@ -111,7 +111,7 @@ Optional second return value contains length of parsed data."
 
 (defconst weechat--relay-ptr-spec
   '((len u8)
-    (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
+    (val str (eval (let ((len (weechat--relay-bindat-unsigned-to-signed
                                (bindat-get-field struct 'len)
                                1)))
                      ;; Hack for signed/unsigned problems
@@ -127,7 +127,7 @@ of bytes consumed."
 
 (defconst weechat--relay-tim-spec
   '((len u8)
-    (val str (eval (let ((len (weechat--bindat-unsigned-to-signed
+    (val str (eval (let ((len (weechat--relay-bindat-unsigned-to-signed
                                (bindat-get-field struct 'len)
                                1)))
                      ;; Hack for signed/unsigned problems
@@ -147,7 +147,7 @@ of bytes consumed."
 
 (defun weechat--relay-unpack-htb (data)
   (let* ((obj (bindat-unpack weechat--relay-htb-spec data))
-         (count (weechat--bindat-unsigned-to-signed
+         (count (weechat--relay-bindat-unsigned-to-signed
                  (bindat-get-field obj 'count)
                  4))
          (key-type (bindat-get-field obj 'key-type))
@@ -175,7 +175,7 @@ of bytes consumed."
     (type str 3)))
 
 (defun weechat--relay-parse-inl-item (data)
-  (let* ((count (weechat--bindat-unsigned-to-signed
+  (let* ((count (weechat--relay-bindat-unsigned-to-signed
                  (bindat-get-field
                   (bindat-unpack '((len u32)) data) 'len)
                  4))
@@ -202,7 +202,7 @@ of bytes consumed."
 (defun weechat--relay-parse-inl (data)
   (let* ((obj (bindat-unpack weechat--relay-inl-spec data))
          (acc ())
-         (count (weechat--bindat-unsigned-to-signed
+         (count (weechat--relay-bindat-unsigned-to-signed
                  (bindat-get-field obj 'count)
                  4))
          (offset (bindat-length weechat--relay-inl-spec obj)))
@@ -249,7 +249,7 @@ of bytes consumed."
 
 (defun weechat--relay-parse-hda (data)
   (let* ((obj (bindat-unpack weechat--relay-hdh-spec data))
-         (count (weechat--bindat-unsigned-to-signed
+         (count (weechat--relay-bindat-unsigned-to-signed
                  (bindat-get-field obj 'count)
                  4))
          (name-type-alist (weechat--hda-split-keys-string
@@ -433,3 +433,4 @@ buffers."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; weechat-relay.el ends here
+
