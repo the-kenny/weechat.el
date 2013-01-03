@@ -29,8 +29,6 @@
 (require 's)
 (require 'pp)
 
-;;; Code:
-
 (defvar weechat-relay-buffer-name "*weechat-relay*"
   "Buffer holding the connection to the host weechat instance.")
 
@@ -44,11 +42,24 @@ Set to nil to disable logging.")
 (defvar weechat-relay-ignored-message-ids '("_nicklist")
   "IDs to ignore.")
 
+
+;;; Code:
+
+(defun weechat--relay-log (text)
+  "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled."
+  (when (bufferp (get-buffer weechat-relay-log-buffer-name))
+    (with-current-buffer weechat-relay-log-buffer-name
+      (goto-char (point-max))
+      (insert (s-trim text))
+      (newline))))
+
 (defun weechat--relay-send-message (text &optional id)
   "Send message `TEXT' with optional ID `id'.
 Trims `text' prior sending it."
-  (send-string (get-buffer-process weechat-relay-buffer-name)
-               (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
+  (let ((msg (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
+    (weechat--relay-log (format "Sending msg: '%s'" (s-trim msg)))
+    (send-string (get-buffer-process weechat-relay-buffer-name)
+                 msg)))
 
 (defun weechat-relay-authenticate (password)
   "Authenticates to weechat with PASSWORD `password'."
@@ -320,20 +331,14 @@ Returns a list: (id data)."
       (while (weechat--message-available-p)
         (let ((data (weechat--relay-parse-new-message)))
           ;; If buffer is available, log message
-          (when (bufferp (get-buffer weechat-relay-log-buffer-name))
-            (with-current-buffer weechat-relay-log-buffer-name
-              (goto-char (point-max))
-              (insert (pp-to-string data))
-              (newline)))
+          (weechat--relay-log (pp-to-string data))
           ;; Call `weechat-relay-message-function'
           (when (functionp weechat-relay-message-function)
             (funcall weechat-relay-message-function data)))))))
 
 (defun weechat--relay-process-sentinel (proc msg)
   (let ((event (process-status proc)))
-   (with-current-buffer weechat-relay-log-buffer-name
-     (insert
-      (format "Received event: %s\n" event)))))
+    (weechat--relay-log (format "Received event: %s\n" event))))
 
 (defun weechat-relay-connect (host port)
   "Opens a new weechat relay connection to `HOST' at PORT `port'."
