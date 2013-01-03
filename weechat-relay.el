@@ -329,20 +329,26 @@ Returns a list: (id data)."
           (when (functionp weechat-relay-message-function)
             (funcall weechat-relay-message-function data)))))))
 
+(defun weechat--relay-process-sentinel (proc msg)
+  (let ((event (process-status proc)))
+   (with-current-buffer weechat-relay-log-buffer-name
+     (insert
+      (format "Received event: %s\n" event)))))
+
 (defun weechat-relay-connect (host port)
   "Opens a new weechat relay connection to `HOST' at PORT `port'."
   (make-network-process :name "weechat-relay"
                         :buffer weechat-relay-buffer-name
                         :host host
                         :service port
+                        :filter #'weechat--relay-message-filter
+                        :sentinel #'weechat--relay-process-sentinel
                         :filter-multibyte nil
                         :coding 'binary)
   (get-buffer-create weechat-relay-log-buffer-name)
   (with-current-buffer (get-buffer weechat-relay-buffer-name)
     (read-only-mode 1)
-    (set-buffer-multibyte nil)
-    (set-process-filter (get-buffer-process (current-buffer))
-                        #'weechat--relay-message-filter)))
+    (set-buffer-multibyte nil)))
 
 (defun weechat-relay-disconnect ()
   "Disconnect current weechat relay connection and close all
