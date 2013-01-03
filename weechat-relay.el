@@ -74,7 +74,7 @@ Useful because bindat doesn't support signed numbers."
     num))
 
 (defun weechat--relay-unpack-int (data)
-  "Unpack a four-byte signed integer from unibyte-string `DATA'.
+  "Unpack a four-byte signed integer from unibyte string `DATA'.
 Returns the value and number of bytes consumed."
   (values
    (weechat--bindat-unsigned-to-signed
@@ -290,7 +290,7 @@ Returns a list: (id data)."
          (msg-id (bindat-get-field msg 'id 'val))
          (ignore-msg (member msg-id weechat-relay-ignored-message-ids))
          (offset 0)
-         (acc ())) 
+         (acc ()))
     ;; Only no-compression is supported atm
     (assert (eq 0 (bindat-get-field msg 'compression)))
     (when (not ignore-msg)
