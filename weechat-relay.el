@@ -48,10 +48,11 @@ Set to nil to disable logging.")
 (defun weechat--relay-log (text)
   "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled."
   (when (bufferp (get-buffer weechat-relay-log-buffer-name))
-    (with-current-buffer weechat-relay-log-buffer-name
-      (goto-char (point-max))
-      (insert (s-trim text))
-      (newline))))
+    (save-excursion
+      (with-current-buffer weechat-relay-log-buffer-name 
+        (goto-char (point-max))
+        (insert (s-trim text))
+        (newline)))))
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message `TEXT' with optional ID `id'.
