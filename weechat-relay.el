@@ -312,7 +312,7 @@ Returns a list: (id data)."
         (delete-region (point-min) (+ (point-min) len))
         ret))))
 
-(defun weechat--relay-message-filter (proc string)
+(defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
     (let ((inhibit-read-only t))
       (goto-char (point-max))
@@ -341,7 +341,7 @@ Returns a list: (id data)."
                         :buffer weechat-relay-buffer-name
                         :host host
                         :service port
-                        :filter #'weechat--relay-message-filter
+                        :filter #'weechat--relay-process-filter
                         :sentinel #'weechat--relay-process-sentinel
                         :filter-multibyte nil
                         :coding 'binary)
