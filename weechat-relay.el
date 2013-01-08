@@ -409,6 +409,7 @@ Returns a list: (id data)."
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)
        (get-buffer-process weechat-relay-buffer-name)
+       (process-live-p (get-buffer-process weechat-relay-buffer-name))
        t))
 
 (defun weechat-relay-disconnect ()
@@ -482,6 +483,16 @@ buffers."
       (should (equal "666" (weechat--message-id data)))
       (should (equal '("version" . "0.3.8")
                      (weechat--message-data data))))))
+
+(ert-deftest weechat-relay-test-connection ()
+  (when (weechat-relay-connected-p)
+    (let ((info-data nil)
+          (info-id (symbol-name (gensym))))
+      (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
+      (weechat--relay-send-message "info version" info-id)
+      (sleep-for 1)
+      (should (equal info-id (weechat--message-id info-data)))
+      (should (equal "version" (car (weechat--message-data info-data)))))))
 
 (provide 'weechat-relay)
 
