@@ -490,7 +490,7 @@ buffers."
           (info-id (symbol-name (gensym))))
       (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
       (weechat--relay-send-message "info version" info-id)
-      (sleep-for 1)
+      (sleep-for 0 500)
       (should (equal info-id (weechat--message-id info-data)))
       (should (equal "version" (car (weechat--message-data info-data)))))))
 
