@@ -1,11 +1,8 @@
-;; -*- lexical-binding: t -*- 
-;;; weechat-relay --- Implementation of Weechat's relay protocol
+;;; weechat-relay --- Implementation of Weechat's relay protocol ;; -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012 Moritz Ulrich
 
 ;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
-;; Version: 0.1
-;; Created 30. Dec 2012
 ;; Keywords: irc chat network weechat
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -46,15 +43,15 @@ Set to nil to disable logging.")
 ;;; Code:
 
 (defvar weechat--relay-id-callback-alist '()
-  "Alist mapping from ids to functions. Incoming message-ids will
-be searched in this alist and the corresponding function will be
-called.")
+  "Alist mapping from ids to functions.
+Incoming message-ids will be searched in this alist and the
+corresponding function will be called.")
 
 (defun weechat--relay-log (text)
   "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled."
   (when (bufferp (get-buffer weechat-relay-log-buffer-name))
     (save-excursion
-      (with-current-buffer weechat-relay-log-buffer-name 
+      (with-current-buffer weechat-relay-log-buffer-name
         (goto-char (point-max))
         (insert (s-trim text))
         (newline)))))
@@ -343,7 +340,7 @@ Returns a list: (id data)."
 
 (defun weechat-relay-add-id-callback (id function &optional one-shot)
   (when (assoc id weechat--relay-id-callback-alist)
-    (error "Id '%s' is already in `weechat--relay-id-callback-alist'." id))
+    (error "Id '%s' is already in `weechat--relay-id-callback-alist'" id))
   (let ((function* (if one-shot
                        (lambda (x)
                          (funcall function x)
