@@ -43,13 +43,12 @@ Set to nil to disable logging.")
 (defvar weechat-relay-ignored-message-ids '("_nicklist")
   "IDs to ignore.")
 
-(defvar weechat-relay-id-callback-alist '()
+;;; Code:
+
+(defvar weechat--relay-id-callback-alist '()
   "Alist mapping from ids to functions. Incoming message-ids will
 be searched in this alist and the corresponding function will be
 called.")
-
-
-;;; Code:
 
 (defun weechat--relay-log (text)
   "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled."
@@ -333,38 +332,38 @@ Returns a list: (id data)."
 
 
 (defun weechat-relay-get-id-callback (id)
-  (cadr (assoc id weechat-relay-id-callback-alist)))
+  (cadr (assoc id weechat--relay-id-callback-alist)))
 
 (defun weechat-relay-remove-id-callback (id)
   (let ((fun (weechat-relay-get-id-callback id)))
-   (setq weechat-relay-id-callback-alist
-         (delq (assoc id weechat-relay-id-callback-alist)
-               weechat-relay-id-callback-alist))
+   (setq weechat--relay-id-callback-alist
+         (delq (assoc id weechat--relay-id-callback-alist)
+               weechat--relay-id-callback-alist))
    fun))
 
 (defun weechat-relay-add-id-callback (id function &optional one-shot)
-  (when (assoc id weechat-relay-id-callback-alist)
-    (error "Id '%s' is already in `weechat-relay-id-callback-alist'." id))
+  (when (assoc id weechat--relay-id-callback-alist)
+    (error "Id '%s' is already in `weechat--relay-id-callback-alist'." id))
   (let ((function* (if one-shot
                        (lambda (x)
                          (funcall function x)
                          (weechat-relay-remove-id-callback id))
                      function)))
-    (setq weechat-relay-id-callback-alist (cons (list id function*)
-                                                weechat-relay-id-callback-alist))))
+    (setq weechat--relay-id-callback-alist (cons (list id function*)
+                                                weechat--relay-id-callback-alist))))
 
 (ert-deftest weechat-relay-id-callback ()
-  (let ((weechat-relay-id-callback-alist nil))
+  (let ((weechat--relay-id-callback-alist nil))
    (let ((fun (lambda (xyz) nil)) )
      (weechat-relay-add-id-callback "23" fun)
      (should (equal fun (weechat-relay-get-id-callback "23")))
      (should (equal fun (weechat-relay-remove-id-callback "23"))))
-   (setq weechat-relay-id-callback-alist nil)
+   (setq weechat--relay-id-callback-alist nil)
    (should-error (progn (weechat-relay-add-id-callback "42" (lambda ()))
                         (weechat-relay-add-id-callback "42" (lambda ()))))))
 
 (ert-deftest weechat-relay-id-callback-one-shot ()
-  (let ((weechat-relay-id-callback-alist nil))
+  (let ((weechat--relay-id-callback-alist nil))
    (let ((fun (lambda (xyz) nil)) )
      (weechat-relay-add-id-callback "23" fun 'one-shot)
      (funcall (weechat-relay-get-id-callback "23") nil)
@@ -383,7 +382,7 @@ Returns a list: (id data)."
           ;; Call `weechat-relay-message-function'
           (when (functionp weechat-relay-message-function)
             (funcall weechat-relay-message-function data))
-          ;; Call callback from `weechat-relay-id-callback-alist'
+          ;; Call callback from `weechat--relay-id-callback-alist'
           (if (functionp (weechat-relay-get-id-callback id))
               (funcall (weechat-relay-get-id-callback id) data)))))))
 
