@@ -406,10 +406,15 @@ Returns a list: (id data)."
     (read-only-mode 1)
     (set-buffer-multibyte nil)))
 
+(defun weechat-relay-connected-p ()
+  (and (get-buffer weechat-relay-buffer-name)
+       (get-buffer-process weechat-relay-buffer-name)
+       t))
+
 (defun weechat-relay-disconnect ()
   "Disconnect current weechat relay connection and close all
 buffers."
-  (when (get-buffer weechat-relay-buffer-name)
+  (when (weechat-relay-connected-p)
     (weechat--relay-send-message "quit")
     (with-current-buffer weechat-relay-buffer-name
       (delete-process
