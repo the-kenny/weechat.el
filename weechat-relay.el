@@ -391,7 +391,8 @@ Returns a list: (id data)."
             (funcall weechat-relay-message-function data))
           ;; Call callback from `weechat--relay-id-callback-alist'
           (if (functionp (weechat-relay-get-id-callback id))
-              (funcall (weechat-relay-get-id-callback id) data)))))))
+              (funcall (weechat-relay-get-id-callback id)
+                       (weechat--message-data data))))))))
 
 (defun weechat--relay-process-sentinel (proc msg)
   (let ((event (process-status proc)))
