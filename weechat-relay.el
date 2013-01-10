@@ -352,6 +352,11 @@ Returns a list: (id data)."
     (setq weechat--relay-id-callback-alist (cons (list id function*)
                                                 weechat--relay-id-callback-alist))))
 
+(defun weechat-relay-send-command (command callback)
+  (let ((id (symbol-name (gensym))))
+    (weechat-relay-add-id-callback id callback 'one-shot)
+    (weechat--relay-send-message command id)))
+
 (ert-deftest weechat-relay-id-callback ()
   (let ((weechat--relay-id-callback-alist nil))
    (let ((fun (lambda (xyz) nil)) )
