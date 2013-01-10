@@ -20,7 +20,7 @@
 
 
 ;;; Commentary:
-;; 
+;;
 
 (require 'bindat)
 (require 'ert)
@@ -57,7 +57,7 @@ corresponding function will be called.")
      (let ((old-point (point)))
        (save-excursion
          (save-restriction
-           (widen) 
+           (widen)
            (goto-char (point-max))
            (insert (s-trim text))
            (newline)))
@@ -519,4 +519,3 @@ buffers."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; weechat-relay.el ends here
-
