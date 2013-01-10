@@ -342,6 +342,8 @@ Returns a list: (id data)."
    fun))
 
 (defun weechat-relay-add-id-callback (id function &optional one-shot)
+  (when (not id)
+    (error "Id must not be nil"))
   (when (assoc id weechat--relay-id-callback-alist)
     (error "Id '%s' is already in `weechat--relay-id-callback-alist'" id))
   (let ((function* (if one-shot
