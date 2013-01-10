@@ -40,6 +40,9 @@ Set to nil to disable logging.")
 (defvar weechat-relay-ignored-message-ids '("_nicklist")
   "IDs to ignore.")
 
+(defvar weechat-relay-disconnect-hook ()
+  "Hook run when the relay disconnects.")
+
 ;;; Code:
 
 (defvar weechat--relay-id-callback-alist '()
@@ -385,7 +388,8 @@ Returns a list: (id data)."
 
 (defun weechat--relay-process-sentinel (proc msg)
   (let ((event (process-status proc)))
-    (weechat--relay-log (format "Received event: %s\n" event))))
+    (weechat--relay-log (format "Received event: %s\n" event))
+    (run-hooks weechat-relay-disconnect-hook)))
 
 (defun weechat-relay-connect (host port)
   "Opens a new weechat relay connection to `HOST' at PORT `port'."
