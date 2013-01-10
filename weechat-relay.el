@@ -456,21 +456,30 @@ buffers."
 (defun weechat--hdata-value-pointer-path (value)
   (car value))
 
-(defun weechat--hdata-value-cons (value)
-  (cadr value))
+(defun weechat--hdata-value-plist (value)
+  (cdr value))
 
 (ert-deftest weechat-test-hdata-fns ()
-  (let ((hdata '("foo" ((("114b240") ("full_name" . "irc.server.euirc"))
-                        (("10ea8d0") ("full_name" . "irc.server.freenode"))
-                        (("10967c0") ("full_name" . "core.weechat"))))))
-    (should (equal "foo" (weechat--hdata-path hdata)))
+  (let ((hdata '("foo/bar"
+                 ((("0x155f870" "0xffffff")
+                   ("title" . "IRC: irc.euirc.net/6667 (83.137.41.33)")
+                   ("short_name" . "euirc")
+                   ("name" . "server.euirc"))
+                  (("0x1502940")
+                   ("title" . "IRC: irc.freenode.net/6697 (174.143.119.91)")
+                   ("short_name" . "freenode")
+                   ("name" . "server.freenode"))))))
+    (should (equal "foo/bar" (weechat--hdata-path hdata)))
     (should (listp (weechat--hdata-values hdata)))
-    (should (equal '(("114b240") ("10ea8d0") ("10967c0"))
+    (should (equal '(("0x155f870" "0xffffff") ("0x1502940"))
                    (mapcar #'weechat--hdata-value-pointer-path (weechat--hdata-values hdata))))
-    (should (equal '(("full_name" . "irc.server.euirc")
-                     ("full_name" . "irc.server.freenode")
-                     ("full_name" . "core.weechat"))
-                   (mapcar #'weechat--hdata-value-cons (weechat--hdata-values hdata))))))
+    (should (equal '((("title" . "IRC: irc.euirc.net/6667 (83.137.41.33)")
+                      ("short_name" . "euirc")
+                      ("name" . "server.euirc"))
+                     (("title" . "IRC: irc.freenode.net/6697 (174.143.119.91)")
+                      ("short_name" . "freenode")
+                      ("name" . "server.freenode")))
+                   (mapcar #'weechat--hdata-value-plist (weechat--hdata-values hdata))))))
 
 ;;; Various tests
 
@@ -503,8 +512,7 @@ buffers."
       (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
       (weechat--relay-send-message "info version" info-id)
       (sleep-for 0 500)
-      (should (equal info-id (weechat--message-id info-data)))
-      (should (equal "version" (car (weechat--message-data info-data)))))))
+      (should (equal "version" (car info-data))))))
 
 (provide 'weechat-relay)
 
