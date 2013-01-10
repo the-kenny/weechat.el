@@ -53,11 +53,15 @@ corresponding function will be called.")
 (defun weechat--relay-log (text)
   "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled."
   (when (bufferp (get-buffer weechat-relay-log-buffer-name))
-    (save-excursion
-      (with-current-buffer weechat-relay-log-buffer-name
-        (goto-char (point-max))
-        (insert (s-trim text))
-        (newline)))))
+    (with-current-buffer weechat-relay-log-buffer-name
+     (let ((old-point (point)))
+       (save-excursion
+         (save-restriction
+           (widen) 
+           (goto-char (point-max))
+           (insert (s-trim text))
+           (newline)))
+       (goto-char old-point)))))
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message `TEXT' with optional ID `id'.
