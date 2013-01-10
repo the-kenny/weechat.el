@@ -396,7 +396,7 @@ Returns a list: (id data)."
 (defun weechat--relay-process-sentinel (proc msg)
   (let ((event (process-status proc)))
     (weechat--relay-log (format "Received event: %s\n" event))
-    (run-hooks weechat-relay-disconnect-hook)))
+    (run-hooks 'weechat-relay-disconnect-hook)))
 
 (defun weechat-relay-connect (host port)
   "Opens a new weechat relay connection to `HOST' at PORT `port'."
