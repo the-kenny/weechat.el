@@ -37,8 +37,4 @@
 
 (add-hook 'weechat-relay-disconnect-hook (lambda () (message "Disconnected from Weechat")))
 
-
-
-
-
-
+(provide 'weechat)
