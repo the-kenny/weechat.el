@@ -456,7 +456,7 @@ buffers."
 (defun weechat--hdata-value-pointer-path (value)
   (car value))
 
-(defun weechat--hdata-value-plist (value)
+(defun weechat--hdata-value-alist (value)
   (cdr value))
 
 (ert-deftest weechat-test-hdata-fns ()
@@ -479,7 +479,7 @@ buffers."
                      (("title" . "IRC: irc.freenode.net/6697 (174.143.119.91)")
                       ("short_name" . "freenode")
                       ("name" . "server.freenode")))
-                   (mapcar #'weechat--hdata-value-plist (weechat--hdata-values hdata))))))
+                   (mapcar #'weechat--hdata-value-alist (weechat--hdata-values hdata))))))
 
 ;;; Various tests
 
