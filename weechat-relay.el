@@ -43,6 +43,11 @@ Set to nil to disable logging.")
 (defvar weechat-relay-disconnect-hook ()
   "Hook run when the relay disconnects.")
 
+(defvar weechat-relay-connect-hook ()
+  "Hook run when the relay connects.
+Note: This DOESN'T mean the client can is already authenticated
+to the relay server.")
+
 ;;; Code:
 
 (defvar weechat--relay-id-callback-alist '()
@@ -400,19 +405,29 @@ Returns a list: (id data)."
               (funcall (weechat-relay-get-id-callback id)
                        (weechat--message-data data))))))))
 
+(defvar weechat--relay-connected-callback)
+
 (defun weechat--relay-process-sentinel (proc msg)
   (let ((event (process-status proc)))
     (weechat--relay-log (format "Received event: %s\n" event))
-    (run-hooks 'weechat-relay-disconnect-hook)))
+    (case event
+      ('close (run-hooks 'weechat-relay-disconnect-hook))
+      ('open (progn
+               (when (functionp weechat--relay-connected-callback)
+                 (funcall weechat--relay-connected-callback)
+                 (setq weechat--relay-connected-callback nil))
+               (run-hooks 'weechat-relay-connect-hook))))))
 
-(defun weechat-relay-connect (host port)
+(defun weechat-relay-connect (host port &optional callback)
   "Opens a new weechat relay connection to `HOST' at PORT `port'."
+  (setq weechat--relay-connected-callback callback)
   (make-network-process :name "weechat-relay"
                         :buffer weechat-relay-buffer-name
                         :host host
                         :service port
                         :filter #'weechat--relay-process-filter
                         :sentinel #'weechat--relay-process-sentinel
+                        :nowait t
                         :filter-multibyte nil
                         :coding 'binary)
   (get-buffer-create weechat-relay-log-buffer-name)
