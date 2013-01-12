@@ -345,18 +345,20 @@ Returns a list: (id data)."
                weechat--relay-id-callback-alist))
    fun))
 
-(defun weechat-relay-add-id-callback (id function &optional one-shot)
+(defun weechat-relay-add-id-callback (id function &optional one-shot force)
   (when (not id)
     (error "Id must not be nil"))
   (when (assoc id weechat--relay-id-callback-alist)
-    (error "Id '%s' is already in `weechat--relay-id-callback-alist'" id))
+    (if (not force)
+        (error "Id '%s' is already in `weechat--relay-id-callback-alist'" id)
+      (weechat-relay-remove-id-callback id)))
   (let ((function* (if one-shot
                        (lambda (x)
                          (funcall function x)
                          (weechat-relay-remove-id-callback id))
                      function)))
     (setq weechat--relay-id-callback-alist (cons (list id function*)
-                                                weechat--relay-id-callback-alist))))
+                                                 weechat--relay-id-callback-alist))))
 
 (defun weechat-relay-send-command (command callback)
   (let ((id (symbol-name (gensym))))
