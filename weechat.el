@@ -38,14 +38,16 @@
                      (read-number "Port: ")
                      (read-passwd "Password: ")))
   (when (and (stringp host)
-             (integerp port))
-    (weechat-relay-connect host port)
-    (weechat-relay-authenticate password)
-    (weechat-relay-send-command
-     "info version"
-     (lambda (data)
-       (message "Connected to '%s', version %s" host (cdr data))
-       (weechat-update-buffer-list)))))
+             (integerp port)) 
+    (weechat-relay-connect
+     host port
+     (lambda ()
+       (weechat-relay-authenticate password)
+       (weechat-relay-send-command
+        "info version"
+        (lambda (data)
+          (message "Connected to '%s', version %s" host (cdr data))
+          (weechat-update-buffer-list)))))))
 
 (defun weechat-disconnect ()
   (interactive)
