@@ -8,6 +8,14 @@
   (setq weechat--buffer-alist
         (cons (cons ptr val) weechat--buffer-alist)))
 
+(defun weechat-buffer-alist (buffer-ptr)
+  (cdr (assoc buffer-ptr weechat--buffer-alist)))
+
+(defun weechat--remove-buffer-from-alist (ptr)
+  (setq weechat--buffer-alist
+        (delq (assoc ptr weechat--buffer-alist)
+              weechat--buffer-alist)))
+
 (defun weechat--handle-buffer-list (hdata)
   (setq weechat--buffer-alist ())
   (dolist (value (weechat--hdata-values hdata))
@@ -15,9 +23,6 @@
       (weechat--add-buffer-to-alist
        buffer-ptr
        (weechat--hdata-value-alist value)))))
-
-(defun weechat-buffer-alist (buffer-ptr)
-  (cdr (assoc buffer-ptr weechat--buffer-alist)))
 
 (defun weechat-update-buffer-list ()
   (weechat-relay-send-command
@@ -31,7 +36,15 @@
       (error "Received '_buffer_opened' event for '%s' but the buffer exists already!" buffer-ptr))
     (weechat--add-buffer-to-alist buffer-ptr (weechat--hdata-value-alist value))))
 
+(defun weechat--handle-buffer-closed (hdata)
+  (let* ((value (car (weechat--hdata-values hdata)))
+         (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
+    (when (not (weechat-buffer-alist buffer-ptr))
+      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
+    (weechat--remove-buffer-from-alist buffer-ptr)))
+
 (weechat-relay-add-id-callback "_buffer_opened" #'weechat--handle-buffer-opened nil 'force)
+(weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
 
 (defun weechat-connect (host port password)
   (interactive (list (read-string "Relay Host: ")
@@ -47,7 +60,7 @@
         "info version"
         (lambda (data)
           (message "Connected to '%s', version %s" host (cdr data))
-          (weechat-update-buffer-list)))))))
+          (weechat-update-buffer-list)/))))))
 
 (defun weechat-disconnect ()
   (interactive)
@@ -57,3 +70,4 @@
 (add-hook 'weechat-relay-disconnect-hook (lambda () (message "Disconnected from Weechat")))
 
 (provide 'weechat)
+
