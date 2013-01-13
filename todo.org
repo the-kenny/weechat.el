@@ -1,0 +1,21 @@
+* Short-Term
+** DONE Handle network errors (disconnect)
+   CLOSED: [2013-01-10 Thu 22:48]
+** DONE Handle opening/closing of buffers (after 'sync')
+   CLOSED: [2013-01-13 Sun 02:06]
+** TODO Handle 'sync' events [2/15]
+   - [X] _buffer_opened           
+   - [X] _buffer_closing          
+   - [ ] _buffer_renamed          
+   - [ ] _buffer_title_changed    
+   - [ ] _buffer_localvar_added   
+   - [ ] _buffer_localvar_changed 
+   - [ ] _buffer_localvar_removed 
+   - [ ] _buffer_type_changed     
+   - [ ] _buffer_line_added       
+   - [ ] _buffer_moved            
+   - [ ] _buffer_merged           
+   - [ ] _buffer_unmerged         
+   - [ ] _nicklist                
+   - [ ] _upgrade                 
+   - [ ] _upgrade_ended           
