@@ -41,7 +41,7 @@
 
 (defun weechat-update-buffer-list ()
   (weechat-relay-send-command
-   "hdata buffer:gui_buffers(*) name,short_name,title"
+   "hdata buffer:gui_buffers(*) name,short_name,title,number"
    #'weechat--handle-buffer-list))
 
 (defun weechat--handle-buffer-opened (hdata)
