@@ -34,6 +34,9 @@
   "Buffer name to use as debug log.
 Set to nil to disable logging.")
 
+(defvar weechat-relay-log-level :info
+  "Minimum log level. Might be one of :debug :info :warn :error")
+
 (defvar weechat-relay-message-function nil
   "Function to call when receiving a new weechat message.")
 
@@ -55,24 +58,32 @@ to the relay server.")
 Incoming message-ids will be searched in this alist and the
 corresponding function will be called.")
 
-(defun weechat--relay-log (text)
-  "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled."
+(defun weechat-relay-log (text &optional level)
+  "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled.
+`LEVEL' might be one of :debug :info :warn :error. Defaults
+to :info"
   (when (bufferp (get-buffer weechat-relay-log-buffer-name))
     (with-current-buffer weechat-relay-log-buffer-name
-     (let ((old-point (point)))
-       (save-excursion
-         (save-restriction
-           (widen)
-           (goto-char (point-max))
-           (insert (s-trim text))
-           (newline)))
-       (goto-char old-point)))))
+      (let ((log-level-alist '((:debug . 0)
+                               (:info  . 1)
+                               (:warn  . 2)
+                               (:error . 3))))
+        (when (>= (assoc-default (or level :info) log-level-alist)
+                  (assoc-default weechat-relay-log-level log-level-alist))
+          (let ((old-point (point)))
+            (save-excursion
+              (save-restriction
+                (widen)
+                (goto-char (point-max))
+                (insert (s-trim text))
+                (newline)))
+            (goto-char old-point)))))))
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message `TEXT' with optional ID `id'.
 Trims `text' prior sending it."
   (let ((msg (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
-    (weechat--relay-log (format "Sending msg: '%s'" (s-trim msg)))
+    (weechat-relay-log (format "Sending msg: '%s'" (s-trim msg)))
     (send-string (get-buffer-process weechat-relay-buffer-name)
                  msg)))
 
@@ -396,7 +407,7 @@ Returns a list: (id data)."
         (let* ((data (weechat--relay-parse-new-message))
                (id (weechat--message-id data)))
           ;; If buffer is available, log message
-          (weechat--relay-log (pp-to-string data))
+          (weechat-relay-log (pp-to-string data) :debug)
           ;; Call `weechat-relay-message-function'
           (when (functionp weechat-relay-message-function)
             (funcall weechat-relay-message-function data))
@@ -409,7 +420,7 @@ Returns a list: (id data)."
 
 (defun weechat--relay-process-sentinel (proc msg)
   (let ((event (process-status proc)))
-    (weechat--relay-log (format "Received event: %s\n" event))
+    (weechat-relay-log (format "Received event: %s\n" event))
     (case event
       ('close (run-hooks 'weechat-relay-disconnect-hook))
       ('open (progn
