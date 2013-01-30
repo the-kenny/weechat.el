@@ -1,6 +1,6 @@
 ;;; weechat-relay --- Implementation of Weechat's relay protocol ;; -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Moritz Ulrich
+;; Copyright (C) 2013 Moritz Ulrich
 
 ;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
 ;; Keywords: irc chat network weechat
