@@ -69,7 +69,7 @@
                      (read-number "Port: ")
                      (read-passwd "Password: ")))
   (when (and (stringp host)
-             (integerp port)) 
+             (integerp port))
     (weechat-relay-connect
      host port
      (lambda ()
@@ -88,4 +88,3 @@
 (add-hook 'weechat-relay-disconnect-hook (lambda () (message "Disconnected from Weechat")))
 
 (provide 'weechat)
-
