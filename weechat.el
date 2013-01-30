@@ -11,8 +11,8 @@
 (defun weechat--clear-buffer-store ()
   (clrhash weechat--buffer-hash))
 
-(defun weechat--store-buffer-alist (ptr val)
-  (when (weechat-buffer-alist ptr)
+(defun weechat--store-buffer-alist (ptr val &optional replace)
+  (when (and (not replace) (weechat-buffer-alist ptr))
     (error "Buffer '%s' already exists" ptr))
   (puthash ptr val weechat--buffer-hash))
 
