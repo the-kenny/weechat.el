@@ -16,7 +16,7 @@
     (error "Buffer '%s' already exists" ptr))
   (let ((hash (make-hash-table :test 'equal)))
     (dolist (x alist)
-     (puthash (car alist) (cdr alist) hash))
+     (puthash (car x) (cdr x) hash))
     (puthash ptr hash weechat--buffer-hashes)))
 
 (defun weechat--remove-buffer-hash (ptr)
@@ -45,7 +45,7 @@
 
 (defun weechat-update-buffer-list ()
   (weechat-relay-send-command
-   "hdata buffer:gui_buffers(*) name,short_name,title,number"
+   "hdata buffer:gui_buffers(*) number,name,short_name,title,local_variables"
    #'weechat--handle-buffer-list))
 
 (defun weechat--handle-buffer-opened (hdata)
@@ -73,8 +73,21 @@
       (setq result (append (list (car form) result)
                            (cdr form))))))
 
+(defun weechat--handle-buffer-renamed (hdata)
+  (let* ((value (car (weechat--hdata-values hdata)))
+         (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+         (hash (weechat-buffer-hash buffer-ptr))
+         (alist (weechat--hdata-value-alist value)))
+    (when (not hash)
+      (error "Received '_buffer_renamed' event for '%s' but the buffer doesn't exist" buffer-ptr))
+    (puthash "number" (assoc-default "number" value) hash)
+    (puthash "full_name" (assoc-default "full_name" value) hash)
+    (puthash "short_name" (assoc-default "short_name" value) hash)
+    (puthash "local_variables" (assoc-default "local_variables" value) hash)))
+
 (weechat-relay-add-id-callback "_buffer_opened" #'weechat--handle-buffer-opened nil 'force)
 (weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
+(weechat-relay-add-id-callback "_buffer_renamed" #'weechat--handle-buffer-renamed nil 'force)
 
 (defun weechat-connect (host port password)
   (interactive (list (read-string "Relay Host: ")
