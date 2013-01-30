@@ -28,10 +28,10 @@
   (let ((weechat--buffer-hashes (copy-hash-table weechat--buffer-hashes)))
     (weechat--clear-buffer-store)
     (should (eql 0 (hash-table-count weechat--buffer-hashes)))
-    (let ((hash (make-hash-table)))
-      (weechat--store-buffer-hash "0xffffff" hash)
-      (should (eq hash
-                  (weechat-buffer-hash "0xffffff"))))
+    (let ((data '(("name" . "Foobar"))))
+      (weechat--store-buffer-hash "0xffffff" data)
+      (should (eq (cadr data)
+                  (gethash "name"(weechat-buffer-hash "0xffffff")))))
     (weechat--remove-buffer-hash "0xffffff")
     (should (not (weechat-buffer-hash "0xffffff")))))
 
