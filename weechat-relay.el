@@ -427,7 +427,9 @@ Returns a list: (id data)."
                (when (functionp weechat--relay-connected-callback)
                  (funcall weechat--relay-connected-callback)
                  (setq weechat--relay-connected-callback nil))
-               (run-hooks 'weechat-relay-connect-hook))))))
+               (run-hooks 'weechat-relay-connect-hook)))
+      ('failed (progn (error "Failed to connect to weechat relay")
+                      (weechat-relay-disconnect))))))
 
 (defun weechat-relay-connect (host port &optional callback)
   "Opens a new weechat relay connection to `HOST' at PORT `port'."
