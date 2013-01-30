@@ -136,6 +136,54 @@
 
 (add-hook 'weechat-relay-disconnect-hook (lambda () (message "Disconnected from Weechat")))
 
+(defun weechat--find-buffer (name)
+  (let (ret)
+   (maphash
+    (lambda (ptr hash)
+      (when (equal (gethash "name" hash) name)
+        (setq ret ptr)))
+    weechat--buffer-hashes)
+   ret))
+
+(defun weechat-channel-names ()
+  (let (ret)
+   (maphash (lambda (k v)
+              (setq ret (cons (gethash "name" v) ret)))
+            weechat--buffer-hashes)
+   ret))
+
+(defun weechat--emacs-buffer (buffer-ptr)
+  (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
+    (assert (hash-table-p hash))
+    (gethash :emacs/buffer hash)))
+
+(defvar weechat-buffer-ptr nil
+  "The pointer of the channel buffer. Used to identify it on the
+  relay server.")
+(defvar weechat-server-buffer nil
+  "The relay buffer associated with this channel buffer.")
+(defvar weechat-topic nil
+  "Topic of the channel buffer.")
+(defvar weechat-buffer-number nil)
+
+(defun weechat-mode (process buffer-ptr buffer-hash)
+  "Major mode used by weechat buffers."
+
+  (setq mode-name "weeeechat")
+  (setq major-mode 'weechat-mode)
+  
+  (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
+  (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
+  (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
+  (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+
+  (puthash :emacs/buffer (current-buffer) buffer-hash)
+  (add-hook 'kill-buffer-hook
+            (lambda ()
+              (remhash :emacs/buffer (weechat-buffer-hash weechat-buffer-ptr)))
+            nil
+            'local-hook))
+
 (provide 'weechat)
 
 ;;; weechat.el ends here
