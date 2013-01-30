@@ -5,37 +5,41 @@
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
-(defun weechat-buffer-alist (buffer-ptr)
+(defun weechat-buffer-hash (buffer-ptr)
   (gethash buffer-ptr weechat--buffer-hashes))
 
 (defun weechat--clear-buffer-store ()
   (clrhash weechat--buffer-hashes))
 
-(defun weechat--store-buffer-alist (ptr val &optional replace)
-  (when (and (not replace) (weechat-buffer-alist ptr))
+(defun weechat--store-buffer-hash (ptr alist &optional replace)
+  (when (and (not replace) (weechat-buffer-hash ptr))
     (error "Buffer '%s' already exists" ptr))
-  (puthash ptr val weechat--buffer-hashes))
+  (let ((hash (make-hash-table :test 'equal)))
+    (dolist (x alist)
+     (puthash (car alist) (cdr alist) hash))
+    (puthash ptr hash weechat--buffer-hashes)))
 
-(defun weechat--remove-buffer-alist (ptr)
-  (when (not (weechat-buffer-alist ptr))
+(defun weechat--remove-buffer-hash (ptr)
+  (when (not (weechat-buffer-hash ptr))
     (error "Buffer '%s' doesn't exist" ptr))
   (remhash ptr weechat--buffer-hashes))
 
 (ert-deftest weechat-test-buffer-store ()
-  (let ((weechat--buffer-hashes (make-hash-table :test 'equal)))
+  (let ((weechat--buffer-hashes (copy-hash-table weechat--buffer-hashes)))
     (weechat--clear-buffer-store)
     (should (eql 0 (hash-table-count weechat--buffer-hashes)))
-    (weechat--store-buffer-alist "0xffffff" '(("name" . "#asimov")))
-    (should (equal '(("name" . "#asimov"))
-                   (weechat-buffer-alist "0xffffff")))
-    (weechat--remove-buffer-alist "0xffffff")
-    (should (not (weechat-buffer-alist "0xffffff")))))
+    (let ((hash (make-hash-table)))
+      (weechat--store-buffer-hash "0xffffff" hash)
+      (should (eq hash
+                  (weechat-buffer-hash "0xffffff"))))
+    (weechat--remove-buffer-hash "0xffffff")
+    (should (not (weechat-buffer-hash "0xffffff")))))
 
 (defun weechat--handle-buffer-list (hdata)
   (weechat--clear-buffer-store)
   (dolist (value (weechat--hdata-values hdata))
     (let ((buffer-ptr (car (weechat--hdata-value-pointer-path value))))
-      (weechat--store-buffer-alist
+      (weechat--store-buffer-hash
        buffer-ptr
        (weechat--hdata-value-alist value)))))
 
@@ -47,19 +51,27 @@
 (defun weechat--handle-buffer-opened (hdata)
   (let* ((value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
-    (when (weechat-buffer-alist buffer-ptr)
+    (when (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_opened' event for '%s' but the buffer exists already!" buffer-ptr))
-    (weechat--store-buffer-alist buffer-ptr (weechat--hdata-value-alist value))))
+    (weechat--store-buffer-hash buffer-ptr (weechat--hdata-value-alist value))))
 
 (defun weechat--handle-buffer-closed (hdata)
   (let* ((value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
-    (when (not (weechat-buffer-alist buffer-ptr))
+    (when (not (weechat-buffer-hash buffer-ptr))
       (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
-    (weechat--remove-buffer-alist buffer-ptr)))
+    (weechat--remove-buffer-hash buffer-ptr)))
 
-(defun weechat--handle-buffer-renamed (hdata)
-  (let (buf)))
+(defmacro weechat->> (&rest body)
+      (let ((result (pop body)))
+        (dolist (form body result)
+          (setq result (append form (list result))))))
+
+(defmacro weechat-> (&rest body)
+  (let ((result (pop body)))
+    (dolist (form body result)
+      (setq result (append (list (car form) result)
+                           (cdr form))))))
 
 (weechat-relay-add-id-callback "_buffer_opened" #'weechat--handle-buffer-opened nil 'force)
 (weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
