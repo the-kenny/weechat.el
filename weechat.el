@@ -3,28 +3,28 @@
 (require 'weechat-relay)
 (require 'ert)
 
-(defvar weechat--buffer-hash (make-hash-table :test 'equal))
+(defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defun weechat-buffer-alist (buffer-ptr)
-  (gethash buffer-ptr weechat--buffer-hash))
+  (gethash buffer-ptr weechat--buffer-hashes))
 
 (defun weechat--clear-buffer-store ()
-  (clrhash weechat--buffer-hash))
+  (clrhash weechat--buffer-hashes))
 
 (defun weechat--store-buffer-alist (ptr val &optional replace)
   (when (and (not replace) (weechat-buffer-alist ptr))
     (error "Buffer '%s' already exists" ptr))
-  (puthash ptr val weechat--buffer-hash))
+  (puthash ptr val weechat--buffer-hashes))
 
 (defun weechat--remove-buffer-alist (ptr)
   (when (not (weechat-buffer-alist ptr))
     (error "Buffer '%s' doesn't exist" ptr))
-  (remhash ptr weechat--buffer-hash))
+  (remhash ptr weechat--buffer-hashes))
 
 (ert-deftest weechat-test-buffer-store ()
-  (let ((weechat--buffer-hash (make-hash-table :test 'equal)))
+  (let ((weechat--buffer-hashes (make-hash-table :test 'equal)))
     (weechat--clear-buffer-store)
-    (should (eql 0 (hash-table-count weechat--buffer-hash)))
+    (should (eql 0 (hash-table-count weechat--buffer-hashes)))
     (weechat--store-buffer-alist "0xffffff" '(("name" . "#asimov")))
     (should (equal '(("name" . "#asimov"))
                    (weechat-buffer-alist "0xffffff")))
