@@ -348,7 +348,9 @@
   (puthash :emacs/buffer (current-buffer) buffer-hash)
   (add-hook 'kill-buffer-hook
             (lambda ()
-              (remhash :emacs/buffer (weechat-buffer-hash weechat-buffer-ptr)))
+              (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+               (when (hash-table-p hash)
+                   (remhash :emacs/buffer hash))))
             nil
             'local-hook)
 
