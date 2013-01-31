@@ -28,6 +28,8 @@
 (defvar weechat-read-only t
   "Whether to make text in weechat buffers read-only.")
 
+(defvar weechat-prompt "> ")
+
 ;;; Code:
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
@@ -173,9 +175,27 @@
 (defvar weechat-prompt-start-marker)
 (defvar weechat-prompt-end-marker)
 
+(defun weechat-update-prompt ()
+  (save-excursion
+    (let ((start (point))
+          (inhibit-read-only t))
+      (delete-region weechat-prompt-start-marker weechat-prompt-end-marker)
+      (insert-before-markers weechat-prompt)
+      (set-marker weechat-prompt-start-marker start)
+      (when (not (zerop (- weechat-prompt-end-marker
+                           weechat-prompt-start-marker)))
+        (add-text-properties weechat-prompt-start-marker
+                             weechat-prompt-end-marker
+                             (list 'read-only t
+                                   'field t
+                                   'rear-nonsticky t
+                                   'front-sticky t))))))
+
 (defun weechat-mode (process buffer-ptr buffer-hash)
   "Major mode used by weechat buffers."
 
+  (kill-all-local-variables)
+  
   (setq mode-name "weeeechat")
   (setq major-mode 'weechat-mode)
 
@@ -186,7 +206,8 @@
 
   (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
-
+  (weechat-update-prompt)
+  
   (puthash :emacs/buffer (current-buffer) buffer-hash)
   (add-hook 'kill-buffer-hook
             (lambda ()
@@ -207,13 +228,13 @@
                                  '(read-only t)))
           (goto-char (marker-position weechat-prompt-start-marker))
 
-          ;; Hack burrowed from rcirc:
+          ;; Hack borrowed from rcirc:
           ;; temporarily set the marker insertion-type because
           ;; insert-before-markers results in hidden text in new buffers
           (set-marker-insertion-type weechat-prompt-start-marker t)
           (set-marker-insertion-type weechat-prompt-end-marker t)
-
-          (insert sender "> " (s-trim text) "\n"))
+          
+          (insert sender ": " (s-trim text) "\n"))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
