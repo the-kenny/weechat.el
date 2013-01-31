@@ -1,4 +1,4 @@
-* Short-Term
+* Short-Term [2/8]
 ** DONE Handle network errors (disconnect)
    CLOSED: [2013-01-10 Thu 22:48]
 ** DONE Handle opening/closing of buffers (after 'sync')
@@ -19,3 +19,15 @@
    - [ ] _nicklist
    - [ ] _upgrade
    - [ ] _upgrade_ended
+** TODO Print 'connection lost' message to all buffers
+** TODO Nick Completion
+** TODO Input-Ring
+** TODO Auto-Reconnect
+** TODO List with buffers to "auto-watch"
+
+* Big Stuff [0/1]
+** TODO Colors
+
+* Nice to have [0/2]
+** TODO Sauron Integration
+** TODO DBUS-Integration
