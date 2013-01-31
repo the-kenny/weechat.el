@@ -140,7 +140,8 @@
         "info version"
         (lambda (data)
           (message "Connected to '%s', version %s" host (cdr data))
-          (weechat-update-buffer-list)))))))
+          (weechat-update-buffer-list)
+          (weechat-relay-send-command "sync")))))))
 
 (defun weechat-disconnect ()
   (interactive)
