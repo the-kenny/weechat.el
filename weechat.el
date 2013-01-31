@@ -38,6 +38,8 @@
 
 ;;; Code:
 
+(defvar weechat-debug-strip-formatting t)
+
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defun weechat-buffer-hash (buffer-ptr)
@@ -202,8 +204,45 @@
                                    'rear-nonsticky t
                                    'front-sticky t))))))
 
+(defvar weechat-formatting-regex
+  (let* ((attr `(in "*!/_|"))
+         (std  `(= 2 digit))
+         (astd `(seq ,attr (= 2 digit)))
+         (ext  `(seq "@" (= 5 digit)))
+         (aext `(seq "@" ,attr (= 5 digit))))
+    (rx-form
+     `(or (seq ""
+               (or ,std
+                   ,ext
+                   (seq "F" (or ,std ,astd ,ext ,aext))
+                   (seq "B" (or ,std ,ext))
+                   (seq "*" (or ,std
+                                ,astd
+                                ,ext
+                                ,aext 
+                                (seq (or ,std ,astd ,ext ,aext)
+                                     ","
+                                     (or ,std ,astd ,ext ,aext))))
+                   (seq "b" (in "FDB_-#il"))
+                   ""))
+          (seq "" ,attr)
+          (seq "" ,attr)
+          ""))))
+
+(defun weechat-strip-formatting (string)
+  "Strips weechat color codes from STRING"
+  (replace-regexp-in-string weechat-formatting-regex "" string))
+
+(ert-deftest weechat-color-stripping ()
+  (should (equal (weechat-strip-formatting
+                  "F14someone282728F05 has joined 13#asdfasdfasdfF05")
+                 "someone has joined #asdfasdfasdf"))
+  (should (equal (weechat-strip-formatting "ddd") "ddd")))
+
+
 (defun weechat-print-line (buffer-ptr sender text)
-  (setq text (or text ""))
+  (setq text   (or text ""))
+  (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (when (not (bufferp buffer))
       (error "Couldn't find emacs buffer for weechat-buffer %s" buffer-ptr))
@@ -322,8 +361,10 @@
                (and weechat-hide-like-weechat
                     (= 1 (assoc-default "displayed" value))))
       (weechat-print-line buffer-ptr
-                          (assoc-default "prefix" value)
-                          (assoc-default "message" value)))))
+                          (funcall (if weechat-debug-strip-formatting #'weechat-strip-formatting identity)
+                                   (assoc-default "prefix" value))
+                          (funcall (if weechat-debug-strip-formatting #'weechat-strip-formatting identity)
+                                   (assoc-default "message" value))))))
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
