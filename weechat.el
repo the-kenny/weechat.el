@@ -251,9 +251,6 @@
       (let ((at-end (= (point) weechat-prompt-end-marker))
             (old-point (point-marker)))
         (let ((inhibit-read-only t))
-          (when weechat-read-only
-            (add-text-properties (point-min) weechat-prompt-start-marker
-                                 '(read-only t)))
           (goto-char (marker-position weechat-prompt-start-marker))
 
           ;; Hack borrowed from rcirc:
@@ -262,7 +259,11 @@
           (set-marker-insertion-type weechat-prompt-start-marker t)
           (set-marker-insertion-type weechat-prompt-end-marker t)
 
-          (insert sender ": " (s-trim text) "\n"))
+          (insert sender ": ")
+          (insert (s-trim text) "\n")
+          (when weechat-read-only
+            (add-text-properties (point-min) weechat-prompt-start-marker
+                                 '(read-only t))))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
