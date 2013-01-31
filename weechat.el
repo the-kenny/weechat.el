@@ -292,10 +292,13 @@
       (save-excursion
         (kill-region (point-min) weechat-prompt-start-marker)
         (dolist (line-hdata (weechat--hdata-values lines-hdata))
-          (let ((alist (weechat--hdata-value-alist line-hdata)))
-            (weechat-print-line weechat-buffer-ptr
-                                (assoc-default "prefix"  alist)
-                                (assoc-default "message" alist))))))))
+          (let* ((alist (weechat--hdata-value-alist line-hdata))
+                 (sender (assoc-default "prefix"  alist))
+                 (message (assoc-default "message" alist)))
+            (when weechat-debug-strip-formatting
+              (setq sender (weechat-strip-formatting sender))
+              (setq message (weechat-strip-formatting message)))
+            (weechat-print-line weechat-buffer-ptr sender message)))))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -386,11 +389,12 @@
     (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                (and weechat-hide-like-weechat
                     (= 1 (assoc-default "displayed" value))))
-      (weechat-print-line buffer-ptr
-                          (funcall (if weechat-debug-strip-formatting #'weechat-strip-formatting identity)
-                                   (assoc-default "prefix" value))
-                          (funcall (if weechat-debug-strip-formatting #'weechat-strip-formatting identity)
-                                   (assoc-default "message" value))))))
+      (let ((sender (assoc-default "prefix" value))
+            (message (assoc-default "message" value)))
+        (when weechat-debug-strip-formatting
+          (setq sender (weechat-strip-formatting sender))
+          (setq message (weechat-strip-formatting message)))
+       (weechat-print-line buffer-ptr sender message)))))
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
