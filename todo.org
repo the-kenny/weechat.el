@@ -1,4 +1,4 @@
-* Short-Term [2/8]
+* Short-Term [2/9]
 ** DONE Handle network errors (disconnect)
    CLOSED: [2013-01-10 Thu 22:48]
 ** DONE Handle opening/closing of buffers (after 'sync')
@@ -24,10 +24,13 @@
 ** TODO Input-Ring
 ** TODO Auto-Reconnect
 ** TODO List with buffers to "auto-watch"
+** TODO Mark channel as "read" from Emacs
+   send command: "input 0x10f29d0 /input set_unread_current_buffer"
 
 * Big Stuff [0/1]
 ** TODO Colors
 
-* Nice to have [0/2]
+* Nice to have [0/3]
 ** TODO Sauron Integration
 ** TODO DBUS-Integration
+** TODO More Unit Tests (ert)
