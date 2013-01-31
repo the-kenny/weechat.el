@@ -28,6 +28,9 @@
 (defvar weechat-read-only t
   "Whether to make text in weechat buffers read-only.")
 
+(defvar weechat-initial-lines 100
+  "Number of lines to show when initializing a channel buffer.")
+
 (defvar weechat-prompt "> ")
 
 ;;; Code:
@@ -196,30 +199,6 @@
                                    'rear-nonsticky t
                                    'front-sticky t))))))
 
-(defun weechat-mode (process buffer-ptr buffer-hash)
-  "Major mode used by weechat buffers."
-
-  (kill-all-local-variables)
-  
-  (setq mode-name "weeeechat")
-  (setq major-mode 'weechat-mode)
-
-  (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
-  (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
-  (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
-  (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
-
-  (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
-  (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
-  (weechat-update-prompt)
-  
-  (puthash :emacs/buffer (current-buffer) buffer-hash)
-  (add-hook 'kill-buffer-hook
-            (lambda ()
-              (remhash :emacs/buffer (weechat-buffer-hash weechat-buffer-ptr)))
-            nil
-            'local-hook))
-
 (defun weechat-print-line (buffer-ptr sender text)
   (setq text (or text ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -255,6 +234,60 @@
 
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil)))))
+
+(defun weechat-add-initial-lines (lines-hdata)
+  ;; Need to get buffer-ptr from hdata pointer list
+  (let ((buffer (weechat->
+                 lines-hdata
+                 (weechat--hdata-values)
+                 (car)
+                 (weechat--hdata-value-pointer-path)
+                 (car)
+                 (weechat--emacs-buffer))))
+    (with-current-buffer buffer
+      (save-excursion
+        (kill-region (point-min) weechat-prompt-start-marker)
+        (dolist (line-hdata (weechat--hdata-values lines-hdata))
+          (let ((alist (weechat--hdata-value-alist line-hdata)))
+            (weechat-print-line weechat-buffer-ptr
+                                (assoc-default "prefix"  alist)
+                                (assoc-default "message" alist))))))))
+
+(defun weechat-request-initial-lines (buffer-ptr)
+  (let ((buffer (weechat--emacs-buffer buffer-ptr)))
+    (assert (bufferp buffer))
+    (weechat-relay-send-command
+     (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date"
+             buffer-ptr
+             weechat-initial-lines)
+     #'weechat-add-initial-lines)))
+
+(defun weechat-mode (process buffer-ptr buffer-hash)
+  "Major mode used by weechat buffers."
+
+  (kill-all-local-variables)
+  
+  (setq mode-name "weeeechat")
+  (setq major-mode 'weechat-mode)
+
+  (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
+  (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
+  (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
+  (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+
+  (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
+  (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
+  (weechat-update-prompt)
+  
+  (puthash :emacs/buffer (current-buffer) buffer-hash)
+  (add-hook 'kill-buffer-hook
+            (lambda ()
+              (remhash :emacs/buffer (weechat-buffer-hash weechat-buffer-ptr)))
+            nil
+            'local-hook)
+
+  ;; Initialize buffer
+  (weechat-request-initial-lines buffer-ptr))
 
 (defun weechat-monitor-buffer (name)
   (interactive (list
