@@ -33,6 +33,9 @@
 
 (defvar weechat-prompt "> ")
 
+(defvar weechat-hide-like-weechat t
+  "Hide lines in buffer when they're hidden in weechat.")
+
 ;;; Code:
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
@@ -202,7 +205,8 @@
 (defun weechat-print-line (buffer-ptr sender text)
   (setq text (or text ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
-    (assert (bufferp buffer))
+    (when (not (bufferp buffer))
+      (error "Couldn't find emacs buffer for weechat-buffer %s" buffer-ptr))
     (with-current-buffer buffer
       (let ((at-end (= (point) weechat-prompt-end-marker))
             (old-point (point-marker)))
@@ -308,6 +312,20 @@
                     buffer-ptr
                     buffer-hash)
       (switch-to-buffer (current-buffer)))))
+
+(defun weechat--handle-buffer-line-added (hdata)
+  (let* ((value (car (weechat--hdata-values hdata)))
+         (buffer-ptr (assoc-default "buffer" value)))
+    (when (not (weechat-buffer-hash buffer-ptr))
+      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
+    (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
+               (and weechat-hide-like-weechat
+                    (= 1 (assoc-default "displayed" value))))
+      (weechat-print-line buffer-ptr
+                          (assoc-default "prefix" value)
+                          (assoc-default "message" value)))))
+
+(weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
 (provide 'weechat)
 
