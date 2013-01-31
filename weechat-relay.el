@@ -251,7 +251,7 @@ of bytes consumed."
         (multiple-value-bind (obj offset*) (funcall fun (substring data offset))
           (setq result (cons (cons (car name-type) obj) result))
           (setq offset (+ offset offset*)))))
-    (values (cons p-path result)
+    (values (cons (reverse p-path) result)
             offset)))
 
 (defconst weechat--relay-hdh-spec
