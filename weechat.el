@@ -260,6 +260,11 @@
          (buffer-hash (weechat-buffer-hash buffer-ptr)))
     (when (not (hash-table-p buffer-hash))
       (error "Couldn't find buffer %s on relay server." name))
+
+    (when (and (bufferp (get-buffer name))
+               (y-or-n-p "Buffer already monitored. Replace? "))
+      (kill-buffer name))
+    
     (with-current-buffer (get-buffer-create name)
       (weechat-mode (get-buffer-process weechat-relay-buffer-name)
                     buffer-ptr
