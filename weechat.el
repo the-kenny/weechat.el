@@ -145,7 +145,9 @@
   (let (ret)
    (maphash
     (lambda (ptr hash)
-      (when (equal (gethash "name" hash) name)
+      (when (or (equal (gethash "name"        hash)  name)
+                (equal (gethash "full_name"   hash)  name)
+                (equal (gethash "short_name"  hash)  name))
         (setq ret ptr)))
     weechat--buffer-hashes)
    ret))
@@ -153,7 +155,10 @@
 (defun weechat-channel-names ()
   (let (ret)
    (maphash (lambda (k v)
-              (setq ret (cons (gethash "name" v) ret)))
+              (setq ret (cons (or (gethash "name"        v)
+                                  (gethash "full_name"   v)
+                                  (gethash "short_name"  v))
+                              ret)))
             weechat--buffer-hashes)
    ret))
 
