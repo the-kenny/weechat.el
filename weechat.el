@@ -65,8 +65,8 @@
     (should (eql 0 (hash-table-count weechat--buffer-hashes)))
     (let ((data '(("name" . "Foobar"))))
       (weechat--store-buffer-hash "0xffffff" data)
-      (should (eq (cadr data)
-                  (gethash "name"(weechat-buffer-hash "0xffffff")))))
+      (should (eq (cdar data)
+                  (gethash "name" (weechat-buffer-hash "0xffffff")))))
     (weechat--remove-buffer-hash "0xffffff")
     (should (not (weechat-buffer-hash "0xffffff")))))
 
