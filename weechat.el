@@ -306,11 +306,33 @@
              weechat-initial-lines)
      #'weechat-add-initial-lines)))
 
+(defun weechat-send-input (target input)
+  (weechat-relay-send-command
+   (format "input %s %s" target input)))
+
+(defun weechat-return ()
+  (interactive)
+  ;; TODO: Copy current line when not in input area
+  (when (and (> (point) weechat-prompt-end-marker))
+    (let ((input (buffer-substring-no-properties weechat-prompt-end-marker (point-max))))
+      (when (not (equal "" (s-trim input)))
+        (setq input (s-trim-right input))
+        (dolist (l (split-string input "\n"))
+          (weechat-send-input weechat-buffer-ptr l))
+        (delete-region weechat-prompt-end-marker (point-max))))))
+
+(defvar weechat-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") 'weechat-return)
+    map)
+  "Keymap for weechat mode.")
+
 (defun weechat-mode (process buffer-ptr buffer-hash)
   "Major mode used by weechat buffers."
 
   (kill-all-local-variables)
 
+  (use-local-map weechat-mode-map)
   (setq mode-name "weeeechat")
   (setq major-mode 'weechat-mode)
 
@@ -347,11 +369,12 @@
                (y-or-n-p "Buffer already monitored. Replace? "))
       (kill-buffer name))
 
-    (with-current-buffer (get-buffer-create name)
-      (weechat-mode (get-buffer-process weechat-relay-buffer-name)
-                    buffer-ptr
-                    buffer-hash)
-      (switch-to-buffer (current-buffer)))))
+    (when (not (bufferp (get-buffer name)))
+      (with-current-buffer (get-buffer-create name)
+        (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                      buffer-ptr
+                      buffer-hash)
+        (switch-to-buffer (current-buffer))))))
 
 (defun weechat--handle-buffer-line-added (hdata)
   (let* ((value (car (weechat--hdata-values hdata)))
