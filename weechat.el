@@ -203,7 +203,7 @@
             (old-point (point-marker)))
         (let ((inhibit-read-only t))
           (when weechat-read-only
-            (add-text-properties (point-min) (point-max)
+            (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t)))
           (goto-char (marker-position weechat-prompt-start-marker))
 
