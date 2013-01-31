@@ -1,0 +1,16 @@
+* weechat.el - Chat via Weechat in Emacs
+  Please note: This README is just a placeholder. A more detailed
+  documentation will follow.
+  
+** Usage
+   First, setup the relay server in weechat. Please refer to the
+   [[http://www.weechat.org/files/doc/stable/weechat_user.en.html#relay_weechat_protocol][manual]].
+
+   To load and establish a connection:
+   
+   : (require 'weechat)
+   : (weechat-connect host port password)
+
+   To show a channel in Emacs, do:
+
+   : M-x weechat-monitor-buffer
