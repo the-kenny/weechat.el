@@ -24,6 +24,7 @@
 
 (require 'weechat-relay)
 (require 'ert)
+(require 'rx)
 
 (defvar weechat-read-only t
   "Whether to make text in weechat buffers read-only.")
