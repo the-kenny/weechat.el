@@ -251,6 +251,21 @@
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil)))))
 
+(defun weechat-monitor-buffer (name)
+  (interactive (list
+                (funcall (or (symbol-function 'ido-completing-read)
+                             #'completing-read)
+                         "Channel Name: " (weechat-channel-names))))
+  (let* ((buffer-ptr (weechat--find-buffer name))
+         (buffer-hash (weechat-buffer-hash buffer-ptr)))
+    (when (not (hash-table-p buffer-hash))
+      (error "Couldn't find buffer %s on relay server." name))
+    (with-current-buffer (get-buffer-create name)
+      (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                    buffer-ptr
+                    buffer-hash)
+      (switch-to-buffer (current-buffer)))))
+
 (provide 'weechat)
 
 ;;; weechat.el ends here
