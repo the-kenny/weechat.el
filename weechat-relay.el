@@ -356,10 +356,10 @@ Returns a list: (id data)."
 
 (defun weechat-relay-remove-id-callback (id)
   (let ((fun (weechat-relay-get-id-callback id)))
-   (setq weechat--relay-id-callback-alist
-         (delq (assoc id weechat--relay-id-callback-alist)
-               weechat--relay-id-callback-alist))
-   fun))
+    (setq weechat--relay-id-callback-alist
+          (delq (assoc id weechat--relay-id-callback-alist)
+                weechat--relay-id-callback-alist))
+    fun))
 
 (defun weechat-relay-add-id-callback (id function &optional one-shot force)
   (when (not id)
@@ -384,20 +384,20 @@ Returns a list: (id data)."
 
 (ert-deftest weechat-relay-id-callback ()
   (let ((weechat--relay-id-callback-alist nil))
-   (let ((fun (lambda (xyz) nil)) )
-     (weechat-relay-add-id-callback "23" fun)
-     (should (equal fun (weechat-relay-get-id-callback "23")))
-     (should (equal fun (weechat-relay-remove-id-callback "23"))))
-   (setq weechat--relay-id-callback-alist nil)
-   (should-error (progn (weechat-relay-add-id-callback "42" (lambda ()))
-                        (weechat-relay-add-id-callback "42" (lambda ()))))))
+    (let ((fun (lambda (xyz) nil)) )
+      (weechat-relay-add-id-callback "23" fun)
+      (should (equal fun (weechat-relay-get-id-callback "23")))
+      (should (equal fun (weechat-relay-remove-id-callback "23"))))
+    (setq weechat--relay-id-callback-alist nil)
+    (should-error (progn (weechat-relay-add-id-callback "42" (lambda ()))
+                         (weechat-relay-add-id-callback "42" (lambda ()))))))
 
 (ert-deftest weechat-relay-id-callback-one-shot ()
   (let ((weechat--relay-id-callback-alist nil))
-   (let ((fun (lambda (xyz) nil)) )
-     (weechat-relay-add-id-callback "23" fun 'one-shot)
-     (funcall (weechat-relay-get-id-callback "23") nil)
-     (should (equal nil (weechat-relay-get-id-callback "23"))))))
+    (let ((fun (lambda (xyz) nil)) )
+      (weechat-relay-add-id-callback "23" fun 'one-shot)
+      (funcall (weechat-relay-get-id-callback "23") nil)
+      (should (equal nil (weechat-relay-get-id-callback "23"))))))
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)

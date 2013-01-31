@@ -53,7 +53,7 @@
     (error "Buffer '%s' already exists" ptr))
   (let ((hash (make-hash-table :test 'equal)))
     (dolist (x alist)
-     (puthash (car x) (cdr x) hash))
+      (puthash (car x) (cdr x) hash))
     (puthash ptr hash weechat--buffer-hashes)))
 
 (defun weechat--remove-buffer-hash (ptr)
@@ -100,9 +100,9 @@
     (weechat--remove-buffer-hash buffer-ptr)))
 
 (defmacro weechat->> (&rest body)
-      (let ((result (pop body)))
-        (dolist (form body result)
-          (setq result (append form (list result))))))
+  (let ((result (pop body)))
+    (dolist (form body result)
+      (setq result (append form (list result))))))
 
 (defmacro weechat-> (&rest body)
   (let ((result (pop body)))
@@ -152,24 +152,24 @@
 
 (defun weechat--find-buffer (name)
   (let (ret)
-   (maphash
-    (lambda (ptr hash)
-      (when (or (equal (gethash "name"        hash)  name)
-                (equal (gethash "full_name"   hash)  name)
-                (equal (gethash "short_name"  hash)  name))
-        (setq ret ptr)))
-    weechat--buffer-hashes)
-   ret))
+    (maphash
+     (lambda (ptr hash)
+       (when (or (equal (gethash "name"        hash)  name)
+                 (equal (gethash "full_name"   hash)  name)
+                 (equal (gethash "short_name"  hash)  name))
+         (setq ret ptr)))
+     weechat--buffer-hashes)
+    ret))
 
 (defun weechat-channel-names ()
   (let (ret)
-   (maphash (lambda (k v)
-              (setq ret (cons (or (gethash "name"        v)
-                                  (gethash "full_name"   v)
-                                  (gethash "short_name"  v))
-                              ret)))
-            weechat--buffer-hashes)
-   ret))
+    (maphash (lambda (k v)
+               (setq ret (cons (or (gethash "name"        v)
+                                   (gethash "full_name"   v)
+                                   (gethash "short_name"  v))
+                               ret)))
+             weechat--buffer-hashes)
+    ret))
 
 (defun weechat--emacs-buffer (buffer-ptr)
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
@@ -220,7 +220,7 @@
                    (seq "*" (or ,std
                                 ,astd
                                 ,ext
-                                ,aext 
+                                ,aext
                                 (seq (or ,std ,astd ,ext ,aext)
                                      ","
                                      (or ,std ,astd ,ext ,aext))))
@@ -261,7 +261,7 @@
           ;; insert-before-markers results in hidden text in new buffers
           (set-marker-insertion-type weechat-prompt-start-marker t)
           (set-marker-insertion-type weechat-prompt-end-marker t)
-          
+
           (insert sender ": " (s-trim text) "\n"))
 
         ;; Restore old position
@@ -310,7 +310,7 @@
   "Major mode used by weechat buffers."
 
   (kill-all-local-variables)
-  
+
   (setq mode-name "weeeechat")
   (setq major-mode 'weechat-mode)
 
@@ -322,7 +322,7 @@
   (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
   (weechat-update-prompt)
-  
+
   (puthash :emacs/buffer (current-buffer) buffer-hash)
   (add-hook 'kill-buffer-hook
             (lambda ()
@@ -346,7 +346,7 @@
     (when (and (bufferp (get-buffer name))
                (y-or-n-p "Buffer already monitored. Replace? "))
       (kill-buffer name))
-    
+
     (with-current-buffer (get-buffer-create name)
       (weechat-mode (get-buffer-process weechat-relay-buffer-name)
                     buffer-ptr
