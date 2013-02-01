@@ -37,6 +37,9 @@
 (defvar weechat-hide-like-weechat t
   "Hide lines in buffer when they're hidden in weechat.")
 
+(defvar weechat-connect-hook nil
+  "Hook run when successfully connected and authenticated.")
+
 ;;; Code:
 
 (defvar weechat-debug-strip-formatting t)
@@ -79,7 +82,8 @@
     (let ((buffer-ptr (car (weechat--hdata-value-pointer-path value))))
       (weechat--store-buffer-hash
        buffer-ptr
-       (weechat--hdata-value-alist value)))))
+       (weechat--hdata-value-alist value))))
+  (run-hooks weechat-connect-hook))
 
 (defun weechat-update-buffer-list ()
   (weechat-relay-send-command
@@ -370,18 +374,20 @@
   ;; Initialize buffer
   (weechat-request-initial-lines buffer-ptr))
 
-(defun weechat-monitor-buffer (name)
+(defun weechat-monitor-buffer (name &optional replace)
   (interactive (list
                 (funcall (or (symbol-function 'ido-completing-read)
                              #'completing-read)
-                         "Channel Name: " (weechat-channel-names))))
+                         "Channel Name: " (weechat-channel-names))
+                nil))
   (let* ((buffer-ptr (weechat--find-buffer name))
          (buffer-hash (weechat-buffer-hash buffer-ptr)))
     (when (not (hash-table-p buffer-hash))
       (error "Couldn't find buffer %s on relay server." name))
 
     (when (and (bufferp (get-buffer name))
-               (y-or-n-p "Buffer already monitored. Replace? "))
+               (or replace
+                   (y-or-n-p "Buffer already monitored. Replace? ")))
       (kill-buffer name))
 
     (when (not (bufferp (get-buffer name)))
