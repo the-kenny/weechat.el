@@ -149,7 +149,15 @@
   (weechat-relay-disconnect)
   (setq weechat--buffer-alist nil))
 
-(add-hook 'weechat-relay-disconnect-hook (lambda () (message "Disconnected from Weechat")))
+(defun weechat-handle-disconnect ()
+  ;; Print 'disconnected' message to all channel buffers
+  (maphash (lambda (k v)
+             (when (bufferp (gethash :emacs/buffer v))
+               (with-current-buffer (gethash :emacs/buffer v)
+                 (weechat-print-line k "!!!" "Lost connection to relay server"))))
+           weechat--buffer-hashes))
+
+(add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
 (defun weechat--find-buffer (name)
   (let (ret)
