@@ -146,6 +146,11 @@
   (interactive (list (read-string "Relay Host: ")
                      (read-number "Port: ")
                      (read-passwd "Password: ")))
+  (when (weechat-relay-connected-p)
+    (if (y-or-n-p "Already connected. Disconnect other connection? ")
+     (weechat-relay-disconnect)
+     (error "Can't open two connections")))
+  
   (when (and (stringp host)
              (integerp port))
     (weechat-relay-connect
