@@ -293,32 +293,32 @@
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil)))))
 
+(defun weechat-print-line-data (line-data)
+  (let* ((buffer-ptr (assoc-default "buffer" line-data)))
+    (when (not (weechat-buffer-hash buffer-ptr))
+      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
+    (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
+               (and weechat-hide-like-weechat
+                    (equal 1 (assoc-default "displayed" line-data))))
+      (let ((sender (assoc-default "prefix" line-data))
+            (message (assoc-default "message" line-data)))
+        (when weechat-debug-strip-formatting
+          (setq sender (weechat-strip-formatting sender))
+          (setq message (weechat-strip-formatting message)))
+        (weechat-print-line buffer-ptr sender message)))))
+
 (defun weechat-add-initial-lines (lines-hdata)
   ;; Need to get buffer-ptr from hdata pointer list
-  (let ((buffer (weechat->
-                 lines-hdata
-                 (weechat--hdata-values)
-                 (car)
-                 (weechat--hdata-value-pointer-path)
-                 (car)
-                 (weechat--emacs-buffer))))
-    (with-current-buffer buffer
-      (save-excursion
-        (kill-region (point-min) weechat-prompt-start-marker)
-        (dolist (line-hdata (weechat--hdata-values lines-hdata))
-          (let* ((alist (weechat--hdata-value-alist line-hdata))
-                 (sender (assoc-default "prefix"  alist))
-                 (message (assoc-default "message" alist)))
-            (when weechat-debug-strip-formatting
-              (setq sender (weechat-strip-formatting sender))
-              (setq message (weechat-strip-formatting message)))
-            (weechat-print-line weechat-buffer-ptr sender message)))))))
+  (save-excursion
+    (kill-region (point-min) (point-max))
+    (dolist (line-hdata (weechat--hdata-values lines-hdata))
+      (weechat-print-line-data (weechat--hdata-value-alist line-hdata)))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (assert (bufferp buffer))
     (weechat-relay-send-command
-     (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date"
+     (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date,buffer,displayed"
              buffer-ptr
              weechat-initial-lines)
      #'weechat-add-initial-lines)))
@@ -398,19 +398,9 @@
         (switch-to-buffer (current-buffer))))))
 
 (defun weechat--handle-buffer-line-added (hdata)
-  (let* ((value (car (weechat--hdata-values hdata)))
-         (buffer-ptr (assoc-default "buffer" value)))
-    (when (not (weechat-buffer-hash buffer-ptr))
-      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
-    (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
-               (and weechat-hide-like-weechat
-                    (= 1 (assoc-default "displayed" value))))
-      (let ((sender (assoc-default "prefix" value))
-            (message (assoc-default "message" value)))
-        (when weechat-debug-strip-formatting
-          (setq sender (weechat-strip-formatting sender))
-          (setq message (weechat-strip-formatting message)))
-       (weechat-print-line buffer-ptr sender message)))))
+  (let* ((line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata))))
+         (buffer-ptr (assoc-default "buffer" line-data)))
+    (weechat-print-line-data line-data)))
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
