@@ -423,7 +423,7 @@ Returns a list: (id data)."
   (let ((event (process-status proc)))
     (weechat-relay-log (format "Received event: %s\n" event))
     (case event
-      ('close (run-hooks 'weechat-relay-disconnect-hook))
+      ('closed (run-hooks 'weechat-relay-disconnect-hook))
       ('open (progn
                (when (functionp weechat--relay-connected-callback)
                  (funcall weechat--relay-connected-callback)
