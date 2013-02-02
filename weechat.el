@@ -77,12 +77,23 @@
     (should (not (weechat-buffer-hash "0xffffff")))))
 
 (defun weechat--handle-buffer-list (hdata)
-  (weechat--clear-buffer-store)
+  ;; Remove all hashes not found in the new list
+  (let ((buffer-pointers (mapcar (lambda (x) (car (weechat--hdata-value-pointer-path x)))
+                                 (weechat--hdata-values hdata))))
+    (maphash (lambda (k v)
+               (when (not (find k buffer-pointers
+                                :test 'equal))
+                 (remhash k weechat--buffer-hashes)))
+             (copy-hash-table weechat--buffer-hashes)))
+  ;; Update all remaining values
   (dolist (value (weechat--hdata-values hdata))
-    (let ((buffer-ptr (car (weechat--hdata-value-pointer-path value))))
-      (weechat--store-buffer-hash
-       buffer-ptr
-       (weechat--hdata-value-alist value))))
+    (let* ((buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+           (buffer-hash (weechat-buffer-hash buffer-ptr))
+           (alist (weechat--hdata-value-alist value)))
+      (if (hash-table-p buffer-hash)
+          (dolist (v alist)
+            (puthash (car v) (cdr v) buffer-hash))
+        (weechat--store-buffer-hash buffer-ptr alist))))
   (run-hooks weechat-connect-hook))
 
 (defun weechat-update-buffer-list ()
