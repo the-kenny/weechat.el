@@ -435,18 +435,20 @@ CALLBACK takes one argument (the response data) which is a list."
     (weechat--relay-send-message command id)))
 
 (ert-deftest weechat-relay-id-callback ()
-  (let ((weechat--relay-id-callback-hash nil))
+  (let ((weechat--relay-id-callback-hash
+         (copy-hash-table weechat--relay-id-callback-hash)))
     (let ((fun (lambda (xyz) nil)) )
       (weechat-relay-add-id-callback "23" fun)
       (should (equal fun (weechat-relay-get-id-callback "23")))
       (should (equal fun (weechat-relay-remove-id-callback "23"))))
-    (setq weechat--relay-id-callback-hash nil)
+    (clrhash weechat--relay-id-callback-hash)
     (should-error (progn (weechat-relay-add-id-callback "42" (lambda ()))
                          (weechat-relay-add-id-callback "42" (lambda ()))))))
 
 (ert-deftest weechat-relay-id-callback-one-shot ()
-  (let ((weechat--relay-id-callback-hash nil))
-    (let ((fun (lambda (xyz) nil)) )
+  (let ((weechat--relay-id-callback-hash
+         (copy-hash-table weechat--relay-id-callback-hash)))
+    (let ((fun (lambda (xyz) nil)))
       (weechat-relay-add-id-callback "23" fun 'one-shot)
       (funcall (weechat-relay-get-id-callback "23") nil)
       (should (equal nil (weechat-relay-get-id-callback "23"))))))
@@ -599,7 +601,8 @@ buffers."
           (info-id (symbol-name (gensym))))
       (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
       (weechat--relay-send-message "info version" info-id)
-      (sleep-for 0 500)
+      (while (not info-data)
+        (sleep-for 0 50))
       (should (equal "version" (caar info-data))))))
 
 (ert-deftest weechat-relay-test-test-command ()
@@ -608,21 +611,21 @@ buffers."
           (id (symbol-name (gensym))))
       (weechat-relay-add-id-callback id (lambda (d) (setq data d)) t)
       (weechat--relay-send-message "test" id)
-      (sleep-for 0 500)
-      (should (equal data
-                     `(?A
-                       123456
-                       1234567890
-                       "a string"
-                       ""
-                       ""
-                       [98 117 102 102 101 114]
-                       []
-                       "0x1234abcd"
-                       ""
-                       ,(seconds-to-time 1321993456)
-                       ("abc" "de")
-                       (123 456 789)))))))
+      (while (not data)
+        (sleep-for 0 50))
+      (message "%S" data)
+      (should (equal ?A (nth 0 data)))
+      (should (equal 123456 (nth 1 data)))
+      (should (equal 1234567890 (nth 2 data)))
+      (should (equal "a string" (nth 3 data)))
+      (should (equal "" (nth 4 data)))
+      (should (equal "" (nth 5 data)))
+      (should (equal [98 117 102 102 101 114] (nth 6 data)))
+      (should (equal [] (nth 7 data)))
+      ;; (should (equal "0x1234abcd" (nth 8 data)))
+      (should (equal (seconds-to-time 1321993456) (nth 9 data)))
+      (should (equal '("abc" "de") (nth 10 data)))
+      (should (equal '(123 456 789) (nth 11 data))))))
 
 (provide 'weechat-relay)
 
