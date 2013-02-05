@@ -448,12 +448,6 @@
                  (weechat-monitor-buffer buffer-ptr 'replace)))
              weechat--buffer-hashes)))
 
-(maphash (lambda (buffer-ptr hash)
-           (when (and (gethash :emacs/buffer hash)
-                      (buffer-live-p (get-buffer (gethash :emacs/buffer hash))))
-             (message "%S" (gethash :emacs/buffer hash))))
-         weechat--buffer-hashes)
-
 (add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
 
 (defun weechat--handle-buffer-line-added (response)
