@@ -110,6 +110,17 @@ Returns the value and number of bytes consumed."
     4)
    4))
 
+(defconst weechat--relay-lon-spec
+  '((len u8)
+    (val str (eval (weechat--relay-bindat-unsigned-to-signed
+                    (bindat-get-field struct 'len)
+                    1)))))
+
+(defun weechat--relay-unpack-lon (data)
+  (let ((obj (bindat-unpack weechat--relay-lon-spec data)))
+    (values (string-to-number (decode-coding-string (bindat-get-field obj 'val) 'utf-8))
+            (bindat-length weechat--relay-lon-spec obj))))
+
 (defun weechat--relay-unpack-chr (data)
   "Unpack a one byte char from unibyte string `DATA'.
 Returns value and bytes consumed."
@@ -133,6 +144,19 @@ Optional second return value contains length of parsed data."
   (let ((obj (bindat-unpack weechat--relay-str-spec data)))
     (values (decode-coding-string (bindat-get-field obj 'val) 'utf-8)
             (bindat-length weechat--relay-str-spec obj))))
+
+(defconst weechat--relay-buf-spec
+  '((len u32)
+    (val vec (eval (let ((len (weechat--relay-bindat-unsigned-to-signed
+                               (bindat-get-field struct 'len)
+                               4)))
+                     ;; Hack for signed/unsigned problems
+                     (if (<= len 0) 0 len))))))
+
+(defun weechat--relay-unpack-buf (data)
+  (let ((obj (bindat-unpack weechat--relay-buf-spec data)))
+    (values (bindat-get-field obj 'val)
+            (bindat-length weechat--relay-buf-spec obj))))
 
 (defconst weechat--relay-ptr-spec
   '((len u8)
@@ -188,6 +212,34 @@ of bytes consumed."
           (setq offset (+ offset key-len val-len)))))
     (values acc
             offset)))
+
+(defconst weechat--relay-arr-spec
+  '((type str 3)
+    (count u32)))
+
+(defun weechat--relay-unpack-arr (data)
+  (let* ((obj (bindat-unpack weechat--relay-arr-spec data))
+         (count (weechat--relay-bindat-unsigned-to-signed
+                 (bindat-get-field obj 'count)
+                 4))
+         (type (bindat-get-field obj 'type))
+         (unpack-fn (symbol-function (intern (concat "weechat--relay-unpack-" type))))
+         (offset (bindat-length weechat--relay-arr-spec obj))
+         (acc ()))
+    (dotimes (i count)
+      (multiple-value-bind (val val-len) (funcall unpack-fn (substring data offset))
+        (setq acc (append acc (list val)))
+        (setq offset (+ offset val-len))))
+    (values acc offset)))
+
+(defalias 'weechat--relay-parse-chr 'weechat--relay-unpack-chr)
+(defalias 'weechat--relay-parse-int 'weechat--relay-unpack-int)
+(defalias 'weechat--relay-parse-lon 'weechat--relay-unpack-lon)
+(defalias 'weechat--relay-parse-str 'weechat--relay-unpack-str)
+(defalias 'weechat--relay-parse-buf 'weechat--relay-unpack-buf)
+(defalias 'weechat--relay-parse-ptr 'weechat--relay-unpack-ptr)
+(defalias 'weechat--relay-parse-tim 'weechat--relay-unpack-tim)
+(defalias 'weechat--relay-parse-arr 'weechat--relay-unpack-arr)
 
 (defun weechat--relay-parse-inf (data)
   (multiple-value-bind (name len) (weechat--relay-unpack-str data)
@@ -325,7 +377,7 @@ Returns a list: (id data)."
                                             (substring data offset))
           (setq offset (+ offset offset*))
           (setq acc (cons obj acc)))))
-    (values (cons msg-id (if ignore-msg '(ignored) acc))
+    (values (cons msg-id (if ignore-msg '(ignored) (reverse acc)))
             (bindat-get-field msg 'length))))
 
 (defun weechat--message-available-p (&optional buffer)
@@ -346,6 +398,7 @@ Returns a list: (id data)."
     (when (weechat--message-available-p (current-buffer))
       (multiple-value-bind (ret len) (weechat-unpack-message
                                       (buffer-string))
+        (weechat-relay-log (format "Consumed %d bytes" len) :info)
         (delete-region (point-min) (+ (point-min) len))
         ret))))
 
@@ -377,6 +430,8 @@ Returns a list: (id data)."
                                                  weechat--relay-id-callback-alist))))
 
 (defun weechat-relay-send-command (command &optional callback)
+  "Sends COMMAND to relay and calls CALLBACK with reply.
+CALLBACK takes one argument (the response data) which is a list."
   (let ((id (symbol-name (gensym))))
     (when (functionp callback)
       (weechat-relay-add-id-callback id callback 'one-shot))
@@ -401,7 +456,11 @@ Returns a list: (id data)."
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
-    (let ((inhibit-read-only t))
+    (let ((inhibit-read-only t)
+          (moving (= (point) (process-mark proc))))
+      (weechat-relay-log (format "Received %d bytes" (length string))
+                         :info)
+      ;; Insert the text, advancing the process marker.
       (goto-char (point-max))
       (insert (string-make-unibyte string))
       (while (weechat--message-available-p)
@@ -471,12 +530,13 @@ buffers."
   (car message))
 
 (defun weechat--message-data (message)
-  (cadr message))
+  "Returns a list with data in MESSAGE"
+  (cdr message))
 
 (ert-deftest weechat-test-message-fns ()
   (let ((message '("42" ("version" . "0.3.8"))))
     (should (equal "42" (weechat--message-id message)))
-    (should (equal '("version" . "0.3.8") (weechat--message-data message)))))
+    (should (equal '("version" . "0.3.8") (car (weechat--message-data message))))))
 
 (defun weechat--hdata-path (hdata)
   (car hdata))
@@ -523,7 +583,7 @@ buffers."
     (let ((data (weechat--relay-parse-new-message (current-buffer))))
       (should (equal ""  (weechat--message-id data)))
       (should (equal '("version" . "0.3.8")
-                     (weechat--message-data data))))))
+                     (car (weechat--message-data data)))))))
 
 (ert-deftest weechat-test-id ()
   (with-temp-buffer
@@ -534,7 +594,7 @@ buffers."
     (let ((data (weechat--relay-parse-new-message (current-buffer))))
       (should (equal "666" (weechat--message-id data)))
       (should (equal '("version" . "0.3.8")
-                     (weechat--message-data data))))))
+                     (car (weechat--message-data data)))))))
 
 (ert-deftest weechat-relay-test-connection ()
   (when (weechat-relay-connected-p)
@@ -543,7 +603,29 @@ buffers."
       (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
       (weechat--relay-send-message "info version" info-id)
       (sleep-for 0 500)
-      (should (equal "version" (car info-data))))))
+      (should (equal "version" (caar info-data))))))
+
+(ert-deftest weechat-relay-test-test-command ()
+  (when (weechat-relay-connected-p)
+    (let ((data nil)
+          (id (symbol-name (gensym))))
+      (weechat-relay-add-id-callback id (lambda (d) (setq data d)) t)
+      (weechat--relay-send-message "test" id)
+      (sleep-for 0 500)
+      (should (equal data
+                     `(?A
+                       123456
+                       1234567890
+                       "a string"
+                       ""
+                       ""
+                       [98 117 102 102 101 114]
+                       []
+                       "0x1234abcd"
+                       ""
+                       ,(seconds-to-time 1321993456)
+                       ("abc" "de")
+                       (123 456 789)))))))
 
 (provide 'weechat-relay)
 

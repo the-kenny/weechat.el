@@ -40,11 +40,21 @@
 (defvar weechat-connect-hook nil
   "Hook run when successfully connected and authenticated.")
 
+(defvar weechat-auto-reconnect-buffers t
+  "Automatically re-monitor channel buffers which were opened on
+  a prior connection")
+
 ;;; Code:
 
 (defvar weechat-debug-strip-formatting t)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
+
+(defvar weechat--connected nil)
+
+(defun weechat-connected-p ()
+  (and (weechat-relay-connected-p)
+       weechat--connected))
 
 (defun weechat-buffer-hash (buffer-ptr)
   (gethash buffer-ptr weechat--buffer-hashes))
@@ -76,40 +86,43 @@
     (weechat--remove-buffer-hash "0xffffff")
     (should (not (weechat-buffer-hash "0xffffff")))))
 
-(defun weechat--handle-buffer-list (hdata)
+(defun weechat--handle-buffer-list (response)
   ;; Remove all hashes not found in the new list
-  (let ((buffer-pointers (mapcar (lambda (x) (car (weechat--hdata-value-pointer-path x)))
-                                 (weechat--hdata-values hdata))))
+  (let* ((hdata (car response))
+         (buffer-pointers (mapcar (lambda (x) (car (weechat--hdata-value-pointer-path x)))
+                                  (weechat--hdata-values hdata))))
     (maphash (lambda (k v)
                (when (not (find k buffer-pointers
                                 :test 'equal))
                  (remhash k weechat--buffer-hashes)))
-             (copy-hash-table weechat--buffer-hashes)))
-  ;; Update all remaining values
-  (dolist (value (weechat--hdata-values hdata))
-    (let* ((buffer-ptr (car (weechat--hdata-value-pointer-path value)))
-           (buffer-hash (weechat-buffer-hash buffer-ptr))
-           (alist (weechat--hdata-value-alist value)))
-      (if (hash-table-p buffer-hash)
-          (dolist (v alist)
-            (puthash (car v) (cdr v) buffer-hash))
-        (weechat--store-buffer-hash buffer-ptr alist))))
-  (run-hooks weechat-connect-hook))
+             (copy-hash-table weechat--buffer-hashes))
+    ;; Update all remaining values
+    (dolist (value (weechat--hdata-values hdata))
+      (let* ((buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+             (buffer-hash (weechat-buffer-hash buffer-ptr))
+             (alist (weechat--hdata-value-alist value)))
+        (if (hash-table-p buffer-hash)
+            (dolist (v alist)
+              (puthash (car v) (cdr v) buffer-hash))
+          (weechat--store-buffer-hash buffer-ptr alist))))
+    (run-hooks 'weechat-connect-hook)))
 
 (defun weechat-update-buffer-list ()
   (weechat-relay-send-command
    "hdata buffer:gui_buffers(*) number,name,short_name,title,local_variables"
    #'weechat--handle-buffer-list))
 
-(defun weechat--handle-buffer-opened (hdata)
-  (let* ((value (car (weechat--hdata-values hdata)))
+(defun weechat--handle-buffer-opened (response)
+  (let* ((hdata (car response))
+         (value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
     (when (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_opened' event for '%s' but the buffer exists already!" buffer-ptr))
     (weechat--store-buffer-hash buffer-ptr (weechat--hdata-value-alist value))))
 
-(defun weechat--handle-buffer-closed (hdata)
-  (let* ((value (car (weechat--hdata-values hdata)))
+(defun weechat--handle-buffer-closed (response)
+  (let* ((hdata (car response))
+         (value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
     (when (not (weechat-buffer-hash buffer-ptr))
       (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
@@ -126,8 +139,9 @@
       (setq result (append (list (car form) result)
                            (cdr form))))))
 
-(defun weechat--handle-buffer-renamed (hdata)
-  (let* ((value (car (weechat--hdata-values hdata)))
+(defun weechat--handle-buffer-renamed (response)
+  (let* ((hdata (car response))
+         (value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
          (hash (weechat-buffer-hash buffer-ptr))
          (alist (weechat--hdata-value-alist value)))
@@ -148,8 +162,8 @@
                      (read-passwd "Password: ")))
   (when (weechat-relay-connected-p)
     (if (y-or-n-p "Already connected. Disconnect other connection? ")
-     (weechat-relay-disconnect)
-     (error "Can't open two connections")))
+        (weechat-relay-disconnect)
+      (error "Can't open two connections")))
   
   (when (and (stringp host)
              (integerp port))
@@ -160,9 +174,11 @@
        (weechat-relay-send-command
         "info version"
         (lambda (data)
-          (message "Connected to '%s', version %s" host (cdr data))
+          (message "Connected to '%s', version %s" host (cdar data))
           (weechat-update-buffer-list)
-          (weechat-relay-send-command "sync")))))))
+          (weechat-relay-send-command
+           "sync"
+           (lambda (_) (setq weechat--connected t)))))))))
 
 (defun weechat-disconnect ()
   (interactive)
@@ -170,6 +186,7 @@
   (setq weechat--buffer-alist nil))
 
 (defun weechat-handle-disconnect ()
+  (setq weechat--connected nil)
   ;; Print 'disconnected' message to all channel buffers
   (maphash (lambda (k v)
              (when (bufferp (gethash :emacs/buffer v))
@@ -179,25 +196,30 @@
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
+(defun weechat-buffer-name (buffer-ptr)
+  (let ((hash (weechat-buffer-hash buffer-ptr)))
+    (or (gethash "name"        hash)
+        (gethash "full_name"   hash)
+        (gethash "short_name"  hash))))
+
 (defun weechat--find-buffer (name)
   (let (ret)
     (maphash
      (lambda (ptr hash)
-       (when (or (equal (gethash "name"        hash)  name)
-                 (equal (gethash "full_name"   hash)  name)
-                 (equal (gethash "short_name"  hash)  name))
-         (setq ret ptr)))
+       (let ((bname (weechat-buffer-name ptr)))
+        (when (or (equal bname  name)
+                  (equal bname  name)
+                  (equal bname  name))
+          (setq ret ptr))))
      weechat--buffer-hashes)
     ret))
 
 (defun weechat-channel-names ()
   (let (ret)
-    (maphash (lambda (k v)
-               (setq ret (cons (or (gethash "name"        v)
-                                   (gethash "full_name"   v)
-                                   (gethash "short_name"  v))
-                               ret)))
-             weechat--buffer-hashes)
+    (maphash
+     (lambda (k v)
+       (setq ret (cons (weechat-buffer-name k) ret)))
+     weechat--buffer-hashes)
     ret))
 
 (defun weechat--emacs-buffer (buffer-ptr)
@@ -323,12 +345,13 @@
           (setq message (weechat-strip-formatting message)))
         (weechat-print-line buffer-ptr sender message)))))
 
-(defun weechat-add-initial-lines (lines-hdata)
-  ;; Need to get buffer-ptr from hdata pointer list
-  (save-excursion
-    (kill-region (point-min) (point-max))
-    (dolist (line-hdata (weechat--hdata-values lines-hdata))
-      (weechat-print-line-data (weechat--hdata-value-alist line-hdata)))))
+(defun weechat-add-initial-lines (response)
+  (let ((lines-hdata (car response)))
+   ;; Need to get buffer-ptr from hdata pointer list
+   (save-excursion
+     (kill-region (point-min) (point-max))
+     (dolist (line-hdata (weechat--hdata-values lines-hdata))
+       (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -390,31 +413,52 @@
   ;; Initialize buffer
   (weechat-request-initial-lines buffer-ptr))
 
-(defun weechat-monitor-buffer (name &optional replace)
+(defun weechat-monitor-buffer (buffer-ptr &optional replace show-buffer)
   (interactive (list
-                (funcall (or (symbol-function 'ido-completing-read)
-                             #'completing-read)
-                         "Channel Name: " (weechat-channel-names))
-                nil))
-  (let* ((buffer-ptr (weechat--find-buffer name))
-         (buffer-hash (weechat-buffer-hash buffer-ptr)))
-    (when (not (hash-table-p buffer-hash))
-      (error "Couldn't find buffer %s on relay server." name))
+                (weechat--find-buffer
+                 (funcall (or (symbol-function 'ido-completing-read)
+                              #'completing-read)
+                          "Channel Name: " (weechat-channel-names)))
+                nil
+                t))
+  (save-excursion
+    (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
+           (name (weechat-buffer-name buffer-ptr)))
+      (when (not (hash-table-p buffer-hash))
+        (error "Couldn't find buffer %s on relay server." buffer-ptr))
 
-    (when (and (bufferp (get-buffer name))
-               (or replace
-                   (y-or-n-p "Buffer already monitored. Replace? ")))
-      (kill-buffer name))
+      (when (and (bufferp (get-buffer name))
+                 (or replace
+                     (y-or-n-p "Buffer already monitored. Replace? ")))
+        (kill-buffer name))
 
-    (when (not (bufferp (get-buffer name)))
-      (with-current-buffer (get-buffer-create name)
-        (weechat-mode (get-buffer-process weechat-relay-buffer-name)
-                      buffer-ptr
-                      buffer-hash)
-        (switch-to-buffer (current-buffer))))))
+      (when (not (bufferp (get-buffer name)))
+        (with-current-buffer (get-buffer-create name)
+          (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                        buffer-ptr
+                        buffer-hash)
+          (when show-buffer
+            (switch-to-buffer (current-buffer))))))))
 
-(defun weechat--handle-buffer-line-added (hdata)
-  (let* ((line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata))))
+(defun weechat-re-monitor-buffers ()
+  (when weechat-auto-reconnect-buffers
+    (maphash (lambda (buffer-ptr hash)
+               (when (and (gethash :emacs/buffer hash)
+                          (buffer-live-p (get-buffer (gethash :emacs/buffer hash))))
+                 (weechat-monitor-buffer buffer-ptr 'replace)))
+             weechat--buffer-hashes)))
+
+(maphash (lambda (buffer-ptr hash)
+           (when (and (gethash :emacs/buffer hash)
+                      (buffer-live-p (get-buffer (gethash :emacs/buffer hash))))
+             (message "%S" (gethash :emacs/buffer hash))))
+         weechat--buffer-hashes)
+
+(add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
+
+(defun weechat--handle-buffer-line-added (response)
+  (let* ((hdata (car response))
+         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata))))
          (buffer-ptr (assoc-default "buffer" line-data)))
     (weechat-print-line-data line-data)))
 
