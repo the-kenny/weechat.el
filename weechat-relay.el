@@ -398,7 +398,7 @@ Returns a list: (id data)."
     (when (weechat--message-available-p (current-buffer))
       (multiple-value-bind (ret len) (weechat-unpack-message
                                       (buffer-string))
-        (weechat-relay-log (format "Consumed %d bytes" len) :info)
+        (weechat-relay-log (format "Consumed %d bytes" len) :warn)
         (delete-region (point-min) (+ (point-min) len))
         ret))))
 
@@ -458,7 +458,7 @@ CALLBACK takes one argument (the response data) which is a list."
     (let ((inhibit-read-only t)
           (moving (= (point) (process-mark proc))))
       (weechat-relay-log (format "Received %d bytes" (length string))
-                         :info)
+                         :warn)
       ;; Insert the text, advancing the process marker.
       (goto-char (point-max))
       (insert (string-make-unibyte string))

@@ -346,12 +346,20 @@
         (weechat-print-line buffer-ptr sender message)))))
 
 (defun weechat-add-initial-lines (response)
-  (let ((lines-hdata (car response)))
-   ;; Need to get buffer-ptr from hdata pointer list
-   (save-excursion
-     (kill-region (point-min) (point-max))
-     (dolist (line-hdata (weechat--hdata-values lines-hdata))
-       (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))
+  (let* ((lines-hdata (car response))
+         (buf-ptr (weechat->
+                   lines-hdata
+                   (weechat--hdata-values)
+                   (car)
+                   (weechat--hdata-value-pointer-path)
+                   (car))))
+    (assert (bufferp (weechat--emacs-buffer buf-ptr)))
+    ;; Need to get buffer-ptr from hdata pointer list
+    (with-current-buffer (weechat--emacs-buffer buf-ptr)
+      (save-excursion
+        (kill-region (point-min) (point-max))
+        (dolist (line-hdata (weechat--hdata-values lines-hdata))
+          (weechat-print-line-data (weechat--hdata-value-alist line-hdata)))))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -413,13 +421,12 @@
   ;; Initialize buffer
   (weechat-request-initial-lines buffer-ptr))
 
-(defun weechat-monitor-buffer (buffer-ptr &optional replace show-buffer)
+(defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   (interactive (list
                 (weechat--find-buffer
                  (funcall (or (symbol-function 'ido-completing-read)
                               #'completing-read)
                           "Channel Name: " (weechat-channel-names)))
-                nil
                 t))
   (save-excursion
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
@@ -427,25 +434,24 @@
       (when (not (hash-table-p buffer-hash))
         (error "Couldn't find buffer %s on relay server." buffer-ptr))
 
-      (when (and (bufferp (get-buffer name))
-                 (or replace
-                     (y-or-n-p "Buffer already monitored. Replace? ")))
-        (kill-buffer name))
-
-      (when (not (bufferp (get-buffer name)))
-        (with-current-buffer (get-buffer-create name)
-          (weechat-mode (get-buffer-process weechat-relay-buffer-name)
-                        buffer-ptr
-                        buffer-hash)
-          (when show-buffer
-            (switch-to-buffer (current-buffer))))))))
+      (with-current-buffer (get-buffer-create name)
+        (fundamental-mode)
+        (let ((inhibit-read-only t))
+          (kill-region (point-min) (point-max)))
+        (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                      buffer-ptr
+                      buffer-hash)
+        (when show-buffer
+          (switch-to-buffer (current-buffer)))))))
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
     (maphash (lambda (buffer-ptr hash)
                (when (and (gethash :emacs/buffer hash)
                           (buffer-live-p (get-buffer (gethash :emacs/buffer hash))))
-                 (weechat-monitor-buffer buffer-ptr 'replace)))
+                 (weechat-relay-log
+                  (format "Re-monitoring buffer %S" (gethash :emacs/buffer hash)))
+                 (weechat-monitor-buffer buffer-ptr)))
              weechat--buffer-hashes)))
 
 (add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
