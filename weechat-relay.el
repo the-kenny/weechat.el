@@ -503,10 +503,13 @@ CALLBACK takes one argument (the response data) which is a list."
                         :nowait t
                         :filter-multibyte nil
                         :coding 'binary)
-  (get-buffer-create weechat-relay-log-buffer-name)
+  (with-current-buffer (get-buffer-create
+                        weechat-relay-log-buffer-name)
+    (buffer-disable-undo))
   (with-current-buffer (get-buffer weechat-relay-buffer-name)
     (read-only-mode 1)
-    (set-buffer-multibyte nil)))
+    (set-buffer-multibyte nil)
+    (buffer-disable-undo)))
 
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)

@@ -329,7 +329,11 @@
           (goto-char p-to-go))
 
         (set-marker-insertion-type weechat-prompt-start-marker nil)
-        (set-marker-insertion-type weechat-prompt-end-marker nil)))))
+        (set-marker-insertion-type weechat-prompt-end-marker nil))
+
+      ;; Drop undo information (borrowed from weechat)
+      (buffer-disable-undo)
+	  (buffer-enable-undo))))
 
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data)))
