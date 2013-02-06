@@ -23,6 +23,7 @@
 ;;
 
 (require 'weechat-relay)
+(require 'cl-lib)
 (require 'ert)
 (require 'rx)
 
@@ -92,8 +93,8 @@
          (buffer-pointers (mapcar (lambda (x) (car (weechat--hdata-value-pointer-path x)))
                                   (weechat--hdata-values hdata))))
     (maphash (lambda (k v)
-               (when (not (find k buffer-pointers
-                                :test 'equal))
+               (when (not (cl-find k buffer-pointers
+                                   :test 'equal))
                  (remhash k weechat--buffer-hashes)))
              (copy-hash-table weechat--buffer-hashes))
     ;; Update all remaining values
@@ -224,7 +225,6 @@
 
 (defun weechat--emacs-buffer (buffer-ptr)
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
-    (assert (hash-table-p hash))
     (gethash :emacs/buffer hash)))
 
 (defvar weechat-buffer-ptr nil
@@ -357,7 +357,6 @@
                    (car)
                    (weechat--hdata-value-pointer-path)
                    (car))))
-    (assert (bufferp (weechat--emacs-buffer buf-ptr)))
     ;; Need to get buffer-ptr from hdata pointer list
     (with-current-buffer (weechat--emacs-buffer buf-ptr)
       (save-excursion
@@ -366,7 +365,6 @@
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
-    (assert (bufferp buffer))
     (weechat-relay-send-command
      (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date,buffer,displayed"
              buffer-ptr
@@ -427,7 +425,8 @@
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   (interactive (list
                 (weechat--find-buffer
-                 (funcall (or (symbol-function 'ido-completing-read)
+                 (funcall (or (and (featurep 'ido)
+                                   (symbol-function 'ido-completing-read))
                               #'completing-read)
                           "Channel Name: " (weechat-channel-names)))
                 t))
