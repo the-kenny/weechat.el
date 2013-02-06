@@ -84,7 +84,8 @@ to :info"
   "Send message `TEXT' with optional ID `id'.
 Trims `text' prior sending it."
   (let ((msg (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
-    (weechat-relay-log (format "Sending msg: '%s'" (s-trim msg)))
+    (weechat-relay-log (format "Sending msg: '%s'" (s-trim msg))
+                       :debug)
     (send-string (get-buffer-process weechat-relay-buffer-name)
                  msg)))
 
