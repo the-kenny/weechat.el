@@ -257,7 +257,7 @@
                                    'front-sticky t))))))
 
 (defvar weechat-formatting-regex
-  (let* ((attr `(in "*!/_|"))
+  (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
          (std  `(= 2 digit))
          (astd `(seq ,attr (= 2 digit)))
          (ext  `(seq "@" (= 5 digit)))
