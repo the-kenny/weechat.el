@@ -357,7 +357,6 @@
     ;; Need to get buffer-ptr from hdata pointer list
     (with-current-buffer (weechat--emacs-buffer buf-ptr)
       (save-excursion
-        (kill-region (point-min) (point-max))
         (dolist (line-hdata (weechat--hdata-values lines-hdata))
           (weechat-print-line-data (weechat--hdata-value-alist line-hdata)))))))
 
