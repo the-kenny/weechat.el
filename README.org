@@ -9,7 +9,7 @@
    To load and establish a connection:
    
    : (require 'weechat)
-   : (weechat-connect host port password)
+   : M-x weechat-connect
 
    To show a channel in Emacs, do:
 
