@@ -43,7 +43,7 @@
 
 (defvar weechat-auto-reconnect-buffers t
   "Automatically re-monitor channel buffers which were opened on
-  a prior connection")
+a prior connection")
 
 ;;; Code:
 
@@ -162,7 +162,7 @@
                      (read-number "Port: ")
                      (read-passwd "Password: ")))
   (when (weechat-relay-connected-p)
-    (if (y-or-n-p "Already connected. Disconnect other connection? ")
+    (if (y-or-n-p "Already connected.  Disconnect other connection? ")
         (weechat-relay-disconnect)
       (error "Can't open two connections")))
   
@@ -229,7 +229,7 @@
 
 (defvar weechat-buffer-ptr nil
   "The pointer of the channel buffer. Used to identify it on the
-  relay server.")
+relay server.")
 (defvar weechat-server-buffer nil
   "The relay buffer associated with this channel buffer.")
 (defvar weechat-topic nil
@@ -282,7 +282,7 @@
           ""))))
 
 (defun weechat-strip-formatting (string)
-  "Strips weechat color codes from STRING"
+  "Strip weechat color codes from STRING."
   (replace-regexp-in-string weechat-formatting-regex "" string))
 
 (ert-deftest weechat-color-stripping ()
@@ -297,7 +297,7 @@
   (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (when (not (bufferp buffer))
-      (error "Couldn't find emacs buffer for weechat-buffer %s" buffer-ptr))
+      (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
     (with-current-buffer buffer
       (let ((at-end (= (point) weechat-prompt-end-marker))
             (old-point (point-marker)))
@@ -393,7 +393,9 @@
   "Keymap for weechat mode.")
 
 (defun weechat-mode (process buffer-ptr buffer-hash)
-  "Major mode used by weechat buffers."
+  "Major mode used by weechat buffers.
+
+\\{weechat-mode-map}"
 
   (kill-all-local-variables)
 
@@ -434,7 +436,7 @@
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
            (name (weechat-buffer-name buffer-ptr)))
       (when (not (hash-table-p buffer-hash))
-        (error "Couldn't find buffer %s on relay server." buffer-ptr))
+        (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
       (with-current-buffer (get-buffer-create name)
         (fundamental-mode)

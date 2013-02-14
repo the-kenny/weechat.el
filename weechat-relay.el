@@ -36,7 +36,8 @@
 Set to nil to disable logging.")
 
 (defvar weechat-relay-log-level :info
-  "Minimum log level. Might be one of :debug :info :warn :error")
+  "Minimum log level.
+Might be one of :debug :info :warn :error")
 
 (defvar weechat-relay-message-function nil
   "Function to call when receiving a new weechat message.")
@@ -61,7 +62,7 @@ corresponding function will be called.")
 
 (defun weechat-relay-log (text &optional level)
   "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled.
-`LEVEL' might be one of :debug :info :warn :error. Defaults
+`LEVEL' might be one of :debug :info :warn :error.  Defaults
 to :info"
   (when (bufferp (get-buffer weechat-relay-log-buffer-name))
     (with-current-buffer weechat-relay-log-buffer-name
@@ -81,8 +82,8 @@ to :info"
             (goto-char old-point)))))))
 
 (defun weechat--relay-send-message (text &optional id)
-  "Send message `TEXT' with optional ID `id'.
-Trims `text' prior sending it."
+  "Send message TEXT with optional ID.
+Trim TEXT prior to sending it."
   (let ((msg (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
     (weechat-relay-log (format "Sending msg: '%s'" (s-trim msg))
                        :debug)
@@ -90,20 +91,20 @@ Trims `text' prior sending it."
                  msg)))
 
 (defun weechat-relay-authenticate (password)
-  "Authenticates to weechat with PASSWORD `password'."
+  "Authenticate to weechat with PASSWORD."
   (weechat--relay-send-message (format "init password=%s,compression=off\n" password)))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
-  "Convert an unsigned int `NUM' to signed int.
-`num' is in two-complement representation with `BYTES' bytes.
-Useful because bindat doesn't support signed numbers."
+  "Convert an unsigned int NUM to signed int.
+NUM is in two-complement representation with BYTES bytes.
+Useful because bindat does not support signed numbers."
   (if (> num (- (expt 2 (- (* 8 bytes) 1)) 1))
       (- num (expt 2 (* 8 bytes)))
     num))
 
 (defun weechat--relay-unpack-int (data)
-  "Unpack a four-byte signed integer from unibyte string `DATA'.
-Returns the value and number of bytes consumed."
+  "Unpack a four-byte signed integer from unibyte string DATA.
+Return the value and number of bytes consumed."
   (cl-values
    (weechat--relay-bindat-unsigned-to-signed
     (bindat-get-field
@@ -124,7 +125,7 @@ Returns the value and number of bytes consumed."
             (bindat-length weechat--relay-lon-spec obj))))
 
 (defun weechat--relay-unpack-chr (data)
-  "Unpack a one byte char from unibyte string `DATA'.
+  "Unpack a one byte char from unibyte string DATA.
 Returns value and bytes consumed."
   (cl-values
    (bindat-get-field
@@ -141,7 +142,7 @@ Returns value and bytes consumed."
                      (if (<= len 0) 0 len))))))
 
 (defun weechat--relay-unpack-str (data)
-  "Unpacks a weechat-relay-string from unibyte string `DATA'.
+  "Unpacks a weechat-relay-string from unibyte string DATA.
 Optional second return value contains length of parsed data."
   (let ((obj (bindat-unpack weechat--relay-str-spec data)))
     (cl-values (decode-coding-string (bindat-get-field obj 'val) 'utf-8)
@@ -170,7 +171,7 @@ Optional second return value contains length of parsed data."
 
 (defun weechat--relay-unpack-ptr (data)
   "Unpack a string encoded in weechat's binary representation.
-`DATA' must be an unibyte string. Returns string-value and number
+DATA must be an unibyte string.  Return string-value and number
 of bytes consumed."
   (let ((obj (bindat-unpack weechat--relay-ptr-spec data)))
     (cl-values (concat "0x" (bindat-get-field obj 'val))
@@ -362,8 +363,8 @@ of bytes consumed."
               (+ len 3)))))
 
 (defun weechat-unpack-message (message-data)
-  "Unpack weechat relay message in `MESSAGE-DATA'.
-Returns a list: (id data)."
+  "Unpack weechat relay message in MESSAGE-DATA.
+Return a list: (id data)."
   (let* ((msg (bindat-unpack weechat--relay-message-spec message-data))
          (data (concat (bindat-get-field msg 'data)))
          (msg-id (bindat-get-field msg 'id 'val))
@@ -383,8 +384,8 @@ Returns a list: (id data)."
             (bindat-get-field msg 'length))))
 
 (defun weechat--message-available-p (&optional buffer)
-  "Check if a weechat relay message available in `BUFFER'.
-`buffer' defaults to current buffer."
+  "Check if a weechat relay message available in BUFFER.
+BUFFER defaults to the current buffer."
   (with-current-buffer (get-buffer (or buffer
                                        weechat-relay-buffer-name))
     (and (> (buffer-size) 5)
@@ -430,7 +431,7 @@ Returns a list: (id data)."
     (puthash id function* weechat--relay-id-callback-hash)))
 
 (defun weechat-relay-send-command (command &optional callback)
-  "Sends COMMAND to relay and calls CALLBACK with reply.
+  "Send COMMAND to relay and call CALLBACK with reply.
 CALLBACK takes one argument (the response data) which is a list."
   (let ((id (symbol-name (cl-gensym))))
     (when (functionp callback)
@@ -494,7 +495,7 @@ CALLBACK takes one argument (the response data) which is a list."
                       (weechat-relay-disconnect))))))
 
 (defun weechat-relay-connect (host port &optional callback)
-  "Opens a new weechat relay connection to `HOST' at PORT `port'."
+  "Open a new weechat relay connection to HOST at PORT."
   (setq weechat--relay-connected-callback callback)
   (make-network-process :name "weechat-relay"
                         :buffer weechat-relay-buffer-name
@@ -520,8 +521,7 @@ CALLBACK takes one argument (the response data) which is a list."
        t))
 
 (defun weechat-relay-disconnect ()
-  "Disconnect current weechat relay connection and close all
-buffers."
+  "Disconnect current weechat relay connection and close all buffers."
   (when (weechat-relay-connected-p)
     (weechat--relay-send-message "quit")
     (with-current-buffer weechat-relay-buffer-name
@@ -535,7 +535,7 @@ buffers."
   (car message))
 
 (defun weechat--message-data (message)
-  "Returns a list with data in MESSAGE"
+  "Return a list with data in MESSAGE."
   (cdr message))
 
 (ert-deftest weechat-test-message-fns ()
