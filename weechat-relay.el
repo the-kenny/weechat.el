@@ -187,7 +187,7 @@ of bytes consumed."
 (defun weechat--relay-unpack-tim (data)
   (let ((obj (bindat-unpack weechat--relay-tim-spec data)))
     (cl-values (seconds-to-time
-             (string-to-int
+             (string-to-number
               (bindat-get-field obj 'val)))
             (bindat-length weechat--relay-tim-spec obj))))
 
@@ -582,9 +582,9 @@ buffers."
 (ert-deftest weechat-test-infolist ()
   (with-temp-buffer
     (set-buffer-multibyte nil)
-    (insert-string (concat [0 0 0 32 0 255 255 255 255 105 110 102 0 0
-                              0 7 118 101 114 115 105 111 110 0 0 0 5
-                              48 46 51 46 56]))
+    (insert (concat [0 0 0 32 0 255 255 255 255 105 110 102 0 0
+                       0 7 118 101 114 115 105 111 110 0 0 0 5
+                       48 46 51 46 56]))
     (let ((data (weechat--relay-parse-new-message (current-buffer))))
       (should (equal ""  (weechat--message-id data)))
       (should (equal '("version" . "0.3.8")
@@ -593,9 +593,9 @@ buffers."
 (ert-deftest weechat-test-id ()
   (with-temp-buffer
     (set-buffer-multibyte nil)
-    (insert-string (concat [0 0 0 35 0 0 0 0 3 54 54 54 105 110 102 0
-                              0 0 7 118 101 114 115 105 111 110 0 0 0
-                              5 48 46 51 46 56]))
+    (insert (concat [0 0 0 35 0 0 0 0 3 54 54 54 105 110 102 0
+                       0 0 7 118 101 114 115 105 111 110 0 0 0
+                       5 48 46 51 46 56]))
     (let ((data (weechat--relay-parse-new-message (current-buffer))))
       (should (equal "666" (weechat--message-id data)))
       (should (equal '("version" . "0.3.8")
