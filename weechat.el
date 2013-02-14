@@ -27,23 +27,42 @@
 (require 'ert)
 (require 'rx)
 
-(defvar weechat-read-only t
-  "Whether to make text in weechat buffers read-only.")
+(defgroup weechat nil
+  "Weechat based IRC client for Emacs."
+  :link '(url-link "https://github.com/the-kenny/weechat.el")
+  :prefix "weechat-"
+  :group 'applications)
 
-(defvar weechat-initial-lines 100
-  "Number of lines to show when initializing a channel buffer.")
+(defcustom weechat-read-only t
+  "Whether to make text in weechat buffers read-only."
+  :type 'boolean
+  :group 'weechat)
 
-(defvar weechat-prompt "> ")
+(defcustom weechat-initial-lines 100
+  "Number of lines to show when initializing a channel buffer."
+  :type 'integer
+  :group 'weechat)
 
-(defvar weechat-hide-like-weechat t
-  "Hide lines in buffer when they're hidden in weechat.")
+(defcustom weechat-prompt "> "
+  "The Weechat prompt."
+  :type 'string
+  :group 'weechat)
 
-(defvar weechat-connect-hook nil
-  "Hook run when successfully connected and authenticated.")
+(defcustom weechat-hide-like-weechat t
+  "Hide lines in buffer when they're hidden in Weechat."
+  :type 'boolean
+  :group 'weechat)
 
-(defvar weechat-auto-reconnect-buffers t
-  "Automatically re-monitor channel buffers which were opened on
-a prior connection")
+(defcustom weechat-connect-hook nil
+  "Hook run when successfully connected and authenticated."
+  :type '(choice (const :tag "Off" nil)
+                 (function :tag "Hook"))
+  :group 'weechat)
+
+(defcustom weechat-auto-reconnect-buffers t
+  "Automatically re-monitor channel buffers which were opened on a prior connection."
+  :type 'boolean
+  :group 'weechat)
 
 ;;; Code:
 
