@@ -372,9 +372,9 @@ Return a list: (id data)."
          (offset 0)
          (acc ()))
     ;; Only no-compression is supported atm
-    (when (not (eq 0 (bindat-get-field msg 'compression)))
+    (unless (= 0 (bindat-get-field msg 'compression))
       (error "Compression not supported"))
-    (when (not ignore-msg)
+    (unless ignore-msg
       (while (< offset (length data))
         (cl-multiple-value-bind (obj offset*) (weechat--unpack-message-contents
                                                (substring data offset))
@@ -417,12 +417,12 @@ BUFFER defaults to the current buffer."
     fun))
 
 (defun weechat-relay-add-id-callback (id function &optional one-shot force)
-  (when (not id)
-    (error "Id must not be nil"))
+  (unless id
+    (error "ID must not be nil"))
   (when (weechat-relay-get-id-callback id)
-    (if (not force)
-        (error "Id '%s' is already in `weechat--relay-id-callback-hash'" id)
-      (weechat-relay-remove-id-callback id)))
+    (unless force
+      (error "ID '%s' is already in `weechat--relay-id-callback-hash'" id))
+    (weechat-relay-remove-id-callback id))
   (let ((function* (if one-shot
                        (lambda (x)
                          (funcall function x)
