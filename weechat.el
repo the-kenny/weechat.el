@@ -149,7 +149,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
     (puthash ptr hash weechat--buffer-hashes)))
 
 (defun weechat--remove-buffer-hash (ptr)
-  (when (not (weechat-buffer-hash ptr))
+  (unless (weechat-buffer-hash ptr)
     (error "Buffer '%s' doesn't exist" ptr))
   (remhash ptr weechat--buffer-hashes))
 
@@ -170,8 +170,8 @@ Set to nil to disable header line.  Currently only supported format option is %t
          (buffer-pointers (mapcar (lambda (x) (car (weechat--hdata-value-pointer-path x)))
                                   (weechat--hdata-values hdata))))
     (maphash (lambda (k v)
-               (when (not (cl-find k buffer-pointers
-                                   :test 'equal))
+               (unless (cl-find k buffer-pointers
+                                :test 'equal)
                  (remhash k weechat--buffer-hashes)))
              (copy-hash-table weechat--buffer-hashes))
     ;; Update all remaining values
@@ -202,7 +202,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
   (let* ((hdata (car response))
          (value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
-    (when (not (weechat-buffer-hash buffer-ptr))
+    (unless (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (weechat--remove-buffer-hash buffer-ptr)))
 
@@ -223,7 +223,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
          (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
          (hash (weechat-buffer-hash buffer-ptr))
          (alist (weechat--hdata-value-alist value)))
-    (when (not hash)
+    (unless hash
       (error "Received '_buffer_renamed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (puthash "number" (assoc-default "number" value) hash)
     (puthash "full_name" (assoc-default "full_name" value) hash)
@@ -351,8 +351,8 @@ relay server.")
       (delete-region weechat-prompt-start-marker weechat-prompt-end-marker)
       (insert-before-markers weechat-prompt)
       (set-marker weechat-prompt-start-marker start)
-      (when (not (zerop (- weechat-prompt-end-marker
-                           weechat-prompt-start-marker)))
+      (unless (zerop (- weechat-prompt-end-marker
+                        weechat-prompt-start-marker))
         (add-text-properties weechat-prompt-start-marker
                              weechat-prompt-end-marker
                              (list 'face 'weechat-prompt-face
@@ -593,7 +593,7 @@ The optional paramteres are internal!"
   (setq sender (or sender ""))
   (setq highlight (equal 1 highlight))  ;`=' throws for nil
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
-    (when (not (bufferp buffer))
+    (unless (bufferp buffer)
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
     (with-current-buffer buffer
       (let ((at-end (= (point) weechat-prompt-end-marker))
@@ -665,7 +665,7 @@ The optional paramteres are internal!"
 
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data)))
-    (when (not (weechat-buffer-hash buffer-ptr))
+    (unless (weechat-buffer-hash buffer-ptr)
       (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
     (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                (and weechat-hide-like-weechat
@@ -804,7 +804,7 @@ Default is current buffer."
   (save-excursion
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
            (name (weechat-buffer-name buffer-ptr)))
-      (when (not (hash-table-p buffer-hash))
+      (unless (hash-table-p buffer-hash)
         (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
       (with-current-buffer (get-buffer-create name)
