@@ -515,6 +515,9 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
   (weechat-update-prompt)
 
+  ;; Don't auto-add newlines on next-line
+  (set (make-local-variable 'next-line-add-newlines) nil)
+
   (puthash :emacs/buffer (current-buffer) buffer-hash)
   (add-hook 'kill-buffer-hook
             (lambda ()
