@@ -255,10 +255,10 @@ See `format-time-string' for format description."
     (maphash
      (lambda (ptr hash)
        (let ((bname (weechat-buffer-name ptr)))
-        (when (or (equal bname  name)
-                  (equal bname  name)
-                  (equal bname  name))
-          (setq ret ptr))))
+         (when (or (equal bname  name)
+                   (equal bname  name)
+                   (equal bname  name))
+           (setq ret ptr))))
      weechat--buffer-hashes)
     ret))
 
@@ -434,7 +434,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                                  '(read-only t))))
 
         (when (and (not weechat-inhibit-notifications) highlight)
-            (weechat-notify sender text date))
+          (weechat-notify sender text date))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
@@ -467,7 +467,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
             (date (assoc-default "date" line-data))
             (highlight (assoc-default "highlight" line-data)))
         (when weechat-debug-strip-formatting
-          ;(setq sender (weechat-strip-formatting sender))
+                                        ;(setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
         (weechat-print-line buffer-ptr sender message date highlight)))))
 
@@ -483,8 +483,8 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
     (with-current-buffer (weechat--emacs-buffer buf-ptr)
       (save-excursion
         (let ((weechat-inhibit-notifications t))
-         (dolist (line-hdata (weechat--hdata-values lines-hdata))
-           (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
+          (dolist (line-hdata (weechat--hdata-values lines-hdata))
+            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
