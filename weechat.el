@@ -108,9 +108,20 @@ increased for that line."
           (function :tag "Custom Function"))
   :group 'weechat)
 
+(defcustom weechat-header-line-format "%n on %c/%s: %t"
+  "Header line format.
+Set to nil to disable header line.  Currently only supported format option is %t for the title."
+  :type '(choice (const :tag "Disabled" nil)
+                 string)
+  :set (lambda (sym val)
+         (set sym val)
+         (when (fboundp 'weechat-update-header-line)
+           (weechat-update-header-line)))
+  :group 'weechat)
+
 ;;; Code:
 
-(defvar weechat-debug-strip-formatting t)
+(defvar weechat-debug-strip-formatting nil)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
@@ -223,6 +234,24 @@ increased for that line."
 (weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
 (weechat-relay-add-id-callback "_buffer_renamed" #'weechat--handle-buffer-renamed nil 'force)
 
+(defun weechat--handle-buffer-title-changed (response)
+  (let* ((hdata (car response))
+         (value (car (weechat--hdata-values hdata)))
+         (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+         (hash (weechat-buffer-hash buffer-ptr))
+         (alist (weechat--hdata-value-alist value))
+         (buffer (gethash :emacs/buffer hash))
+         (new-title (or (cdr (assoc-string "title" alist)) "")))
+    (unless (weechat-buffer-hash buffer-ptr)
+      (error "Received '_buffer_title_changed' event for '%s' but the buffer doesn't exist" buffer-ptr))
+    (puthash "title" new-title hash)
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (setq weechat-topic new-title)
+        (weechat-update-header-line-buffer buffer)))))
+
+(weechat-relay-add-id-callback "_buffer_title_changed" #'weechat--handle-buffer-title-changed nil 'force)
+
 (defun weechat-connect (host port password)
   (interactive (list (read-string "Relay Host: ")
                      (read-number "Port: ")
@@ -288,6 +317,15 @@ increased for that line."
        (setq ret (cons (weechat-buffer-name k) ret)))
      weechat--buffer-hashes)
     ret))
+
+(defun weechat-buffer-list ()
+  "List all Weechat buffers."
+  (let (acc)
+    (maphash (lambda (k v)
+               (when (buffer-live-p (gethash :emacs/buffer v))
+                 (setq acc (cons (gethash :emacs/buffer v) acc))))
+             weechat--buffer-hashes)
+    acc))
 
 (defun weechat--emacs-buffer (buffer-ptr)
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
@@ -586,10 +624,12 @@ The optional paramteres are internal!"
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
               
-              (insert (if highlight
-                          (propertize (s-trim text) 'face 'weechat-highlight-face)
-                        (s-trim text))
-                      "\n")
+              (let ((text (weechat-handle-color-codes
+                           (s-trim text))))
+                (insert (if highlight
+                            (propertize text 'face 'weechat-highlight-face)
+                          text)
+                      "\n"))
 
               (when weechat-fill-text
                 ;; Filling is slightly misleading here. We use this
@@ -635,7 +675,7 @@ The optional paramteres are internal!"
             (date (assoc-default "date" line-data))
             (highlight (assoc-default "highlight" line-data)))
         (when weechat-debug-strip-formatting
-                                        ;(setq sender (weechat-strip-formatting sender))
+          (setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
         (weechat-print-line buffer-ptr sender message date highlight)))))
 
@@ -683,6 +723,35 @@ The optional paramteres are internal!"
     map)
   "Keymap for weechat mode.")
 
+(defun weechat-get-local-var (var &optional buffer-ptr)
+  "Return value of local VAR in BUFFER-PTR.
+Default is current buffer."
+  (or (cdr (assoc-string var
+                         (gethash "local_variables"
+                                  (weechat-buffer-hash
+                                   (or buffer-ptr weechat-buffer-ptr)))))
+      ""))
+
+(defun weechat-update-header-line-buffer (buffer)
+  "Update the header line for BUFFER."
+  (with-current-buffer buffer
+    (let ((spec (format-spec-make
+                 ?n (weechat-get-local-var "nick")
+                 ?s (weechat-get-local-var "server")
+                 ?c (weechat-get-local-var "channel")
+                 ?N (weechat-get-local-var "name")
+                 ?t weechat-topic)))
+      (if weechat-header-line-format
+          (setq header-line-format (format-spec weechat-header-line-format spec))
+        (setq header-line-format nil)))))
+
+(defun weechat-update-header-line (&optional buffer)
+  "Update the header line for BUFFER or if BUFFER is nil for all buffers."
+  (if (and buffer (bufferp buffer))
+      (weechat-update-header-line-buffer buffer)
+    (dolist (buffer (weechat-buffer-list))
+      (weechat-update-header-line-buffer buffer))))
+
 (defun weechat-mode (process buffer-ptr buffer-hash)
   "Major mode used by weechat buffers.
 
@@ -717,6 +786,9 @@ The optional paramteres are internal!"
 
   ;; Initialize buffer
   (weechat-request-initial-lines buffer-ptr)
+
+  ;; Set Header
+  (weechat-update-header-line-buffer (current-buffer))
 
   ;; Hooks
   (run-mode-hooks 'weechat-mode-hook))
