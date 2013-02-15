@@ -70,6 +70,10 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
+(defface weechat-prompt-face '((t :weight bold :foreground "black" :background "grey90"))
+  "Weechat face used for the prompt."
+  :group 'weechat)
+
 ;;; Code:
 
 (defvar weechat-debug-strip-formatting t)
@@ -276,7 +280,8 @@ relay server.")
                            weechat-prompt-start-marker)))
         (add-text-properties weechat-prompt-start-marker
                              weechat-prompt-end-marker
-                             (list 'read-only t
+                             (list 'face 'weechat-prompt-face
+                                   'read-only t
                                    'field t
                                    'rear-nonsticky t
                                    'front-sticky t))))))
