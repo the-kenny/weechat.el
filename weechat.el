@@ -339,9 +339,16 @@ relay server.")
                  "someone has joined #asdfasdfasdf"))
   (should (equal (weechat-strip-formatting "ddd") "ddd")))
 
-(defvar weechat-color-list '(unspecified "black" "dark gray" "dark red" "red" "dark green" "light green" "brown" "yellow" "dark blue" "light blue" "dark magenta" "magenta" "dark cyan" "light cyan" "gray" "white")
+(defcustom weechat-color-list '(unspecified "black" "dark gray" "dark red" "red"
+                                            "dark green" "light green" "brown"
+                                            "yellow" "dark blue" "light blue"
+                                            "dark magenta" "magenta" "dark cyan"
+                                            "light cyan" "gray" "white")
   "Mapping of Weechat colors.
-See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings")
+See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings"
+  :type '(repeat (choice (const :tag "Unspecified" unspecified)
+                         (const :tag "Color" color)))
+  :group 'weechat)
 
 (defvar weechat-color-attributes-alist '((?* . (:weight  bold)) ; bold
                                          (?! . (:inverse-video t)) ; reverse??
