@@ -436,7 +436,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
 The optional paramteres are internal!"
   (setq i (or i 0))
   (if (>= i (length str))
-      ret
+      (or ret "")
     (setq ret (or ret ""))
     (cl-case (aref str i)
       ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
@@ -553,7 +553,7 @@ The optional paramteres are internal!"
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
-  (setq highlight (= 1 highlight))
+  (setq highlight (equal 1 highlight))  ;`=' throws for nil
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (when (not (bufferp buffer))
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
