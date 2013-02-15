@@ -343,7 +343,8 @@ Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
 
 Be aware that Weechat does not use mIRC color codes.
 See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings."
-  (unless (s-blank? string)
+  (if (s-blank? string)
+      ""
     (save-match-data
       (let ((ret "")
             face
