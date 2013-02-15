@@ -739,8 +739,8 @@ The optional paramteres are internal!"
      ((string= input "")
       (weechat-replace-input (car (ring-elements weechat-input-ring))))
      ((not (ring-member weechat-input-ring input))
-      (weechat-input-ring-insert input)
-      (weechat-replace-input (car (ring-elements weechat-input-ring))))
+      (weechat-replace-input (car (ring-elements weechat-input-ring)))
+      (weechat-input-ring-insert input))
      ((ring-member weechat-input-ring input)
       (weechat-replace-input (ring-next weechat-input-ring input))))))
 
