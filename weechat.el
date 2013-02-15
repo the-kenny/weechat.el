@@ -64,6 +64,12 @@
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-time-format "%H:%M:%S"
+  "How to format time stamps.
+See `format-time-string' for format description."
+  :type 'string
+  :group 'weechat)
+
 ;;; Code:
 
 (defvar weechat-debug-strip-formatting t)
@@ -344,7 +350,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                          (propertize (substring string j) 'face face)
                        (substring string j))))))))
 
-(defun weechat-print-line (buffer-ptr sender text)
+(defun weechat-print-line (buffer-ptr sender text &optional date)
   (setq text   (or text ""))
   (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -362,6 +368,8 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
           (set-marker-insertion-type weechat-prompt-start-marker t)
           (set-marker-insertion-type weechat-prompt-end-marker t)
 
+          (when date
+            (insert (format-time-string weechat-time-format date) " "))
           (insert (weechat-handle-color-codes sender) ": ")
           (insert (s-trim text) "\n")
           (when weechat-read-only
@@ -395,11 +403,12 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                (and weechat-hide-like-weechat
                     (equal 1 (assoc-default "displayed" line-data))))
       (let ((sender (assoc-default "prefix" line-data))
-            (message (assoc-default "message" line-data)))
+            (message (assoc-default "message" line-data))
+            (date (assoc-default "date_printed" line-data)))
         (when weechat-debug-strip-formatting
           ;(setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
-        (weechat-print-line buffer-ptr sender message)))))
+        (weechat-print-line buffer-ptr sender message date)))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
