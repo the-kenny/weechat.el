@@ -502,8 +502,17 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
 
   (kill-all-local-variables)
 
+  (puthash :emacs/buffer (current-buffer) buffer-hash)
+  (add-hook 'kill-buffer-hook
+            (lambda ()
+              (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+                (when (hash-table-p hash)
+                  (remhash :emacs/buffer hash))))
+            nil
+            'local-hook)
+
   (use-local-map weechat-mode-map)
-  (setq mode-name "weeeechat")
+  (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
   (setq major-mode 'weechat-mode)
 
   (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
@@ -517,15 +526,6 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
 
   ;; Don't auto-add newlines on next-line
   (set (make-local-variable 'next-line-add-newlines) nil)
-
-  (puthash :emacs/buffer (current-buffer) buffer-hash)
-  (add-hook 'kill-buffer-hook
-            (lambda ()
-              (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
-               (when (hash-table-p hash)
-                   (remhash :emacs/buffer hash))))
-            nil
-            'local-hook)
 
   ;; Initialize buffer
   (weechat-request-initial-lines buffer-ptr))
