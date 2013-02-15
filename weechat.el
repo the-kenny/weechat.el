@@ -70,7 +70,7 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
-(defface weechat-prompt-face '((t :weight bold :foreground "black" :background "grey90"))
+(defface weechat-prompt-face '((t :inherit minibuffer-prompt))
   "Weechat face used for the prompt."
   :group 'weechat)
 
