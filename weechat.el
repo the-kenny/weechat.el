@@ -373,7 +373,9 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
   (when (featurep 'notifications)
     (setq weechat--last-notification-id
           (notifications-notify
-           :title (xml-escape-string (concat "Weechat.el: Message from <" sender ">"))
+           :title (xml-escape-string (concat "Weechat.el: Message from <"
+                                             (weechat-strip-formatting sender)
+                                             ">"))
            :body (xml-escape-string text)
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
