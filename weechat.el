@@ -81,6 +81,18 @@ increased for that line."
   :type 'integer
   :group 'weechat)
 
+(defcustom weechat-fill-text t
+  "Wether weechat should fill text paragraphs automatically"
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-fill-column 'frame-width
+  "Column used for filling text in buffers"
+  :type '(choice
+          (const :tag "Frame width" 'frame-width)
+          (integer :tag "Number")
+          (const :tag "Default" t)))
+
 (defcustom weechat-notification-icon nil
   "Icon used in notifications"
   :type '(choice (const :tag "No icon" nil)
@@ -442,14 +454,25 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                       (- (point-max) (point-min)))))
               (when (> chars-to-insert 0)
                 (insert-char ?\s chars-to-insert)))
-          
-            (insert (if highlight
-                        (propertize (s-trim text) 'face 'weechat-highlight-face)
-                      (s-trim text))
-                    "\n")
-            (when weechat-read-only
-              (add-text-properties (point-min) weechat-prompt-start-marker
-                                   '(read-only t)))))
+            
+            (let ((fill-start (point))
+                  (fill-prefix (make-string (- (point-max) (point-min)) ?\s))
+                  (fill-column (cond ((eq weechat-fill-column 'frame-width)
+                                      (frame-width))
+                                     (weechat-fill-column
+                                      weechat-fill-column)
+                                     (t fill-column))))
+              (insert (if highlight
+                          (propertize (s-trim text) 'face 'weechat-highlight-face)
+                        (s-trim text))
+                      "\n")
+
+              (when weechat-fill-text
+                (fill-region fill-start weechat-prompt-start-marker))))
+
+          (when weechat-read-only
+            (add-text-properties (point-min) weechat-prompt-start-marker
+                                 '(read-only t))))
 
         (when (and (not weechat-inhibit-notifications) highlight)
           (weechat-notify sender text date))
