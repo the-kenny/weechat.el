@@ -74,6 +74,25 @@ See `format-time-string' for format description."
   "Weechat face used for the prompt."
   :group 'weechat)
 
+(defcustom weechat-text-column 22
+  "Column after which text will be inserted. If `(length (concat
+nick timestamp))' is longer than this value, text-column will be
+increased for that line."
+  :type 'integer
+  :group 'weechat)
+
+(defcustom weechat-fill-text t
+  "Wether weechat should fill text paragraphs automatically"
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-fill-column 'frame-width
+  "Column used for filling text in buffers"
+  :type '(choice
+          (const :tag "Frame width" 'frame-width)
+          (integer :tag "Number")
+          (const :tag "Default" t)))
+
 (defcustom weechat-notification-icon nil
   "Icon used in notifications"
   :type '(choice (const :tag "No icon" nil)
@@ -544,19 +563,41 @@ The optional paramteres are internal!"
         (let ((inhibit-read-only t))
           (goto-char (marker-position weechat-prompt-start-marker))
 
-          ;; Hack borrowed from rcirc:
-          ;; temporarily set the marker insertion-type because
-          ;; insert-before-markers results in hidden text in new buffers
-          (set-marker-insertion-type weechat-prompt-start-marker t)
-          (set-marker-insertion-type weechat-prompt-end-marker t)
+          (save-restriction
+            ;; Hack borrowed from rcirc:
+            ;; temporarily set the marker insertion-type because
+            ;; insert-before-markers results in hidden text in new buffers
+            (set-marker-insertion-type weechat-prompt-start-marker t)
+            (set-marker-insertion-type weechat-prompt-end-marker t)
 
-          (when date
-            (insert (format-time-string weechat-time-format date) " "))
-          (insert (weechat-handle-color-codes sender) ": ")
-          (insert (if highlight
-                      (propertize (s-trim text) 'face 'weechat-highlight-face)
-                    (s-trim text))
-                  "\n")
+            (narrow-to-region (point-at-bol)
+                              weechat-prompt-start-marker)
+            
+            (when date
+              (insert (format-time-string weechat-time-format date) " "))
+            (insert (weechat-handle-color-codes sender) ": ")
+
+            (let ((chars-to-insert
+                   (- weechat-text-column
+                      (- (point-max) (point-min)))))
+              (when (> chars-to-insert 0)
+                (insert-char ?\s chars-to-insert)))
+            
+            (let ((fill-start (point))
+                  (fill-prefix (make-string (- (point-max) (point-min)) ?\s))
+                  (fill-column (cond ((eq weechat-fill-column 'frame-width)
+                                      (frame-width))
+                                     (weechat-fill-column
+                                      weechat-fill-column)
+                                     (t fill-column))))
+              (insert (if highlight
+                          (propertize (s-trim text) 'face 'weechat-highlight-face)
+                        (s-trim text))
+                      "\n")
+
+              (when weechat-fill-text
+                (fill-region fill-start weechat-prompt-start-marker))))
+
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t))))
