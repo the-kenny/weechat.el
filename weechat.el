@@ -321,27 +321,28 @@ Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
 Be aware that Weechat does not use mIRC color codes.
 See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings."
   (unless (s-blank? string)
-    (let ((ret "")
-          face
-          (j 0)
-          i)
-      (while (setq i (string-match "\\(\x19\\)\\(F\\|B\\)\\([[:digit:]][[:digit:]]\\)"
-                                   string j))
-        (when (> i 0)
-          (setq ret (concat ret
-                            (if face
-                                (propertize (substring string j i) 'face face)
-                              (substring string j i)))))
-        (setq face (list (list (if (string= (match-string 2 string) "F")
-                                   :foreground
-                                 :background)
-                               (nth (string-to-number (match-string 3 string))
-                                    weechat-color-list))))
-        (setq j (+ i (length (match-string 0 string)))))
-      (weechat-strip-formatting ;; Strip any formatting we left
-       (concat ret (if face
-                       (propertize (substring string j) 'face face)
-                     (substring string j)))))))
+    (save-match-data
+      (let ((ret "")
+            face
+            (j 0)
+            i)
+        (while (setq i (string-match "\\(\x19\\)\\(F\\|B\\)\\([[:digit:]][[:digit:]]\\)"
+                                     string j))
+          (when (> i 0)
+            (setq ret (concat ret
+                              (if face
+                                  (propertize (substring string j i) 'face face)
+                                (substring string j i)))))
+          (setq face (list (list (if (string= (match-string 2 string) "F")
+                                     :foreground
+                                   :background)
+                                 (nth (string-to-number (match-string 3 string))
+                                      weechat-color-list))))
+          (setq j (+ i (length (match-string 0 string)))))
+        (weechat-strip-formatting ;; Strip any formatting we left
+         (concat ret (if face
+                         (propertize (substring string j) 'face face)
+                       (substring string j))))))))
 
 (defun weechat-print-line (buffer-ptr sender text)
   (setq text   (or text ""))
