@@ -350,9 +350,14 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                          (propertize (substring string j) 'face face)
                        (substring string j))))))))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date)
+(defface weechat-highlight-face '((t :background "light blue"))
+  "Weechat face for highlighted lines."
+  :group 'weechat)
+
+(defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
+  (setq highlight (= 1 highlight))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (when (not (bufferp buffer))
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
@@ -371,7 +376,10 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
           (when date
             (insert (format-time-string weechat-time-format date) " "))
           (insert (weechat-handle-color-codes sender) ": ")
-          (insert (s-trim text) "\n")
+          (insert (if highlight
+                      (propertize (s-trim text) 'face 'weechat-highlight-face)
+                    (s-trim text))
+                  "\n")
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t))))
@@ -404,11 +412,12 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                     (equal 1 (assoc-default "displayed" line-data))))
       (let ((sender (assoc-default "prefix" line-data))
             (message (assoc-default "message" line-data))
-            (date (assoc-default "date_printed" line-data)))
+            (date (assoc-default "date_printed" line-data))
+            (highlight (assoc-default "highlight" line-data)))
         (when weechat-debug-strip-formatting
           ;(setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
-        (weechat-print-line buffer-ptr sender message date)))))
+        (weechat-print-line buffer-ptr sender message date highlight)))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
