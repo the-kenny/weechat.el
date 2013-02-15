@@ -310,6 +310,38 @@ relay server.")
                  "someone has joined #asdfasdfasdf"))
   (should (equal (weechat-strip-formatting "ddd") "ddd")))
 
+(defvar weechat-color-list '(unspecified "black" "dark gray" "dark red" "red" "dark green" "light green" "brown" "yellow" "dark blue" "light blue" "dark magenta" "magenta" "dark cyan" "light cyan" "gray" "white")
+  "Mapping of Weechat colors.
+See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings")
+
+(defun weechat-handle-color-codes (string)
+  "Convert the Weechat color codes in STRING to properties.
+Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
+
+Be aware that Weechat does not use mIRC color codes.
+See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings."
+  (unless (s-blank? string)
+    (let ((ret "")
+          face
+          (j 0)
+          i)
+      (while (setq i (string-match "\\(\x19\\)\\(F\\|B\\)\\([[:digit:]][[:digit:]]\\)"
+                                   string j))
+        (when (> i 0)
+          (setq ret (concat ret
+                            (if face
+                                (propertize (substring string j i) 'face face)
+                              (substring string j i)))))
+        (setq face (list (list (if (string= (match-string 2 string) "F")
+                                   :foreground
+                                 :background)
+                               (nth (string-to-number (match-string 3 string))
+                                    weechat-color-list))))
+        (setq j (+ i (length (match-string 0 string)))))
+      (weechat-strip-formatting ;; Strip any formatting we left
+       (concat ret (if face
+                       (propertize (substring string j) 'face face)
+                     (substring string j)))))))
 
 (defun weechat-print-line (buffer-ptr sender text)
   (setq text   (or text ""))
@@ -329,7 +361,7 @@ relay server.")
           (set-marker-insertion-type weechat-prompt-start-marker t)
           (set-marker-insertion-type weechat-prompt-end-marker t)
 
-          (insert sender ": ")
+          (insert (weechat-handle-color-codes sender) ": ")
           (insert (s-trim text) "\n")
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
@@ -364,7 +396,7 @@ relay server.")
       (let ((sender (assoc-default "prefix" line-data))
             (message (assoc-default "message" line-data)))
         (when weechat-debug-strip-formatting
-          (setq sender (weechat-strip-formatting sender))
+          ;(setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
         (weechat-print-line buffer-ptr sender message)))))
 
