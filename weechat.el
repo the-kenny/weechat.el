@@ -613,7 +613,9 @@ The optional paramteres are internal!"
             
             (when date
               (insert (format-time-string weechat-time-format date) " "))
-            (insert (weechat-handle-color-codes sender) ": ")
+
+            (unless (s-blank? (weechat-handle-color-codes sender))
+             (insert (weechat-handle-color-codes sender) ": "))
 
             (let ((chars-to-insert
                    (- weechat-text-column
