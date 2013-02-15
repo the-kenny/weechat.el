@@ -551,14 +551,20 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
         (when show-buffer
           (switch-to-buffer (current-buffer)))))))
 
+(defun weechat-reload-buffer (&optional buffer)
+  (interactive)
+  (with-current-buffer (or buffer (current-buffer))
+    (weechat-relay-log
+     (format "Re-monitoring buffer %S" buffer))
+    (weechat-monitor-buffer weechat-buffer-ptr)))
+
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
     (maphash (lambda (buffer-ptr hash)
-               (when (and (gethash :emacs/buffer hash)
-                          (buffer-live-p (get-buffer (gethash :emacs/buffer hash))))
-                 (weechat-relay-log
-                  (format "Re-monitoring buffer %S" (gethash :emacs/buffer hash)))
-                 (weechat-monitor-buffer buffer-ptr)))
+               (let ((buffer (and (gethash :emacs/buffer hash)
+                                  (get-buffer (gethash :emacs/buffer hash)))))
+                 (when (buffer-live-p buffer)
+                   (weechat-reload-buffer buffer))))
              weechat--buffer-hashes)))
 
 (add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
