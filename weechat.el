@@ -74,6 +74,13 @@ See `format-time-string' for format description."
   "Weechat face used for the prompt."
   :group 'weechat)
 
+(defcustom weechat-text-column 22
+  "Column after which text will be inserted. If `(length (concat
+nick timestamp))' is longer than this value, text-column will be
+increased for that line."
+  :type 'integer
+  :group 'weechat)
+
 (defcustom weechat-notification-icon nil
   "Icon used in notifications"
   :type '(choice (const :tag "No icon" nil)
@@ -416,22 +423,33 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
         (let ((inhibit-read-only t))
           (goto-char (marker-position weechat-prompt-start-marker))
 
-          ;; Hack borrowed from rcirc:
-          ;; temporarily set the marker insertion-type because
-          ;; insert-before-markers results in hidden text in new buffers
-          (set-marker-insertion-type weechat-prompt-start-marker t)
-          (set-marker-insertion-type weechat-prompt-end-marker t)
+          (save-restriction
+            ;; Hack borrowed from rcirc:
+            ;; temporarily set the marker insertion-type because
+            ;; insert-before-markers results in hidden text in new buffers
+            (set-marker-insertion-type weechat-prompt-start-marker t)
+            (set-marker-insertion-type weechat-prompt-end-marker t)
 
-          (when date
-            (insert (format-time-string weechat-time-format date) " "))
-          (insert (weechat-handle-color-codes sender) ": ")
-          (insert (if highlight
-                      (propertize (s-trim text) 'face 'weechat-highlight-face)
-                    (s-trim text))
-                  "\n")
-          (when weechat-read-only
-            (add-text-properties (point-min) weechat-prompt-start-marker
-                                 '(read-only t))))
+            (narrow-to-region (point-at-bol)
+                              weechat-prompt-start-marker)
+            
+            (when date
+              (insert (format-time-string weechat-time-format date) " "))
+            (insert (weechat-handle-color-codes sender) ": ")
+
+            (let ((chars-to-insert
+                   (- weechat-text-column
+                      (- (point-max) (point-min)))))
+              (when (> chars-to-insert 0)
+                (insert-char ?\s chars-to-insert)))
+          
+            (insert (if highlight
+                        (propertize (s-trim text) 'face 'weechat-highlight-face)
+                      (s-trim text))
+                    "\n")
+            (when weechat-read-only
+              (add-text-properties (point-min) weechat-prompt-start-marker
+                                   '(read-only t)))))
 
         (when (and (not weechat-inhibit-notifications) highlight)
           (weechat-notify sender text date))
