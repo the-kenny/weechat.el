@@ -350,11 +350,11 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                          (const :tag "Color" color)))
   :group 'weechat)
 
-(defvar weechat-color-attributes-alist '((?* . (:weight  bold)) ; bold
+(defvar weechat-color-attributes-alist '((?* . (:weight  bold))    ; bold
                                          (?! . (:inverse-video t)) ; reverse??
-                                         (?/ . (:slant  italic)) ; italic
-                                         (?_ . (:underline t)) ; underline
-                                         (?| . nil)) ; keep??
+                                         (?/ . (:slant  italic))   ; italic
+                                         (?_ . (:underline t))     ; underline
+                                         (?| . keep))              ; keep
   "Map color attribute specifiers to Emacs face property.")
 
 (defun weechat--match-color-code (what str i)
@@ -411,7 +411,12 @@ The optional paramteres are internal!"
            (let (match-data
                  (j (1+ i)))
              (while (setq match-data (weechat--match-color-code 'attr str j)) ;; (A)
-               (setq face (append (list (cl-third match-data)) face))
+               (if (eq (cl-third match-data) 'keep)
+                   (setq face (cl-delete-if (lambda (x) ;; Delete color part and keep attrs
+                                              (memq (car x)
+                                                    '(:foreground :background)))
+                                            old-face))
+                 (setq face (append (list (cl-third match-data)) face)))
                (setq j (cl-second match-data)))
              (setq match-data (weechat--match-color-code 'std str j))
              (if match-data
