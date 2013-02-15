@@ -1,11 +1,11 @@
-* Short-Term [4/13]
+* Short-Term [4/12]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
-** TODO Handle 'sync' events [4/15]
+** TODO Handle 'sync' events [5/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
    - [X] _buffer_renamed
-   - [ ] _buffer_title_changed
+   - [X] _buffer_title_changed
    - [ ] _buffer_localvar_added
    - [ ] _buffer_localvar_changed
    - [ ] _buffer_localvar_removed

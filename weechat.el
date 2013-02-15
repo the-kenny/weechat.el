@@ -234,6 +234,24 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
 (weechat-relay-add-id-callback "_buffer_renamed" #'weechat--handle-buffer-renamed nil 'force)
 
+(defun weechat--handle-buffer-title-changed (response)
+  (let* ((hdata (car response))
+         (value (car (weechat--hdata-values hdata)))
+         (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+         (hash (weechat-buffer-hash buffer-ptr))
+         (alist (weechat--hdata-value-alist value))
+         (buffer (gethash :emacs/buffer hash))
+         (new-title (or (cdr (assoc-string "title" alist)) "")))
+    (unless (weechat-buffer-hash buffer-ptr)
+      (error "Received '_buffer_title_changed' event for '%s' but the buffer doesn't exist" buffer-ptr))
+    (puthash "title" new-title hash)
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (setq weechat-topic new-title)
+        (weechat-update-header-line-buffer buffer)))))
+
+(weechat-relay-add-id-callback "_buffer_title_changed" #'weechat--handle-buffer-title-changed nil 'force)
+
 (defun weechat-connect (host port password)
   (interactive (list (read-string "Relay Host: ")
                      (read-number "Port: ")
