@@ -26,24 +26,65 @@
 (require 'cl-lib)
 (require 'ert)
 (require 'rx)
+(require 'notifications nil t) ;; Optional
 
-(defvar weechat-read-only t
-  "Whether to make text in weechat buffers read-only.")
+(defgroup weechat nil
+  "Weechat based IRC client for Emacs."
+  :link '(url-link "https://github.com/the-kenny/weechat.el")
+  :prefix "weechat-"
+  :group 'applications)
 
-(defvar weechat-initial-lines 100
-  "Number of lines to show when initializing a channel buffer.")
+(defcustom weechat-read-only t
+  "Whether to make text in weechat buffers read-only."
+  :type 'boolean
+  :group 'weechat)
 
-(defvar weechat-prompt "> ")
+(defcustom weechat-initial-lines 100
+  "Number of lines to show when initializing a channel buffer."
+  :type 'integer
+  :group 'weechat)
 
-(defvar weechat-hide-like-weechat t
-  "Hide lines in buffer when they're hidden in weechat.")
+(defcustom weechat-prompt "> "
+  "The Weechat prompt."
+  :type 'string
+  :group 'weechat)
 
-(defvar weechat-connect-hook nil
-  "Hook run when successfully connected and authenticated.")
+(defcustom weechat-hide-like-weechat t
+  "Hide lines in buffer when they're hidden in Weechat."
+  :type 'boolean
+  :group 'weechat)
 
-(defvar weechat-auto-reconnect-buffers t
-  "Automatically re-monitor channel buffers which were opened on
-  a prior connection")
+(defcustom weechat-connect-hook nil
+  "Hook run when successfully connected and authenticated."
+  :type '(choice (const :tag "Off" nil)
+                 (function :tag "Hook"))
+  :group 'weechat)
+
+(defcustom weechat-auto-reconnect-buffers t
+  "Automatically re-monitor channel buffers which were opened on a prior connection."
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-time-format "%H:%M:%S"
+  "How to format time stamps.
+See `format-time-string' for format description."
+  :type 'string
+  :group 'weechat)
+
+(defface weechat-prompt-face '((t :weight bold :foreground "black" :background "grey90"))
+  "Weechat face used for the prompt."
+  :group 'weechat)
+
+(defcustom weechat-use-notifications (featurep 'notifications)
+  "Use notifications."
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-notification-icon nil
+  "Icon used in notifications"
+  :type '(choice (const :tag "No icon" nil)
+                 (file :tag "Icon file"))
+  :group 'weechat)
 
 ;;; Code:
 
@@ -162,7 +203,7 @@
                      (read-number "Port: ")
                      (read-passwd "Password: ")))
   (when (weechat-relay-connected-p)
-    (if (y-or-n-p "Already connected. Disconnect other connection? ")
+    (if (y-or-n-p "Already connected.  Disconnect other connection? ")
         (weechat-relay-disconnect)
       (error "Can't open two connections")))
   
@@ -229,7 +270,7 @@
 
 (defvar weechat-buffer-ptr nil
   "The pointer of the channel buffer. Used to identify it on the
-  relay server.")
+relay server.")
 (defvar weechat-server-buffer nil
   "The relay buffer associated with this channel buffer.")
 (defvar weechat-topic nil
@@ -251,7 +292,8 @@
                            weechat-prompt-start-marker)))
         (add-text-properties weechat-prompt-start-marker
                              weechat-prompt-end-marker
-                             (list 'read-only t
+                             (list 'face 'weechat-prompt-face
+                                   'read-only t
                                    'field t
                                    'rear-nonsticky t
                                    'front-sticky t))))))
@@ -282,7 +324,7 @@
           ""))))
 
 (defun weechat-strip-formatting (string)
-  "Strips weechat color codes from STRING"
+  "Strip weechat color codes from STRING."
   (replace-regexp-in-string weechat-formatting-regex "" string))
 
 (ert-deftest weechat-color-stripping ()
@@ -291,13 +333,64 @@
                  "someone has joined #asdfasdfasdf"))
   (should (equal (weechat-strip-formatting "ddd") "ddd")))
 
+(defvar weechat-color-list '(unspecified "black" "dark gray" "dark red" "red" "dark green" "light green" "brown" "yellow" "dark blue" "light blue" "dark magenta" "magenta" "dark cyan" "light cyan" "gray" "white")
+  "Mapping of Weechat colors.
+See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings")
 
-(defun weechat-print-line (buffer-ptr sender text)
+(defun weechat-handle-color-codes (string)
+  "Convert the Weechat color codes in STRING to properties.
+Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
+
+Be aware that Weechat does not use mIRC color codes.
+See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings."
+  (unless (s-blank? string)
+    (save-match-data
+      (let ((ret "")
+            face
+            (j 0)
+            i)
+        (while (setq i (string-match "\\(\x19\\)\\(F\\|B\\)\\([[:digit:]][[:digit:]]\\)"
+                                     string j))
+          (when (> i 0)
+            (setq ret (concat ret
+                              (if face
+                                  (propertize (substring string j i) 'face face)
+                                (substring string j i)))))
+          (setq face (list (list (if (string= (match-string 2 string) "F")
+                                     :foreground
+                                   :background)
+                                 (nth (string-to-number (match-string 3 string))
+                                      weechat-color-list))))
+          (setq j (+ i (length (match-string 0 string)))))
+        (weechat-strip-formatting ;; Strip any formatting we left
+         (concat ret (if face
+                         (propertize (substring string j) 'face face)
+                       (substring string j))))))))
+
+(defvar weechat--last-notification-id nil
+  "Last notification id parameter for :replaces-id.")
+(defun weechat-notify (sender text date)
+  (when (featurep 'notifications)
+    (setq weechat--last-notification-id
+          (notifications-notify
+           :title (xml-escape-string (concat "Weechat.el: Message from <"
+                                             (weechat-strip-formatting sender)
+                                             ">"))
+           :body (xml-escape-string text)
+           :app-icon weechat-notification-icon
+           :replaces-id weechat--last-notification-id))))
+
+(defface weechat-highlight-face '((t :background "light blue"))
+  "Weechat face for highlighted lines."
+  :group 'weechat)
+
+(defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
+  (setq highlight (= 1 highlight))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (when (not (bufferp buffer))
-      (error "Couldn't find emacs buffer for weechat-buffer %s" buffer-ptr))
+      (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
     (with-current-buffer buffer
       (let ((at-end (= (point) weechat-prompt-end-marker))
             (old-point (point-marker)))
@@ -310,11 +403,19 @@
           (set-marker-insertion-type weechat-prompt-start-marker t)
           (set-marker-insertion-type weechat-prompt-end-marker t)
 
-          (insert sender ": ")
-          (insert (s-trim text) "\n")
+          (when date
+            (insert (format-time-string weechat-time-format date) " "))
+          (insert (weechat-handle-color-codes sender) ": ")
+          (insert (if highlight
+                      (propertize (s-trim text) 'face 'weechat-highlight-face)
+                    (s-trim text))
+                  "\n")
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t))))
+
+        (when (and weechat-use-notifications highlight)
+            (weechat-notify sender text date))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
@@ -343,11 +444,13 @@
                (and weechat-hide-like-weechat
                     (equal 1 (assoc-default "displayed" line-data))))
       (let ((sender (assoc-default "prefix" line-data))
-            (message (assoc-default "message" line-data)))
+            (message (assoc-default "message" line-data))
+            (date (assoc-default "date" line-data))
+            (highlight (assoc-default "highlight" line-data)))
         (when weechat-debug-strip-formatting
-          (setq sender (weechat-strip-formatting sender))
+          ;(setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
-        (weechat-print-line buffer-ptr sender message)))))
+        (weechat-print-line buffer-ptr sender message date highlight)))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
@@ -378,10 +481,10 @@
 (defun weechat-return ()
   (interactive)
   ;; TODO: Copy current line when not in input area
-  (when (and (> (point) weechat-prompt-end-marker))
-    (let ((input (buffer-substring-no-properties weechat-prompt-end-marker (point-max))))
-      (when (not (equal "" (s-trim input)))
-        (setq input (s-trim-right input))
+  (when (> (point) weechat-prompt-end-marker)
+    (let ((input (s-trim-right (buffer-substring-no-properties weechat-prompt-end-marker
+                                                               (point-max)))))
+      (unless (string= "" input)
         (dolist (l (split-string input "\n"))
           (weechat-send-input weechat-buffer-ptr l))
         (delete-region weechat-prompt-end-marker (point-max))))))
@@ -393,7 +496,9 @@
   "Keymap for weechat mode.")
 
 (defun weechat-mode (process buffer-ptr buffer-hash)
-  "Major mode used by weechat buffers."
+  "Major mode used by weechat buffers.
+
+\\{weechat-mode-map}"
 
   (kill-all-local-variables)
 
@@ -434,7 +539,7 @@
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
            (name (weechat-buffer-name buffer-ptr)))
       (when (not (hash-table-p buffer-hash))
-        (error "Couldn't find buffer %s on relay server." buffer-ptr))
+        (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
       (with-current-buffer (get-buffer-create name)
         (fundamental-mode)
