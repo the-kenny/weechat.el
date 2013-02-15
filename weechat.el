@@ -720,6 +720,7 @@ The optional paramteres are internal!"
 (defvar weechat-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-return)
+    (define-key map (kbd "C-x C-r") 'weechat-reload-buffer)
     map)
   "Keymap for weechat mode.")
 
