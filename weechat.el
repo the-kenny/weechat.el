@@ -119,6 +119,11 @@ Set to nil to disable header line.  Currently only supported format option is %t
            (weechat-update-header-line)))
   :group 'weechat)
 
+(defcustom weechat-input-ring-size 20
+  "Size for the input ring"
+  :type 'integer
+  :group 'weechat)
+
 ;;; Code:
 
 (defvar weechat-debug-strip-formatting nil)
@@ -708,20 +713,66 @@ The optional paramteres are internal!"
   (weechat-relay-send-command
    (format "input %s %s" target input)))
 
+(defun weechat-get-input ()
+  (s-trim-right
+   (buffer-substring-no-properties
+    weechat-prompt-end-marker
+    (point-max))))
+
+(defun weechat-replace-input (replacement)
+  (save-excursion
+    (delete-region weechat-prompt-end-marker (point-max))
+    (goto-char weechat-prompt-end-marker)
+    (insert replacement)))
+
+(defvar weechat-input-ring)
+
+(defun weechat-input-ring-insert (input)
+  (unless (ring-member weechat-input-ring input)
+   (ring-insert weechat-input-ring input)))
+
+(defun weechat-previous-input ()
+  (interactive)
+  (let ((input (weechat-get-input)))
+    ;; If input isn't in the ring, assume push it in and show first
+    (cond
+     ((string= input "")
+      (weechat-replace-input (car (ring-elements weechat-input-ring))))
+     ((not (ring-member weechat-input-ring input))
+      (weechat-input-ring-insert input)
+      (weechat-replace-input (car (ring-elements weechat-input-ring))))
+     ((ring-member weechat-input-ring input)
+      (weechat-replace-input (ring-next weechat-input-ring input))))))
+
+(defun weechat-next-input ()
+  (interactive)
+  (let ((input (weechat-get-input)))
+    ;; If input isn't in the ring, assume push it in and show first
+    (cond
+     ((string= input "")
+      (weechat-replace-input (last (ring-elements weechat-input-ring))))
+     ((not (ring-member weechat-input-ring input))
+      (weechat-input-ring-insert input)
+      (weechat-replace-input (last (ring-elements weechat-input-ring))))
+     ((ring-member weechat-input-ring input)
+      (weechat-replace-input (ring-previous weechat-input-ring input))))))
+
 (defun weechat-return ()
   (interactive)
   ;; TODO: Copy current line when not in input area
   (when (> (point) weechat-prompt-end-marker)
-    (let ((input (s-trim-right (buffer-substring-no-properties weechat-prompt-end-marker
-                                                               (point-max)))))
+    (let ((input (weechat-get-input)))
       (unless (string= "" input)
         (dolist (l (split-string input "\n"))
           (weechat-send-input weechat-buffer-ptr l))
-        (delete-region weechat-prompt-end-marker (point-max))))))
+        (weechat-input-ring-insert input)
+        (weechat-replace-input "")))))
 
 (defvar weechat-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-return)
+    (define-key map (kbd "M-p") 'weechat-previous-input)
+    (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-x C-r") 'weechat-reload-buffer)
     map)
   "Keymap for weechat mode.")
@@ -783,6 +834,8 @@ Default is current buffer."
   (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
   (weechat-update-prompt)
+
+  (set (make-local-variable 'weechat-input-ring) (make-ring weechat-input-ring-size))
 
   ;; Don't auto-add newlines on next-line
   (set (make-local-variable 'next-line-add-newlines) nil)
