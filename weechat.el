@@ -412,7 +412,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                     (equal 1 (assoc-default "displayed" line-data))))
       (let ((sender (assoc-default "prefix" line-data))
             (message (assoc-default "message" line-data))
-            (date (assoc-default "date_printed" line-data))
+            (date (assoc-default "date" line-data))
             (highlight (assoc-default "highlight" line-data)))
         (when weechat-debug-strip-formatting
           ;(setq sender (weechat-strip-formatting sender))
