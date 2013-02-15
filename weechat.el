@@ -336,36 +336,114 @@ relay server.")
   "Mapping of Weechat colors.
 See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings")
 
-(defun weechat-handle-color-codes (string)
-  "Convert the Weechat color codes in STRING to properties.
+(defvar weechat-color-attributes-alist '((?* . (:weight  bold)) ; bold
+                                         (?! . (:inverse-video t)) ; reverse??
+                                         (?/ . (:slant  italic)) ; italic
+                                         (?_ . (:underline t)) ; underline
+                                         (?| . nil)) ; keep??
+  "Map color attribute specifiers to Emacs face property.")
+
+(defun weechat--match-color-code (what str i)
+  "Match std, ext, attr WHAT on STR at position I.
+This is internal and used by `weechat-handle-color-codes'."
+  (when (symbolp what)
+      (cl-case what
+        ((std)
+         (let ((std (substring str i (+ i 2))))
+           (when (s-matches? "^[0-9]+$" std)
+             (list 'std (+ i 2) (string-to-number std)))))
+        ((ext)
+         (when (= (aref str i) ?@)
+           (let ((std (substring str (1+ i) (+ i 6))))
+             (when (s-matches? "^[0-9]+$" std)
+               (list 'ext (+ i 6) (string-to-number std))))))
+        ((attr)
+         (let* ((a (aref str i))
+                (x (cdr (assq a weechat-color-attributes-alist))))
+           (when x
+             (list 'attr (1+ i) x))))
+        (t (error "unknown parameter %s" what)))))
+
+(defun weechat-handle-color-codes (str &optional i ret face)
+  "Convert the Weechat color codes in STR to properties.
 Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
 
 Be aware that Weechat does not use mIRC color codes.
-See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings."
-  (if (s-blank? string)
-      ""
-    (save-match-data
-      (let ((ret "")
-            face
-            (j 0)
-            i)
-        (while (setq i (string-match "\\(\x19\\)\\(F\\|B\\)\\([[:digit:]][[:digit:]]\\)"
-                                     string j))
-          (when (> i 0)
-            (setq ret (concat ret
-                              (if face
-                                  (propertize (substring string j i) 'face face)
-                                (substring string j i)))))
-          (setq face (list (list (if (string= (match-string 2 string) "F")
-                                     :foreground
-                                   :background)
-                                 (nth (string-to-number (match-string 3 string))
-                                      weechat-color-list))))
-          (setq j (+ i (length (match-string 0 string)))))
-        (weechat-strip-formatting ;; Strip any formatting we left
-         (concat ret (if face
-                         (propertize (substring string j) 'face face)
-                       (substring string j))))))))
+See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings.
+
+The optional paramteres are internal!"
+  (setq i (or i 0))
+  (if (>= i (length str))
+      ret
+    (setq ret (or ret ""))
+    (cl-case (aref str i)
+      ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
+       (let ((old-face face)
+             (next (aref str (1+ i))))
+         (setq face nil)
+         (setq i (1+ i))
+         (cond
+          ((and (<= ?0 next) (<= next ?9)) ;; STD
+           (let ((match-data (weechat--match-color-code 'std str i)))
+             (when match-data
+               ;; TODO
+               (setq i (cl-second match-data)))))
+          ((= next ?@) ;; EXT
+           (let ((match-data (weechat--match-color-code 'ext str i)))
+             (when match-data
+               ;; TODO
+               (setq i (cl-second match-data)))))
+          ((= next ?F) ;; ?F(A)STD|?F(A)EXT
+           (let (match-data
+                 (j (1+ i)))
+             (while (setq match-data (weechat--match-color-code 'attr str j)) ;; (A)
+               (setq face (append (list (cl-third match-data)) face))
+               (setq j (cl-second match-data)))
+             (setq match-data (weechat--match-color-code 'std str j))
+             (if match-data
+                 (setq face (append (list (list :foreground (nth (cl-third match-data)
+                                                                 weechat-color-list)))
+                                    face)) ;; TODO set attribute instead of simply append
+               (setq match-data (weechat--match-color-code 'ext str j))
+               (if match-data
+                   t ;; TODO ext
+                 (error "Broken color code (in ?F '%s' %s)" str i)))
+             (when match-data
+               (setq i (cl-second match-data)))))
+          ((= next ?B) ;; ?BSTD|?BEXT
+           (let ((match-data (weechat--match-color-code 'std str i)))
+             (if match-data
+                 (setq face (list (list :background (nth (cl-third match-data)
+                                                                 weechat-color-list))))
+               (setq match-data (weechat--match-color-code 'ext str i))
+               (if match-data
+                   t ;; TODO ext
+                 (error "Broken color code (in ?B '%s' %s)" str i)))
+             (when match-data
+               (setq i (cl-second match-data)))))
+          ((= next ?*) '*) ;; TODO
+          ((= next ?b) 'b) ;; TODO
+          ((= next ?\x1C)  ;; Clear color, leave attributes
+           (setq face
+                 (cl-delete-if (lambda (x) (memq (car x) '(:foreground :background)))
+                               old-face))))))
+      ((?\x1A) (setq i (1+ i))) ;; TODO
+      ((?\x1B) (setq i (1+ i))) ;; TODO
+      ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
+    (let ((r (string-match-p "\\(\x19\\|\x1A\\|\x1B\\|\x1C\\)" str i)))
+      (if r
+          (weechat-handle-color-codes
+           str r (concat ret
+                         (propertize  (substring str i r) 'face face))
+           face)
+        (concat ret (propertize (substring str i) 'face face))))))
+
+(ert-deftest weechat-color-handling ()
+  "Test `weechat-handle-color-codes'."
+  (should (string= (weechat-handle-color-codes "foo bar baz")
+                   "foo bar baz"))
+  (should (string= (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world")
+                   "hi world")))
 
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
