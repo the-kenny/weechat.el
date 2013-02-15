@@ -26,6 +26,7 @@
 (require 'cl-lib)
 (require 'ert)
 (require 'rx)
+(require 'notifications nil t) ;; Optional
 
 (defgroup weechat nil
   "Weechat based IRC client for Emacs."
@@ -72,6 +73,17 @@ See `format-time-string' for format description."
 
 (defface weechat-prompt-face '((t :weight bold :foreground "black" :background "grey90"))
   "Weechat face used for the prompt."
+  :group 'weechat)
+
+(defcustom weechat-use-notifications (featurep 'notifications)
+  "Use notifications."
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-notification-icon nil
+  "Icon used in notifications"
+  :type '(choice (const :tag "No icon" nil)
+                 (file :tag "Icon file"))
   :group 'weechat)
 
 ;;; Code:
@@ -355,6 +367,17 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
                          (propertize (substring string j) 'face face)
                        (substring string j))))))))
 
+(defvar weechat--last-notification-id nil
+  "Last notification id parameter for :replaces-id.")
+(defun weechat-notify (sender text date)
+  (when (featurep 'notifications)
+    (setq weechat--last-notification-id
+          (notifications-notify
+           :title (xml-escape-string (concat "Weechat.el: Message from <" sender ">"))
+           :body (xml-escape-string text)
+           :app-icon weechat-notification-icon
+           :replaces-id weechat--last-notification-id))))
+
 (defface weechat-highlight-face '((t :background "light blue"))
   "Weechat face for highlighted lines."
   :group 'weechat)
@@ -388,6 +411,9 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t))))
+
+        (when (and weechat-use-notifications highlight)
+            (weechat-notify sender text date))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
