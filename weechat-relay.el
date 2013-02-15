@@ -187,10 +187,11 @@ of bytes consumed."
 
 (defun weechat--relay-unpack-tim (data)
   (let ((obj (bindat-unpack weechat--relay-tim-spec data)))
-    (cl-values (seconds-to-time
-             (string-to-number
-              (bindat-get-field obj 'val)))
-            (bindat-length weechat--relay-tim-spec obj))))
+    (cl-values (let ((val (string-to-number
+                           (bindat-get-field obj 'val))))
+                 (unless (zerop val)
+                   (seconds-to-time val)))
+               (bindat-length weechat--relay-tim-spec obj))))
 
 (defconst weechat--relay-htb-spec
   '((key-type str 3)
