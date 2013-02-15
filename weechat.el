@@ -717,7 +717,10 @@ The optional paramteres are internal!"
   (set (make-local-variable 'next-line-add-newlines) nil)
 
   ;; Initialize buffer
-  (weechat-request-initial-lines buffer-ptr))
+  (weechat-request-initial-lines buffer-ptr)
+
+  ;; Hooks
+  (run-mode-hooks 'weechat-mode-hook))
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   (interactive (list
