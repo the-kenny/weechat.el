@@ -26,7 +26,6 @@
 (require 'cl-lib)
 (require 'ert)
 (require 'rx)
-(require 'notifications nil t) ;; Optional
 
 (defgroup weechat nil
   "Weechat based IRC client for Emacs."
