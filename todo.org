@@ -1,8 +1,6 @@
-* Short-Term [3/11]
+* Short-Term [4/12]
 ** DONE Handle network errors (disconnect)
-   CLOSED: [2013-01-10 Thu 22:48]
 ** DONE Handle opening/closing of buffers (after 'sync')
-   CLOSED: [2013-01-13 Sun 02:06]
 ** TODO Handle 'sync' events [4/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -20,7 +18,6 @@
    - [ ] _upgrade
    - [ ] _upgrade_ended
 ** DONE Print 'connection lost' message to all buffers
-   CLOSED: [2013-02-06 Wed 08:47]
 ** TODO Nick Completion
 ** TODO Input-Ring
 ** TODO Auto-Reconnect
@@ -28,13 +25,15 @@
 ** TODO Mark channel as "read" from Emacs
    send command: "input 0x10f29d0 /input set_unread_current_buffer"
 ** TODO Get (max 100 (count unread)) lines
+** DONE Fill region when receiving long messages
+** TODO Buffer-local URL ring for easy access
+* Big Stuff [1/1]
+** DONE Colors
+   Thanks, Rüdiger
 
-** TODO Fill region when receiving long messages
-* Big Stuff [0/1]
-** TODO Colors
+* Nice to have [2/3]
+** DONE Sauron Integration
 
-* Nice to have [0/3]
-** TODO Sauron Integration
-** TODO DBUS-Integration
+** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
 
