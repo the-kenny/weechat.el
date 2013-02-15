@@ -378,6 +378,12 @@ This is internal and used by `weechat-handle-color-codes'."
              (list 'attr (1+ i) x))))
         (t (error "unknown parameter %s" what)))))
 
+(defun weechat--color-keep-attributes (old-face)
+  "Remove color settings from OLD-FACE but keep the attributes."
+  (cl-delete-if (lambda (x)
+                  (memq (car x) '(:foreground :background)))
+                old-face))
+
 (defun weechat-handle-color-codes (str &optional i ret face)
   "Convert the Weechat color codes in STR to properties.
 Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
@@ -412,10 +418,7 @@ The optional paramteres are internal!"
                  (j (1+ i)))
              (while (setq match-data (weechat--match-color-code 'attr str j)) ;; (A)
                (if (eq (cl-third match-data) 'keep)
-                   (setq face (cl-delete-if (lambda (x) ;; Delete color part and keep attrs
-                                              (memq (car x)
-                                                    '(:foreground :background)))
-                                            old-face))
+                   (setq face (weechat--color-keep-attributes old-face))
                  (setq face (append (list (cl-third match-data)) face)))
                (setq j (cl-second match-data)))
              (setq match-data (weechat--match-color-code 'std str j))
@@ -443,12 +446,28 @@ The optional paramteres are internal!"
           ((= next ?*) '*) ;; TODO
           ((= next ?b) 'b) ;; TODO
           ((= next ?\x1C)  ;; Clear color, leave attributes
-           (setq face
-                 (cl-delete-if (lambda (x) (memq (car x) '(:foreground :background)))
-                               old-face))))))
-      ((?\x1A) (setq i (1+ i))) ;; TODO
-      ((?\x1B) (setq i (1+ i))) ;; TODO
-      ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
+           (setq face (weechat--color-keep-attributes old-face))))))
+
+      ((?\x1A) ;; Set ATTR
+       (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
+         (unless match-data
+           (error "Broken color code (in ?\x1A '%s' %s)" str i))
+         (if (eq (cl-third match-data) 'keep)
+             (setq face (weechat--color-keep-attributes face))
+           (setq face (list (cl-third match-data))))
+         (setq i (cl-second match-data))))
+
+      ((?\x1B) ;; Delete ATTR
+       (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
+             (old-face (copy-sequence face)))
+         (unless match-data
+           (error "Broken color code (in ?\x1B '%s' %s)" str i))
+         (if (eq (cl-third match-data) 'keep)
+             (setq face nil) ;; TODO Does keep here means delete all or keep all?
+           (setq face (delq (cl-third match-data) old-face)))
+         (setq i (cl-second match-data))))
+
+      ((?\x1C) (setq i (+1 i) face nil))) ;; reset face
     (let ((r (string-match-p "\\(\x19\\|\x1A\\|\x1B\\|\x1C\\)" str i)))
       (if r
           (weechat-handle-color-codes
