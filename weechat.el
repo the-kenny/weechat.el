@@ -121,7 +121,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 
 ;;; Code:
 
-(defvar weechat-debug-strip-formatting t)
+(defvar weechat-debug-strip-formatting nil)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
@@ -624,10 +624,12 @@ The optional paramteres are internal!"
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
               
-              (insert (if highlight
-                          (propertize (s-trim text) 'face 'weechat-highlight-face)
-                        (s-trim text))
-                      "\n")
+              (let ((text (weechat-handle-color-codes
+                           (s-trim text))))
+                (insert (if highlight
+                            (propertize text 'face 'weechat-highlight-face)
+                          text)
+                      "\n"))
 
               (when weechat-fill-text
                 ;; Filling is slightly misleading here. We use this
@@ -673,7 +675,7 @@ The optional paramteres are internal!"
             (date (assoc-default "date" line-data))
             (highlight (assoc-default "highlight" line-data)))
         (when weechat-debug-strip-formatting
-                                        ;(setq sender (weechat-strip-formatting sender))
+          (setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
         (weechat-print-line buffer-ptr sender message date highlight)))))
 
