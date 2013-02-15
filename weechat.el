@@ -74,15 +74,19 @@ See `format-time-string' for format description."
   "Weechat face used for the prompt."
   :group 'weechat)
 
-(defcustom weechat-use-notifications (featurep 'notifications)
-  "Use notifications."
-  :type 'boolean
-  :group 'weechat)
-
 (defcustom weechat-notification-icon nil
   "Icon used in notifications"
   :type '(choice (const :tag "No icon" nil)
                  (file :tag "Icon file"))
+  :group 'weechat)
+
+(defcustom weechat-notification-handler nil
+  "Function called to display notificiations"
+  :type '(choice
+          (const :tag "No Notifications" nil)
+          (const :tag "Sauron" 'weechat-sauron-handler)
+          (const :tag "DBUS" 'weechat-notifications-handler)
+          (function :tag "Custom Function"))
   :group 'weechat)
 
 ;;; Code:
@@ -92,6 +96,9 @@ See `format-time-string' for format description."
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
+
+(defvar weechat-inhibit-notifications nil
+  "Non-nil means don't display any weechat notifications")
 
 (defun weechat-connected-p ()
   (and (weechat-relay-connected-p)
@@ -369,7 +376,8 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
 
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
-(defun weechat-notify (sender text date)
+
+(defun weechat-notifications-handler (sender text date)
   (when (featurep 'notifications)
     (setq weechat--last-notification-id
           (notifications-notify
@@ -379,6 +387,17 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
            :body (xml-escape-string text)
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
+
+(defun weechat-sauron-handler (sender text date)
+  (when (featurep 'sauron)
+    (sauron-add-event 'weechat 3
+                      (format "Message from %s"
+                              (weechat-strip-formatting sender)))))
+
+(defun weechat-notify (sender text date)
+  (message "foo")
+  (when (functionp weechat-notification-handler)
+    (funcall weechat-notification-handler sender text date)))
 
 (defface weechat-highlight-face '((t :background "light blue"))
   "Weechat face for highlighted lines."
@@ -414,7 +433,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
             (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t))))
 
-        (when (and weechat-use-notifications highlight)
+        (when (and (not weechat-inhibit-notifications) highlight)
             (weechat-notify sender text date))
 
         ;; Restore old position
@@ -463,8 +482,9 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
     ;; Need to get buffer-ptr from hdata pointer list
     (with-current-buffer (weechat--emacs-buffer buf-ptr)
       (save-excursion
-        (dolist (line-hdata (weechat--hdata-values lines-hdata))
-          (weechat-print-line-data (weechat--hdata-value-alist line-hdata)))))))
+        (let ((weechat-inhibit-notifications t))
+         (dolist (line-hdata (weechat--hdata-values lines-hdata))
+           (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
