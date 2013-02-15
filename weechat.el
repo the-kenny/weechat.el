@@ -456,7 +456,7 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
 The optional paramteres are internal!"
   (setq i (or i 0))
   (if (>= i (length str))
-      ret
+      (or ret "")
     (setq ret (or ret ""))
     (cl-case (aref str i)
       ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
@@ -573,7 +573,7 @@ The optional paramteres are internal!"
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
-  (setq highlight (= 1 highlight))
+  (setq highlight (equal 1 highlight))  ;`=' throws for nil
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (when (not (bufferp buffer))
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
@@ -603,20 +603,19 @@ The optional paramteres are internal!"
               (when (> chars-to-insert 0)
                 (insert-char ?\s chars-to-insert)))
             
-            (let ((fill-start (point))
-                  (fill-prefix (make-string (- (point-max) (point-min)) ?\s))
-                  (fill-column (cond ((eq weechat-fill-column 'frame-width)
-                                      (frame-width))
-                                     (weechat-fill-column
-                                      weechat-fill-column)
-                                     (t fill-column))))
+            (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
+                  (text-start (point)))
+              
               (insert (if highlight
                           (propertize (s-trim text) 'face 'weechat-highlight-face)
                         (s-trim text))
                       "\n")
 
               (when weechat-fill-text
-                (fill-region fill-start weechat-prompt-start-marker))))
+                ;; Filling is slightly misleading here. We use this
+                ;; awesome text property called `wrap-prefix'.
+                (let ((overlay (make-overlay text-start (point-max))))
+                  (overlay-put overlay 'wrap-prefix prefix-string)))))
 
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
