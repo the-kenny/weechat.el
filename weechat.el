@@ -25,7 +25,6 @@
 
 (require 'weechat-relay)
 (require 'cl-lib)
-(require 'ert)
 (require 'rx)
 
 (defgroup weechat nil
@@ -162,17 +161,6 @@ Set to nil to disable header line.  Currently only supported format option is %t
   (unless (weechat-buffer-hash ptr)
     (error "Buffer '%s' doesn't exist" ptr))
   (remhash ptr weechat--buffer-hashes))
-
-(ert-deftest weechat-test-buffer-store ()
-  (let ((weechat--buffer-hashes (copy-hash-table weechat--buffer-hashes)))
-    (weechat--clear-buffer-store)
-    (should (eql 0 (hash-table-count weechat--buffer-hashes)))
-    (let ((data '(("name" . "Foobar"))))
-      (weechat--store-buffer-hash "0xffffff" data)
-      (should (eq (cdar data)
-                  (gethash "name" (weechat-buffer-hash "0xffffff")))))
-    (weechat--remove-buffer-hash "0xffffff")
-    (should (not (weechat-buffer-hash "0xffffff")))))
 
 (defun weechat--handle-buffer-list (response)
   ;; Remove all hashes not found in the new list
@@ -425,12 +413,6 @@ relay server.")
   "Strip weechat color codes from STRING."
   (replace-regexp-in-string weechat-formatting-regex "" string))
 
-(ert-deftest weechat-color-stripping ()
-  (should (equal (weechat-strip-formatting
-                  "F14someone282728F05 has joined 13#asdfasdfasdfF05")
-                 "someone has joined #asdfasdfasdf"))
-  (should (equal (weechat-strip-formatting "ddd") "ddd")))
-
 (defcustom weechat-color-list '(unspecified "black" "dark gray" "dark red" "red"
                                             "dark green" "light green" "brown"
                                             "yellow" "dark blue" "light blue"
@@ -586,13 +568,6 @@ The optional paramteres are internal!"
                          (propertize  (substring str i r) 'face face))
            face)
         (concat ret (propertize (substring str i) 'face face))))))
-
-(ert-deftest weechat-color-handling ()
-  "Test `weechat-handle-color-codes'."
-  (should (string= (weechat-handle-color-codes "foo bar baz")
-                   "foo bar baz"))
-  (should (string= (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world")
-                   "hi world")))
 
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
