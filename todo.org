@@ -24,23 +24,23 @@
 ** TODO List with buffers to "auto-watch"
 ** TODO Mark channel as "read" from Emacs
    send command: "input 0x10f29d0 /input set_unread_current_buffer"
-   
 *** This is currently broken on weechat's side. Waiting for FlashCode.
 ** TODO Get (max 100 (count unread)) lines
 ** DONE Fill region when receiving long messages
 ** TODO Buffer-local URL ring for easy access
 ** TODO Limit buffer size
 ** TODO Fix /me display
+** TODO Nicklist handling
+   Waiting for delta updates (WeeChat 4.1?)
+** TODO Buttons for URLs and other stuff
 * Big Stuff [1/1]
 ** DONE Colors
    Thanks, Rüdiger
-
 * Nice to have [2/5]
 ** DONE Sauron Integration
-
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
 ** TODO SSL Connections
 ** TODO Compression
 ** TODO Read passwords from ~/.authinfo
-
+** TODO Speedbar integration
