@@ -1,4 +1,4 @@
-* Short-Term [5/13]
+* Short-Term [5/14]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [6/15]
@@ -30,6 +30,7 @@
 ** DONE Fill region when receiving long messages
 ** TODO Buffer-local URL ring for easy access
 ** TODO Limit buffer size
+** TODO Fix /me display
 * Big Stuff [1/1]
 ** DONE Colors
    Thanks, Rüdiger
