@@ -801,6 +801,17 @@ The optional paramteres are internal!"
     map)
   "Keymap for weechat mode.")
 
+(easy-menu-define weechat-mode-menu weechat-mode-map
+  "Weechat menu"
+  '("WeeChat"
+    ["Previous Input" weechat-previous-input t]
+    ["Next Input" weechat-next-input t]
+    "-"
+    ["Reload Buffer" weechat-reload-buffer t]
+    ["Close Buffer" kill-buffer t]
+    ["Monitor Buffer" weechat-monitor-buffer t]
+    ["Disconnect" weechat-disconnect t]))
+
 (defun weechat-get-local-var (var &optional buffer-ptr)
   "Return value of local VAR in BUFFER-PTR.
 Default is current buffer."
