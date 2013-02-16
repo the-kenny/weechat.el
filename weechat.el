@@ -834,14 +834,21 @@ The optional paramteres are internal!"
 
 (defun weechat-return ()
   (interactive)
-  ;; TODO: Copy current line when not in input area
-  (when (> (point) weechat-prompt-end-marker)
+  (cond
+   ((> (point) weechat-prompt-end-marker)
+    ;; Submit
     (let ((input (weechat-get-input)))
       (unless (string= "" input)
         (dolist (l (split-string input "\n"))
           (weechat-send-input weechat-buffer-ptr l))
         (weechat-input-ring-insert input)
-        (weechat-replace-input "")))))
+        (weechat-replace-input ""))))
+   ((< (point) weechat-prompt-start-marker)
+    ;; Copy current line to input line
+    (weechat-replace-input
+     (buffer-substring-no-properties
+      (point-at-bol) (point-at-eol)))
+    (goto-char (point-max)))))
 
 (defvar weechat-mode-map
   (let ((map (make-sparse-keymap)))

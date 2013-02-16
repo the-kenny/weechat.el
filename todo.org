@@ -1,4 +1,4 @@
-* Short-Term [7/18]
+* Short-Term [7/20]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [6/15]
@@ -44,6 +44,9 @@
    - [ ] Netsplit
    - [ ] CTCP
    - [ ] WHOIS
+** TODO Hooks for everything!
+** TODO package.el package
+*** TODO Auto-Upload to melpa
 ** DONE Colors
    Thanks, Rüdiger
 
