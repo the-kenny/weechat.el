@@ -590,7 +590,7 @@ The optional paramteres are internal!"
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (sender text &optional _date _buffer-name)
+(defun weechat-sauron-handler (sender _text &optional _date _buffer-name)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (sauron-add-event 'weechat 3
                       (format "Message from %s"
