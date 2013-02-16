@@ -623,6 +623,7 @@ The optional paramteres are internal!"
   (when (and (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
+                      (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date)))
 
@@ -707,14 +708,15 @@ The optional paramteres are internal!"
 	  (buffer-enable-undo))))
 
 (defun weechat-print-line-data (line-data)
-  (let* ((buffer-ptr (assoc-default "buffer" line-data)))
+  (let* ((buffer-ptr (assoc-default "buffer" line-data))
+         (buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
-      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr)) 
+      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
     (let ((sender (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data)))
-      (setq highlight (equal 1 highlight))  ;`=' throws for nil
+      (setq highlight (equal 1 highlight)) ;`=' throws for nil
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       (equal 1 (assoc-default "displayed" line-data)))) 
@@ -727,8 +729,10 @@ The optional paramteres are internal!"
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
-      (when (and (not weechat-inhibit-notifications) highlight)
-        (weechat-notify sender message date)))))
+      (with-current-buffer (or (and (buffer-live-p buffer) buffer)
+                               weechat-relay-log-buffer-name)
+        (when (and (not weechat-inhibit-notifications) highlight)
+          (weechat-notify sender message date))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
