@@ -252,6 +252,25 @@ Set to nil to disable header line.  Currently only supported format option is %t
 
 (weechat-relay-add-id-callback "_buffer_title_changed" #'weechat--handle-buffer-title-changed nil 'force)
 
+(defun weechat--handle-localvar-changed (response)
+  (let* ((hdata (car response))
+         (value (car (weechat--hdata-values hdata)))
+         (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+         (hash (weechat-buffer-hash buffer-ptr))
+         (alist (weechat--hdata-value-alist value))
+         (buffer (gethash :emacs/buffer hash))
+         (new-local-variables (cdr (assoc-string "local_variables" alist))))
+    (unless (weechat-buffer-hash buffer-ptr)
+      (error "Received '_buffer_localvar_changed' event for '%s' but the buffer doesn't exist"
+             buffer-ptr))
+    (puthash "local_variables" new-local-variables hash)
+    (when buffer
+      (with-current-buffer buffer
+        ;(weechat-update-prompt)
+        (weechat-update-header-line-buffer buffer)))))
+
+(weechat-relay-add-id-callback "_buffer_localvar_changed" #'weechat--handle-localvar-changed nil 'force)
+
 (defun weechat-connect (host port password)
   (interactive (list (read-string "Relay Host: ")
                      (read-number "Port: ")
