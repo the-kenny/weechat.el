@@ -1,4 +1,4 @@
-* Short-Term [5/12]
+* Short-Term [5/13]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [6/15]
@@ -29,6 +29,7 @@
 ** TODO Get (max 100 (count unread)) lines
 ** DONE Fill region when receiving long messages
 ** TODO Buffer-local URL ring for easy access
+** TODO Limit buffer size
 * Big Stuff [1/1]
 ** DONE Colors
    Thanks, Rüdiger
@@ -40,4 +41,5 @@
 ** TODO More Unit Tests (ert)
 ** TODO SSL Connections
 ** TODO Compression
+** TODO Read passwords from ~/.authinfo
 
