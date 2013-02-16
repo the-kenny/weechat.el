@@ -179,7 +179,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
   (let* ((hdata (car response))
          (buffer-pointers (mapcar (lambda (x) (car (weechat--hdata-value-pointer-path x)))
                                   (weechat--hdata-values hdata))))
-    (maphash (lambda (k v)
+    (maphash (lambda (k _)
                (unless (cl-find k buffer-pointers
                                 :test 'equal)
                  (remhash k weechat--buffer-hashes)))
@@ -231,8 +231,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
   (let* ((hdata (car response))
          (value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
-         (hash (weechat-buffer-hash buffer-ptr))
-         (alist (weechat--hdata-value-alist value)))
+         (hash (weechat-buffer-hash buffer-ptr)))
     (unless hash
       (error "Received '_buffer_renamed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (puthash "number" (assoc-default "number" value) hash)
@@ -243,6 +242,9 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (weechat-relay-add-id-callback "_buffer_opened" #'weechat--handle-buffer-opened nil 'force)
 (weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
 (weechat-relay-add-id-callback "_buffer_renamed" #'weechat--handle-buffer-renamed nil 'force)
+
+(defvar weechat-topic nil
+  "Topic of the channel buffer.")
 
 (defun weechat--handle-buffer-title-changed (response)
   (let* ((hdata (car response))
@@ -309,7 +311,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defun weechat-disconnect ()
   (interactive)
   (weechat-relay-disconnect)
-  (setq weechat--buffer-alist nil))
+  (setq weechat--buffer-hashes nil))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil)
@@ -331,7 +333,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defun weechat--find-buffer (name)
   (let (ret)
     (maphash
-     (lambda (ptr hash)
+     (lambda (ptr _)
        (let ((bname (weechat-buffer-name ptr)))
          (when (or (equal bname  name)
                    (equal bname  name)
@@ -343,7 +345,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defun weechat-channel-names ()
   (let (ret)
     (maphash
-     (lambda (k v)
+     (lambda (k _)
        (setq ret (cons (weechat-buffer-name k) ret)))
      weechat--buffer-hashes)
     ret))
@@ -351,7 +353,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defun weechat-buffer-list ()
   "List all Weechat buffers."
   (let (acc)
-    (maphash (lambda (k v)
+    (maphash (lambda (_ v)
                (when (buffer-live-p (gethash :emacs/buffer v))
                  (setq acc (cons (gethash :emacs/buffer v) acc))))
              weechat--buffer-hashes)
@@ -366,8 +368,6 @@ Set to nil to disable header line.  Currently only supported format option is %t
 relay server.")
 (defvar weechat-server-buffer nil
   "The relay buffer associated with this channel buffer.")
-(defvar weechat-topic nil
-  "Topic of the channel buffer.")
 (defvar weechat-buffer-number nil)
 (defvar weechat-local-prompt)
 
@@ -597,8 +597,8 @@ The optional paramteres are internal!"
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
 
-(defun weechat-notifications-handler (sender text date)
-  (when (featurep 'notifications)
+(defun weechat-notifications-handler (sender text _)
+  (when (and (featurep 'notifications) (fboundp 'notifications-notify))
     (setq weechat--last-notification-id
           (notifications-notify
            :title (xml-escape-string (concat "Weechat.el: Message from <"
@@ -608,8 +608,8 @@ The optional paramteres are internal!"
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (sender text date)
-  (when (featurep 'sauron)
+(defun weechat-sauron-handler (sender _ __)
+  (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (sauron-add-event 'weechat 3
                       (format "Message from %s"
                               (weechat-strip-formatting sender)))))
@@ -735,12 +735,11 @@ The optional paramteres are internal!"
             (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
 
 (defun weechat-request-initial-lines (buffer-ptr)
-  (let ((buffer (weechat--emacs-buffer buffer-ptr)))
-    (weechat-relay-send-command
-     (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date,buffer,displayed"
-             buffer-ptr
-             weechat-initial-lines)
-     #'weechat-add-initial-lines)))
+  (weechat-relay-send-command
+   (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date,buffer,displayed"
+           buffer-ptr
+           weechat-initial-lines)
+   #'weechat-add-initial-lines))
 
 (defun weechat-send-input (target input)
   (weechat-relay-send-command
@@ -916,7 +915,7 @@ Default is current buffer."
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
-    (maphash (lambda (buffer-ptr hash)
+    (maphash (lambda (_ hash)
                (let ((buffer (and (gethash :emacs/buffer hash)
                                   (get-buffer (gethash :emacs/buffer hash)))))
                  (when (buffer-live-p buffer)
@@ -927,8 +926,7 @@ Default is current buffer."
 
 (defun weechat--handle-buffer-line-added (response)
   (let* ((hdata (car response))
-         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata))))
-         (buffer-ptr (assoc-default "buffer" line-data)))
+         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata)))))
     (weechat-print-line-data line-data)))
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
