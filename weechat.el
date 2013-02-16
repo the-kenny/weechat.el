@@ -694,6 +694,14 @@ The optional paramteres are internal!"
      ((memq :irc_privmsg tags) :irc/privmsg)
      (:error/unknown))))
 
+(defun weechat-print-irc-action (buffer-ptr sender message date highlight)
+  (let ((weechat-text-column 0))
+    (weechat-print-line buffer-ptr
+                        nil
+                        (concat sender message)
+                        date
+                        highlight)))
+
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
          (buffer (weechat--emacs-buffer buffer-ptr)))
@@ -715,12 +723,11 @@ The optional paramteres are internal!"
         ;; Print the line
         (cl-case line-type
           (:irc/action
-           (let ((weechat-text-column 0))
-             (weechat-print-line buffer-ptr
-                                 nil
-                                 (concat sender message)
-                                 date
-                                 highlight)))
+           (weechat-print-irc-action buffer-ptr
+                                     nil
+                                     (concat sender message)
+                                     date
+                                     highlight))
           (:error/unknown
            (progn
              (warn "Got unknown line. Please see `weechat-relay-log-buffer' for details.")
