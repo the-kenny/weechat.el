@@ -763,11 +763,15 @@ The optional paramteres are internal!"
           (dolist (line-hdata (weechat--hdata-values lines-hdata))
             (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
 
+(defvar weechat-initial-lines-buffer-properties
+  '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
+
 (defun weechat-request-initial-lines (buffer-ptr)
   (weechat-relay-send-command
-   (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date,buffer,displayed"
+   (format "hdata buffer:%s/lines/last_line(-%i)/data %s"
            buffer-ptr
-           weechat-initial-lines)
+           weechat-initial-lines
+           (s-join "," weechat-initial-lines-buffer-properties))
    #'weechat-add-initial-lines))
 
 (defun weechat-send-input (target input)
