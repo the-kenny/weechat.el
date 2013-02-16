@@ -766,7 +766,11 @@ The optional paramteres are internal!"
       (weechat-replace-input (ring-ref weechat-input-ring 0))
       (weechat-input-ring-insert input))
      ((ring-member weechat-input-ring input)
-      (weechat-replace-input (ring-next weechat-input-ring input))))))
+      (if (string= (ring-ref weechat-input-ring
+                             (1- (ring-length weechat-input-ring)))
+                   input)
+          (weechat-replace-input "")
+        (weechat-replace-input (ring-next weechat-input-ring input)))))))
 
 (defun weechat-next-input ()
   (interactive)
@@ -781,7 +785,10 @@ The optional paramteres are internal!"
       (weechat-input-ring-insert input)
       (weechat-replace-input (1- (ring-length weechat-input-ring))))
      ((ring-member weechat-input-ring input)
-      (weechat-replace-input (ring-previous weechat-input-ring input))))))
+      (if (string= (ring-ref weechat-input-ring 0)
+                   input)
+          (weechat-replace-input "")
+        (weechat-replace-input (ring-previous weechat-input-ring input)))))))
 
 (defun weechat-return ()
   (interactive)
