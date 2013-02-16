@@ -209,7 +209,7 @@ of bytes consumed."
          (val-fn (symbol-function (intern (concat "weechat--relay-unpack-" val-type))))
          (offset (bindat-length weechat--relay-htb-spec obj))
          (acc ()))
-    (dotimes (i count)
+    (dotimes (_ count)
       (cl-multiple-value-bind (key key-len) (funcall key-fn (substring data offset))
         (cl-multiple-value-bind (val val-len) (funcall val-fn (substring data (+ offset key-len)))
           (setq acc (cons (cons key val) acc))
@@ -230,7 +230,7 @@ of bytes consumed."
          (unpack-fn (symbol-function (intern (concat "weechat--relay-unpack-" type))))
          (offset (bindat-length weechat--relay-arr-spec obj))
          (acc ()))
-    (dotimes (i count)
+    (dotimes (_ count)
       (cl-multiple-value-bind (val val-len) (funcall unpack-fn (substring data offset))
         (setq acc (append acc (list val)))
         (setq offset (+ offset val-len))))
@@ -287,7 +287,7 @@ of bytes consumed."
                  (bindat-get-field obj 'count)
                  4))
          (offset (bindat-length weechat--relay-inl-spec obj)))
-    (dotimes (i count)
+    (dotimes (_ count)
       (cl-multiple-value-bind (item offset*) (weechat--relay-parse-inl-item (substring data offset))
         (setq acc (cons item acc))
         (setq offset (+ offset offset*))))
@@ -298,7 +298,7 @@ of bytes consumed."
   (let ((p-path ())
         (offset 0)
         (result ()))
-    (dotimes (i h-path-length)
+    (dotimes (_ h-path-length)
       (cl-multiple-value-bind (el offset*) (weechat--relay-unpack-ptr (substring data offset))
         (setq p-path (cons el p-path))
         (setq offset (+ offset offset*))))
@@ -337,7 +337,7 @@ of bytes consumed."
          (h-path-length (length (split-string (bindat-get-field obj 'h-path 'val) "[/]")))
          (offset (+ (bindat-length weechat--relay-hdh-spec obj)))
          (acc ()))
-    (dotimes (i count)
+    (dotimes (_ count)
       (cl-multiple-value-bind (obj offset*) (weechat--relay-parse-hda-item
                                              h-path-length name-type-alist (substring data offset))
         (setq acc (cons obj acc))
@@ -442,7 +442,7 @@ CALLBACK takes one argument (the response data) which is a list."
 (ert-deftest weechat-relay-id-callback ()
   (let ((weechat--relay-id-callback-hash
          (copy-hash-table weechat--relay-id-callback-hash)))
-    (let ((fun (lambda (xyz) nil)) )
+    (let ((fun (lambda (_) nil)) )
       (weechat-relay-add-id-callback "23" fun)
       (should (equal fun (weechat-relay-get-id-callback "23")))
       (should (equal fun (weechat-relay-remove-id-callback "23"))))
@@ -453,36 +453,35 @@ CALLBACK takes one argument (the response data) which is a list."
 (ert-deftest weechat-relay-id-callback-one-shot ()
   (let ((weechat--relay-id-callback-hash
          (copy-hash-table weechat--relay-id-callback-hash)))
-    (let ((fun (lambda (xyz) nil)))
+    (let ((fun (lambda (_) nil)))
       (weechat-relay-add-id-callback "23" fun 'one-shot)
       (funcall (weechat-relay-get-id-callback "23") nil)
       (should (equal nil (weechat-relay-get-id-callback "23"))))))
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
-    (let ((moving (= (point) (process-mark proc))))
-      (weechat-relay-log (format "Received %d bytes" (length string))
-                         :warn)
-      ;; Insert the text, advancing the process marker.
-      (goto-char (point-max))
-      (let ((inhibit-read-only t))
-        (insert (string-make-unibyte string)))
-      (while (weechat--message-available-p)
-        (let* ((data (weechat--relay-parse-new-message))
-               (id (weechat--message-id data)))
-          ;; If buffer is available, log message
-          (weechat-relay-log (pp-to-string data) :debug)
-          ;; Call `weechat-relay-message-function'
-          (when (functionp weechat-relay-message-function)
-            (funcall weechat-relay-message-function data))
-          ;; Call callback from `weechat--relay-id-callback-hash'
-          (if (functionp (weechat-relay-get-id-callback id))
-              (funcall (weechat-relay-get-id-callback id)
-                       (weechat--message-data data))))))))
+    (weechat-relay-log (format "Received %d bytes" (length string))
+                       :warn)
+    ;; Insert the text, advancing the process marker.
+    (goto-char (point-max))
+    (let ((inhibit-read-only t))
+      (insert (string-make-unibyte string)))
+    (while (weechat--message-available-p)
+      (let* ((data (weechat--relay-parse-new-message))
+             (id (weechat--message-id data)))
+        ;; If buffer is available, log message
+        (weechat-relay-log (pp-to-string data) :debug)
+        ;; Call `weechat-relay-message-function'
+        (when (functionp weechat-relay-message-function)
+          (funcall weechat-relay-message-function data))
+        ;; Call callback from `weechat--relay-id-callback-hash'
+        (if (functionp (weechat-relay-get-id-callback id))
+            (funcall (weechat-relay-get-id-callback id)
+                     (weechat--message-data data)))))))
 
 (defvar weechat--relay-connected-callback)
 
-(defun weechat--relay-process-sentinel (proc msg)
+(defun weechat--relay-process-sentinel (proc _)
   (let ((event (process-status proc)))
     (weechat-relay-log (format "Received event: %s\n" event))
     (cl-case event
