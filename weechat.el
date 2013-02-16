@@ -797,7 +797,7 @@ The optional paramteres are internal!"
     (define-key map (kbd "RET") 'weechat-return)
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
-    (define-key map (kbd "C-x C-r") 'weechat-reload-buffer)
+    (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
     map)
   "Keymap for weechat mode.")
 
