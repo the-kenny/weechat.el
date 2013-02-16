@@ -702,7 +702,8 @@ The optional paramteres are internal!"
     (let ((sender (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
-          (highlight (assoc-default "highlight" line-data)))
+          (highlight (assoc-default "highlight" line-data))
+          (line-type (weechat-line-type line-data)))
       (setq highlight (equal 1 highlight)) ;`=' throws for nil
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
@@ -712,7 +713,18 @@ The optional paramteres are internal!"
           (setq message (weechat-strip-formatting message)))
 
         ;; Print the line
-        (weechat-print-line buffer-ptr sender message date highlight))
+        (cl-case line-type
+          (:irc/action (let ((weechat-text-column 0))
+                         (weechat-print-line buffer-ptr
+                                             nil
+                                             (concat sender message)
+                                             date
+                                             highlight)))
+          (t (weechat-print-line buffer-ptr
+                                 sender
+                                 message
+                                 date
+                                 highlight))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
