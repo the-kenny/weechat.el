@@ -714,17 +714,25 @@ The optional paramteres are internal!"
 
         ;; Print the line
         (cl-case line-type
-          (:irc/action (let ((weechat-text-column 0))
-                         (weechat-print-line buffer-ptr
-                                             nil
-                                             (concat sender message)
-                                             date
-                                             highlight)))
-          (t (weechat-print-line buffer-ptr
+          (:irc/action
+           (let ((weechat-text-column 0))
+             (weechat-print-line buffer-ptr
+                                 nil
+                                 (concat sender message)
+                                 date
+                                 highlight)))
+          (:error/unknown
+           (progn
+             (warn "Got unknown line. Please see `weechat-relay-log-buffer' for details.")
+             (weechat-relay-log "Unknown line type:" :warn)
+             (weechat-relay-log (pp-to-string line-data) :warn)))
+          (t
+           (progn
+             (weechat-print-line buffer-ptr
                                  sender
                                  message
                                  date
-                                 highlight))))
+                                 highlight)))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
