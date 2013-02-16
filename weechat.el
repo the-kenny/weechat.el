@@ -43,7 +43,7 @@
   :type 'integer
   :group 'weechat)
 
-(defcustom weechat-prompt "> "
+(defcustom weechat-prompt "[%n] "
   "The Weechat prompt."
   :type 'string
   :group 'weechat)
@@ -271,7 +271,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
     (puthash "local_variables" new-local-variables hash)
     (when buffer
       (with-current-buffer buffer
-        ;(weechat-update-prompt)
+        (weechat-update-prompt)
         (weechat-update-header-line-buffer buffer)))))
 
 (weechat-relay-add-id-callback "_buffer_localvar_changed" #'weechat--handle-localvar-changed nil 'force)
@@ -363,6 +363,7 @@ relay server.")
 (defvar weechat-topic nil
   "Topic of the channel buffer.")
 (defvar weechat-buffer-number nil)
+(defvar weechat-local-prompt)
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
@@ -372,8 +373,11 @@ relay server.")
   (save-excursion
     (let ((start (point))
           (inhibit-read-only t))
+      (setq weechat-local-prompt
+            (format-spec weechat-prompt
+                         (format-spec-make ?n (weechat-get-local-var "nick"))))
       (delete-region weechat-prompt-start-marker weechat-prompt-end-marker)
-      (insert-before-markers weechat-prompt)
+      (insert-before-markers weechat-local-prompt)
       (set-marker weechat-prompt-start-marker start)
       (unless (zerop (- weechat-prompt-end-marker
                         weechat-prompt-start-marker))
@@ -850,6 +854,7 @@ Default is current buffer."
   (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
   (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
 
+  (make-local-variable 'weechat-local-prompt)
   (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
   (weechat-update-prompt)
