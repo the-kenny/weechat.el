@@ -747,7 +747,7 @@ The optional paramteres are internal!"
   (save-excursion
     (delete-region weechat-prompt-end-marker (point-max))
     (goto-char weechat-prompt-end-marker)
-    (insert replacement)))
+    (insert (or replacement ""))))
 
 (defvar weechat-input-ring)
 
