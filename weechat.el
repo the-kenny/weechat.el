@@ -590,7 +590,7 @@ The optional paramteres are internal!"
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (sender text &optional _date _buffer-name)
+(defun weechat-sauron-handler (sender _text &optional _date _buffer-name)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (sauron-add-event 'weechat 3
                       (format "Message from %s"
@@ -747,7 +747,7 @@ The optional paramteres are internal!"
   (save-excursion
     (delete-region weechat-prompt-end-marker (point-max))
     (goto-char weechat-prompt-end-marker)
-    (insert replacement)))
+    (insert (or replacement ""))))
 
 (defvar weechat-input-ring)
 
@@ -806,9 +806,20 @@ The optional paramteres are internal!"
     (define-key map (kbd "RET") 'weechat-return)
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
-    (define-key map (kbd "C-x C-r") 'weechat-reload-buffer)
+    (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
     map)
   "Keymap for weechat mode.")
+
+(easy-menu-define weechat-mode-menu weechat-mode-map
+  "Weechat menu"
+  '("WeeChat"
+    ["Previous Input" weechat-previous-input t]
+    ["Next Input" weechat-next-input t]
+    "-"
+    ["Reload Buffer" weechat-reload-buffer t]
+    ["Close Buffer" kill-buffer t]
+    ["Monitor Buffer" weechat-monitor-buffer t]
+    ["Disconnect" weechat-disconnect t]))
 
 (defun weechat-get-local-var (var &optional buffer-ptr)
   "Return value of local VAR in BUFFER-PTR.
