@@ -1,9 +1,10 @@
-;;; weechat --- Chat via Weechat's relay protocol in Emacs ;; -*- lexical-binding: t -*-
+;;; weechat --- Chat via WeeChat's relay protocol in Emacs ;; -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2013 Moritz Ulrich
 
 ;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
 ;; Keywords: irc chat network weechat
+;; URL: https://github.com/the-kenny/weechat.el
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -280,6 +281,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 
 (weechat-relay-add-id-callback "_buffer_localvar_changed" #'weechat--handle-localvar-changed nil 'force)
 
+;;;###autoload
 (defun weechat-connect (host port password)
   (interactive (list (read-string "Relay Host: ")
                      (read-number "Port: ")
