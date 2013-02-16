@@ -351,9 +351,10 @@ relay server.")
 
 (defun weechat-update-prompt ()
   (save-excursion
-    (let ((start (point))
+    (let ((start (marker-position weechat-prompt-start-marker))
           (inhibit-read-only t))
       (delete-region weechat-prompt-start-marker weechat-prompt-end-marker)
+      (goto-char weechat-prompt-end-marker)
       (insert-before-markers weechat-prompt)
       (set-marker weechat-prompt-start-marker start)
       (unless (zerop (- weechat-prompt-end-marker
