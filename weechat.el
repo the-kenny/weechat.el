@@ -604,7 +604,7 @@ The optional paramteres are internal!"
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
 
-(defun weechat-notifications-handler (sender text date)
+(defun weechat-notifications-handler (sender text &optional date buffer-name)
   (when (featurep 'notifications)
     (setq weechat--last-notification-id
           (notifications-notify
@@ -615,19 +615,19 @@ The optional paramteres are internal!"
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (sender text date)
+(defun weechat-sauron-handler (sender text &optional date buffer-name)
   (when (featurep 'sauron)
     (sauron-add-event 'weechat 3
                       (format "Message from %s"
                               (weechat-strip-formatting sender)))))
 
-(defun weechat-notify (sender text date)
+(defun weechat-notify (sender text &optional date buffer-name)
   (when (and (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
-    (funcall weechat-notification-handler sender text date)))
+    (funcall weechat-notification-handler sender text date buffer-name)))
 
 (defface weechat-highlight-face '((t :background "light blue"))
   "Weechat face for highlighted lines."
@@ -734,7 +734,7 @@ The optional paramteres are internal!"
       (with-current-buffer (or (and (buffer-live-p buffer) buffer)
                                weechat-relay-log-buffer-name)
         (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify sender message date))))))
+          (weechat-notify sender message date (buffer-name)))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
