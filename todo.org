@@ -1,4 +1,4 @@
-* Short-Term [5/17]
+* Short-Term [5/19]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [6/15]
@@ -33,7 +33,9 @@
 ** TODO Nicklist handling
    Waiting for delta updates (WeeChat 4.1?)
 ** TODO Buttons for URLs and other stuff
-** TODO Hooks for everything!
+** TODO Hooks for everything!p
+** TODO package.el package
+*** TODO Auto-Upload to melpa
 * Big Stuff [1/1]
 ** DONE Colors
    Thanks, Rüdiger
