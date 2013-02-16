@@ -70,6 +70,10 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
+(defface weechat-time-face '((t :inherit default))
+  "Weechat face used for timestamps."
+  :group 'weechat)
+
 (defface weechat-prompt-face '((t :inherit minibuffer-prompt))
   "Weechat face used for the prompt."
   :group 'weechat)
@@ -641,7 +645,10 @@ The optional paramteres are internal!"
                               weechat-prompt-start-marker)
             
             (when date
-              (insert (format-time-string weechat-time-format date) " "))
+              (insert (propertize
+                       (format-time-string weechat-time-format date)
+                       'face 'weechat-time-face)
+                      " "))
 
             (unless (s-blank? (weechat-handle-color-codes sender))
              (insert (weechat-handle-color-codes sender) ": "))
