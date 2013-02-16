@@ -651,7 +651,7 @@ The optional paramteres are internal!"
                       " "))
 
             (unless (s-blank? (weechat-handle-color-codes sender))
-             (insert (weechat-handle-color-codes sender) ": "))
+              (insert (weechat-handle-color-codes sender) ": "))
 
             (let ((chars-to-insert
                    (- weechat-text-column
@@ -667,7 +667,7 @@ The optional paramteres are internal!"
                 (insert (if highlight
                             (propertize text 'face 'weechat-highlight-face)
                           text)
-                      "\n"))
+                        "\n"))
 
               (when weechat-fill-text
                 ;; Filling is slightly misleading here. We use this
