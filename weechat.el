@@ -633,7 +633,6 @@ The optional paramteres are internal!"
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
-  (setq highlight (equal 1 highlight))  ;`=' throws for nil
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (bufferp buffer)
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
@@ -715,6 +714,7 @@ The optional paramteres are internal!"
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data)))
+      (setq highlight (equal 1 highlight))  ;`=' throws for nil
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       (equal 1 (assoc-default "displayed" line-data)))) 
@@ -725,10 +725,10 @@ The optional paramteres are internal!"
         ;; Print the line
         (weechat-print-line buffer-ptr sender message date highlight))
 
-      ;; TODO: Debug highlight
+      ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
       (when (and (not weechat-inhibit-notifications) highlight)
-        (weechat-notify sender text date)))))
+        (weechat-notify sender message date)))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
