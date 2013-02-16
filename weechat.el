@@ -684,6 +684,16 @@ The optional paramteres are internal!"
       (buffer-disable-undo)
 	  (buffer-enable-undo))))
 
+(defun weechat-line-type (line-hdata)
+  ;; TODO: Is tags only available on 0.4.0?
+  (let ((tags (mapcar (lambda (x) (intern-soft (concat ":" x)))
+                      (assoc-default "tags_array" line-hdata))))
+    (cond
+     ((memq :irc_action tags) :irc/action)
+     ((memq :irc_quit tags) :irc/quit)
+     ((memq :irc_privmsg tags) :irc/privmsg)
+     (:error/unknown))))
+
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
          (buffer (weechat--emacs-buffer buffer-ptr)))
