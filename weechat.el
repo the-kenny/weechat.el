@@ -689,6 +689,7 @@ The optional paramteres are internal!"
   (let ((tags (mapcar (lambda (x) (intern-soft (concat ":" x)))
                       (assoc-default "tags_array" line-hdata))))
     (cond
+     ((not tags) :irc/privmsg)          ;fallback for 0.3.8
      ((memq :irc_action tags) :irc/action)
      ((memq :irc_quit tags) :irc/quit)
      ((memq :irc_privmsg tags) :irc/privmsg)
