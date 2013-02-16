@@ -112,6 +112,13 @@ increased for that line."
           (function :tag "Custom Function"))
   :group 'weechat)
 
+(defcustom weechat-notification-mode :monitored
+  "When to notify the user"
+  :type '(choice
+          (const :tag "Never" nil)
+          (const :tag "Monitored buffers" :monitored)
+          (const :tag "All Buffers" t)))
+
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
 Set to nil to disable header line.  Currently only supported format option is %t for the title."
@@ -613,8 +620,10 @@ The optional paramteres are internal!"
                               (weechat-strip-formatting sender)))))
 
 (defun weechat-notify (sender text date)
-  (message "foo")
-  (when (functionp weechat-notification-handler)
+  (when (and (functionp weechat-notification-handler)
+             (or (eq weechat-notification-mode t)
+                 (and (eql weechat-notification-mode :monitored)
+                      (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date)))
 
 (defface weechat-highlight-face '((t :background "light blue"))
@@ -679,9 +688,6 @@ The optional paramteres are internal!"
             (add-text-properties (point-min) weechat-prompt-start-marker
                                  '(read-only t))))
 
-        (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify sender text date))
-
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
               (w (get-buffer-window buffer)))
@@ -704,18 +710,25 @@ The optional paramteres are internal!"
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data)))
     (unless (weechat-buffer-hash buffer-ptr)
-      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
-    (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
-               (and weechat-hide-like-weechat
-                    (equal 1 (assoc-default "displayed" line-data))))
-      (let ((sender (assoc-default "prefix" line-data))
-            (message (assoc-default "message" line-data))
-            (date (assoc-default "date" line-data))
-            (highlight (assoc-default "highlight" line-data)))
+      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr)) 
+    (let ((sender (assoc-default "prefix" line-data))
+          (message (assoc-default "message" line-data))
+          (date (assoc-default "date" line-data))
+          (highlight (assoc-default "highlight" line-data)))
+      (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
+                 (and weechat-hide-like-weechat
+                      (equal 1 (assoc-default "displayed" line-data)))) 
         (when weechat-debug-strip-formatting
           (setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
-        (weechat-print-line buffer-ptr sender message date highlight)))))
+
+        ;; Print the line
+        (weechat-print-line buffer-ptr sender message date highlight))
+
+      ;; TODO: Debug highlight
+      ;; (Maybe) notify the user
+      (when (and (not weechat-inhibit-notifications) highlight)
+        (weechat-notify sender text date)))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
