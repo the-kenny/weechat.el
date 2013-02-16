@@ -1,4 +1,4 @@
-* Short-Term [5/14]
+* Short-Term [5/17]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [6/15]
@@ -33,6 +33,7 @@
 ** TODO Nicklist handling
    Waiting for delta updates (WeeChat 4.1?)
 ** TODO Buttons for URLs and other stuff
+** TODO Hooks for everything!
 * Big Stuff [1/1]
 ** DONE Colors
    Thanks, Rüdiger
