@@ -460,22 +460,22 @@ See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_st
   "Match std, ext, attr WHAT on STR at position I.
 This is internal and used by `weechat-handle-color-codes'."
   (when (symbolp what)
-      (cl-case what
-        ((std)
-         (let ((std (substring str i (+ i 2))))
+    (cl-case what
+      ((std)
+       (let ((std (substring str i (+ i 2))))
+         (when (s-matches? "^[0-9]+$" std)
+           (list 'std (+ i 2) (string-to-number std)))))
+      ((ext)
+       (when (= (aref str i) ?@)
+         (let ((std (substring str (1+ i) (+ i 6))))
            (when (s-matches? "^[0-9]+$" std)
-             (list 'std (+ i 2) (string-to-number std)))))
-        ((ext)
-         (when (= (aref str i) ?@)
-           (let ((std (substring str (1+ i) (+ i 6))))
-             (when (s-matches? "^[0-9]+$" std)
-               (list 'ext (+ i 6) (string-to-number std))))))
-        ((attr)
-         (let* ((a (aref str i))
-                (x (cdr (assq a weechat-color-attributes-alist))))
-           (when x
-             (list 'attr (1+ i) x))))
-        (t (error "unknown parameter %s" what)))))
+             (list 'ext (+ i 6) (string-to-number std))))))
+      ((attr)
+       (let* ((a (aref str i))
+              (x (cdr (assq a weechat-color-attributes-alist))))
+         (when x
+           (list 'attr (1+ i) x))))
+      (t (error "unknown parameter %s" what)))))
 
 (defun weechat--color-keep-attributes (old-face)
   "Remove color settings from OLD-FACE but keep the attributes."
@@ -779,7 +779,7 @@ The optional paramteres are internal!"
 
 (defun weechat-input-ring-insert (input)
   (unless (ring-member weechat-input-ring input)
-   (ring-insert weechat-input-ring input)))
+    (ring-insert weechat-input-ring input)))
 
 (defun weechat-previous-input ()
   (interactive)
