@@ -378,7 +378,7 @@ relay server.")
                          (format-spec-make ?n (weechat-get-local-var "nick"))))
       (delete-region weechat-prompt-start-marker weechat-prompt-end-marker)
       (goto-char weechat-prompt-end-marker)
-      (insert-before-markers weechat-prompt)
+      (insert-before-markers weechat-local-prompt)
       (set-marker weechat-prompt-start-marker start)
       (unless (zerop (- weechat-prompt-end-marker
                         weechat-prompt-start-marker))
