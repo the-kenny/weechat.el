@@ -1,4 +1,4 @@
-* Short-Term [4/12]
+* Short-Term [5/12]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [5/15]
@@ -18,7 +18,7 @@
    - [ ] _upgrade
    - [ ] _upgrade_ended
 ** DONE Print 'connection lost' message to all buffers
-** TODO Input-Ring
+** DONE Input-Ring
 ** TODO Nick Completion
 ** TODO Auto-Reconnect
 ** TODO List with buffers to "auto-watch"
@@ -33,9 +33,11 @@
 ** DONE Colors
    Thanks, Rüdiger
 
-* Nice to have [2/3]
+* Nice to have [2/5]
 ** DONE Sauron Integration
 
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
+** TODO SSL Connections
+** TODO Compression
 
