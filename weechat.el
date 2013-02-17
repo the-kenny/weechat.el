@@ -731,6 +731,9 @@ The optional paramteres are internal!"
      ((memq :irc_action tags) :irc/action)
      ((memq :irc_quit tags) :irc/quit)
      ((memq :irc_privmsg tags) :irc/privmsg)
+     ((memq :irc_join tags) :irc/join)
+     ((memq :irc_part tags) :irc/part)
+     ((memq :irc_mode tags) :irc/mode)
      (:irc/privmsg)                     ;fallback
      )))
 
@@ -742,6 +745,21 @@ The optional paramteres are internal!"
                         date
                         highlight)))
 
+(defvar weechat-user-list)
+(defun weechat--user-list-add (nick)
+  (setq weechat-user-list (cl-adjoin nick weechat-user-list)))
+(defun weechat--user-list-remove (nick)
+  (setq weechat-user-list (delete nick weechat-user-list)))
+
+(defun weechat--get-nick-from-line-data (line-hdata)
+  (let ((tags-array (cdr (assoc "tags_array" line-hdata))))
+    (if tags-array
+        (s-chop-prefix "nick_" (cl-find-if (lambda (s) (s-prefix? "nick_" s)) tags-array))
+      (let* ((prefix (cdr (assoc "prefix" line-hdata)))
+             ;; Try to strip the color and prefix from nick
+             (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
+        (or (cadr nick-match) prefix "")))))
+
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
          (buffer (weechat--emacs-buffer buffer-ptr)))
@@ -752,14 +770,22 @@ The optional paramteres are internal!"
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (= 1 (assoc-default "displayed" line-data nil 0))))
+          (visible (= 1 (assoc-default "displayed" line-data nil 0)))
+          (nick (weechat--get-nick-from-line-data line-data)))
       (setq highlight (= 1 highlight))
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       visible))
-        (when weechat-debug-strip-formatting
-          (setq sender (weechat-strip-formatting sender))
-          (setq message (weechat-strip-formatting message)))
+
+        (with-current-buffer buffer
+          (when weechat-debug-strip-formatting
+            (setq sender (weechat-strip-formatting sender))
+            (setq message (weechat-strip-formatting message))))
+
+        (message "nick %s" nick)
+        (cl-case line-type
+          (:irc/join (weechat--user-list-add nick))
+          ((:irc/part :irc/quit) (weechat--user-list-remove nick)))
 
         ;; Print the line
         (cl-case line-type
@@ -960,6 +986,7 @@ Default is current buffer."
   (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
   (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
 
+  (set (make-local-variable 'weechat-user-list) nil)
   (make-local-variable 'weechat-local-prompt)
   (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
