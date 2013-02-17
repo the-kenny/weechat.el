@@ -1,5 +1,5 @@
 NAME  := weechat
-DESCRIPTION := Chat via WeeChat\'s relay protocol in Emacs
+DESCRIPTION := Chat via WeeChat's relay protocol in Emacs
 
 EMACS := emacs
 BATCH := $(EMACS) -Q --batch --eval '(add-to-list '"'"'load-path ".")'
