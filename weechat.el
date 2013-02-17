@@ -120,7 +120,10 @@ text-column will be increased for that line."
                  (file :tag "Icon file"))
   :group 'weechat)
 
-(defcustom weechat-notification-handler nil
+(defcustom weechat-notification-handler
+  (cond
+   ((featurep 'sauron) 'weechat-sauron-handler)
+   ((featurep 'notifications) 'weechat-notifications-handler))
   "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
