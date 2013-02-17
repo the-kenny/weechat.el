@@ -88,6 +88,10 @@ See `format-time-string' for format description."
   "Weechat face used for the prompt."
   :group 'weechat)
 
+(defface weechat-highlight-face '((t :background "light blue"))
+  "Weechat face for highlighted lines."
+  :group 'weechat)
+
 (defcustom weechat-text-column 22
   "Column after which text will be inserted.
 If `(length (concat nick timestamp))' is longer than this value,
@@ -631,10 +635,6 @@ The optional paramteres are internal!"
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date buffer-name)))
-
-(defface weechat-highlight-face '((t :background "light blue"))
-  "Weechat face for highlighted lines."
-  :group 'weechat)
 
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
