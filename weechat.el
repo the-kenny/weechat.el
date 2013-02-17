@@ -315,7 +315,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defun weechat-disconnect ()
   (interactive)
   (weechat-relay-disconnect)
-  (setq weechat--buffer-hashes nil))
+  (clrhash weechat--buffer-hashes))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil)
