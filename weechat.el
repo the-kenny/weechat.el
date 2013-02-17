@@ -1077,6 +1077,45 @@ Default is current buffer."
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
+;;; Completion (inspired by erc-pcomplete.el):
+
+(require 'pcomplete)
+
+(defcustom weechat-complete-nick-postfix ":"
+  "Postfix to nick completions at the beginning of the prompt."
+  :type 'string
+  :group 'weechat)
+
+(defun pcomplete-weechat-setup ()
+  "Setup pcomplete for `weechat-mode'."
+  (set (make-local-variable 'pcomplete-ignore-case) t)
+  (set (make-local-variable 'pcomplete-command-completion-function)
+       #'pcomplete/weechat/complete-command)
+  (set (make-local-variable 'pcomplete-default-completion-function)
+       (lambda () (pcomplete-here (pcomplete-weechat-nicks)))))
+
+(defun pcomplete/weechat/complete-command ()
+  "Complete the initial command argument."
+  (pcomplete-here
+   (append
+    (pcomplete-weechat-commands)
+    (pcomplete-weechat-nicks weechat-complete-nick-postfix 'ignore-self))))
+
+(defun pcomplete-weechat-commands ()
+  "Return a list of user commands."
+  '("nick" "join" "part")) ;; TODO
+
+(defun pcomplete-weechat-nicks (&optional postfix ignore-self)
+  "Return a list of nicks in the current channel.
+POSTFIX is an optional string to append to the nickname.
+If IGNORE-SELF is non-nil the users nick is ignored."
+  (let ((users weechat-user-list))
+    (when ignore-self
+      (setq users (delete (weechat-get-local-var "nick") users)))
+    (if (stringp postfix)
+        (mapcar (lambda (nick) (concat nick postfix)) users)
+      users)))
+
 (provide 'weechat)
 
 ;;; weechat.el ends here
