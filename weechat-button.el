@@ -30,6 +30,8 @@
 (require 'weechat)
 (require 'button)
 
+;;; Customize
+
 (defgroup weechat-button nil
   "WeeChat button interface (URLification)."
   :link '(url-link "https://github.com/the-kenny/weechat.el")
@@ -49,7 +51,9 @@ Copied from erc-button.el."
 ;(defcustom weechat-button-default-log-buffer "*WeeChat URL Log*")
 
 (defcustom weechat-button-list
-  '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0))
+  '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0)
+    ("[`]\\([-_.[:alnum:]]+\\)[']" 1 t nil "Describe Symbol"
+     weechat-button--describe-symbol 1))
   "List of potential buttons in WeeChat chat buffers.
 Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
 DATA-MATCH...), where
@@ -92,6 +96,8 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                         :inline t
                         (integer :tag "Regexp section number")))))
 
+;;; Internal functions
+
 (defun weechat-button--handler (button)
   "Handle BUTTON actions.
 The function in property `weechat-function' gets called with `weechat-data'."
@@ -133,6 +139,22 @@ The function in property `weechat-function' gets called with `weechat-data'."
   "Add text buttons to text in buffer."
   (dolist (i weechat-button-list)
     (weechat-button--add-do i)))
+
+;;; Callback functions
+
+;; This function is copied from `erc-button-describe-symbol'
+(defun weechat-button--describe-symbol (symbol-name)
+  "Describe SYMBOL-NAME.
+Use `describe-function' for functions, `describe-variable' for variables,
+and `apropos' for other symbols."
+  (let ((symbol (intern-soft symbol-name)))
+    (cond ((and symbol (fboundp symbol))
+           (describe-function symbol))
+          ((and symbol (boundp symbol))
+           (describe-variable symbol))
+          (t (apropos symbol-name)))))
+
+;;; Module load/unload
 
 ;; TODO module system
 (defun weechat-button-enable ()
