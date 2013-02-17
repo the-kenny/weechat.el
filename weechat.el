@@ -65,7 +65,12 @@
   :group 'weechat)
 
 (defcustom weechat-auto-monitor-buffers ()
-  "List of buffer names to auto-monitor on connect."
+  "List of buffer names to auto-monitor on connect.
+
+If value is a list, buffers corresponding the names will be
+monitored on connect. A value of t will monitor all available
+buffers. Be warned, a too long list will use much bandwidth on
+connect."
   :type '(choice (const :tag "All" t)
                  (repeat :tag "List" string )))
 
