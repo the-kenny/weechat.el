@@ -26,6 +26,7 @@
 (require 'weechat-relay)
 (require 'cl-lib)
 (require 'rx)
+(require 'format-spec)
 
 (defgroup weechat nil
   "Weechat based IRC client for Emacs."
