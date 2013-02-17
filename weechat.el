@@ -296,7 +296,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
     (if (y-or-n-p "Already connected.  Disconnect other connection? ")
         (weechat-relay-disconnect)
       (error "Can't open two connections")))
-  
+
   (when (and (stringp host)
              (integerp port))
     (weechat-relay-connect
@@ -638,7 +638,7 @@ The optional paramteres are internal!"
 
             (narrow-to-region (point-at-bol)
                               weechat-prompt-start-marker)
-            
+
             (when date
               (insert (propertize
                        (format-time-string weechat-time-format date)
@@ -653,10 +653,10 @@ The optional paramteres are internal!"
                       (- (point-max) (point-min)))))
               (when (> chars-to-insert 0)
                 (insert-char ?\s chars-to-insert)))
-            
+
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
-              
+
               (let ((text (weechat-handle-color-codes
                            (s-trim text))))
                 (insert (if highlight
@@ -705,7 +705,7 @@ The optional paramteres are internal!"
       (setq highlight (equal 1 highlight)) ;`=' throws for nil
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
-                      (equal 1 (assoc-default "displayed" line-data)))) 
+                      (equal 1 (assoc-default "displayed" line-data))))
         (when weechat-debug-strip-formatting
           (setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
@@ -876,9 +876,10 @@ Default is current buffer."
   (puthash :emacs/buffer (current-buffer) buffer-hash)
   (add-hook 'kill-buffer-hook
             (lambda ()
-              (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
-                (when (hash-table-p hash)
-                  (remhash :emacs/buffer hash))))
+              (when (hash-table-p weechat--buffer-hashes)
+               (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+                 (when (hash-table-p hash)
+                   (remhash :emacs/buffer hash)))))
             nil
             'local-hook)
 
@@ -909,6 +910,7 @@ Default is current buffer."
 
   ;; Hooks
   (run-mode-hooks 'weechat-mode-hook))
+
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   (interactive (list
