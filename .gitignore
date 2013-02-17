@@ -1,5 +1,7 @@
 *.elc
 *.tar
 *~
+README.html
 test-cmds.el
 weechat-pkg.el
+weechat-*/
