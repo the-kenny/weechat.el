@@ -95,6 +95,10 @@ See `format-time-string' for format description."
   "Weechat face used for the prompt."
   :group 'weechat)
 
+(defface weechat-highlight-face '((t :background "light blue"))
+  "Weechat face for highlighted lines."
+  :group 'weechat)
+
 (defcustom weechat-text-column 22
   "Column after which text will be inserted.
 If `(length (concat nick timestamp))' is longer than this value,
@@ -460,7 +464,7 @@ Used to identify it on the relay server.")
                                             "dark magenta" "magenta" "dark cyan"
                                             "light cyan" "gray" "white")
   "Mapping of Weechat colors.
-See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings"
+See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
   :type '(repeat (choice (const :tag "Unspecified" unspecified)
                          (const :tag "Color" color)))
   :group 'weechat)
@@ -527,7 +531,7 @@ This is an internal function of `weechat-handle-color-codes'."
 Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
 
 Be aware that Weechat does not use mIRC color codes.
-See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings.
+See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'.
 
 The optional paramteres are internal!"
   (setq i (or i 0))
@@ -585,7 +589,7 @@ The optional paramteres are internal!"
       ((?\x1A) ;; Set ATTR
        (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
          (unless match-data
-           (error "Broken color code (in ?\x1A '%s' %s)" str i))
+           (error "Broken color code (in ?\\x1A '%s' %s)" str i))
          (if (eq (cl-third match-data) 'keep)
              (setq face (weechat--color-keep-attributes face))
            (setq face (list (cl-third match-data))))
@@ -595,7 +599,7 @@ The optional paramteres are internal!"
        (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
              (old-face (copy-sequence face)))
          (unless match-data
-           (error "Broken color code (in ?\x1B '%s' %s)" str i))
+           (error "Broken color code (in ?\\x1B '%s' %s)" str i))
          (if (eq (cl-third match-data) 'keep)
              (setq face nil) ;; TODO Does keep here means delete all or keep all?
            (setq face (delq (cl-third match-data) old-face)))
@@ -631,7 +635,8 @@ The optional paramteres are internal!"
                         (format "Message from %s"
                                 (weechat-strip-formatting sender))
                         (lambda ()
-                          (sauron-switch-to-marker-or-buffer jump-position))))))
+                          (when (fboundp 'sauron-switch-to-marker-or-buffer)
+                            (sauron-switch-to-marker-or-buffer jump-position)))))))
 
 
 (defun weechat-notify (sender text &optional date buffer-name)
@@ -641,10 +646,6 @@ The optional paramteres are internal!"
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date buffer-name)))
-
-(defface weechat-highlight-face '((t :background "light blue"))
-  "Weechat face for highlighted lines."
-  :group 'weechat)
 
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
@@ -749,10 +750,10 @@ The optional paramteres are internal!"
     (let ((sender (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
-          (highlight (assoc-default "highlight" line-data))
+          (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (equal 1 (assoc-default "displayed" line-data))))
-      (setq highlight (equal 1 highlight)) ;`=' throws for nil
+          (visible (= 1 (assoc-default "displayed" line-data nil 0))))
+      (setq highlight (= 1 highlight))
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       visible))
