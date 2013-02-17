@@ -48,7 +48,10 @@ Copied from erc-button.el."
   :type 'regexp
   :group 'weechat-button)
 
-;(defcustom weechat-button-default-log-buffer "*WeeChat URL Log*")
+(defcustom weechat-button-default-log-buffer "*WeeChat URL Log*"
+  "Buffer name for URL log."
+  :group 'weechat-button
+  :type 'string)
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0)
@@ -106,6 +109,16 @@ The function in property `weechat-function' gets called with `weechat-data'."
     (when function
       (apply function data))))
 
+(defun weechat-button--insert-log (log-buffer button-data button-properties)
+  (let ((weechat-buffer-name (buffer-name)))
+    (with-current-buffer (get-buffer-create log-buffer)
+      (goto-char (point-max))
+      (unless (bolp)
+        (insert "\n"))
+      (insert weechat-buffer-name "\t")
+      (apply #'insert-text-button button-data button-properties)
+      (insert "\n"))))
+
 (defun weechat-button--add-do (entry)
   "Handle each button ENTRY."
   (save-excursion
@@ -123,17 +136,21 @@ The function in property `weechat-function' gets called with `weechat-data'."
         (while (re-search-forward regexp nil t)
           (let ((start (match-beginning button-match))
                 (end (match-end button-match))
+                (button-data (match-string button-match))
                 (data (mapcar #'match-string data-match)))
             (when (or (eq buttonize? t)
                       (and (functionp buttonize?)
                            (funcall buttonize?)))
-              ;; TODO log
-              (make-text-button start end
-                                'action #'weechat-button--handler
-                                'help-echo help-echo
-                                'follow-link t
-                                'weechat-function action
-                                'weechat-data data))))))))
+              (let ((properties (list 'action #'weechat-button--handler
+                                      'help-echo help-echo
+                                      'follow-link t
+                                      'weechat-function action
+                                      'weechat-data data)))
+                (when (eq log t)
+                  (setq log weechat-button-default-log-buffer))
+                (when (or (stringp log) (bufferp log))
+                  (weechat-button--insert-log log button-data properties))
+                (apply #'make-text-button start end properties)))))))))
 
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
