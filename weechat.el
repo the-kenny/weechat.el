@@ -626,7 +626,8 @@ The optional paramteres are internal!"
                         (format "Message from %s"
                                 (weechat-strip-formatting sender))
                         (lambda ()
-                          (sauron-switch-to-marker-or-buffer jump-position))))))
+                          (when (fboundp 'sauron-switch-to-marker-or-buffer)
+                            (sauron-switch-to-marker-or-buffer jump-position)))))))
 
 
 (defun weechat-notify (sender text &optional date buffer-name)
