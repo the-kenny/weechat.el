@@ -22,6 +22,7 @@
 
 ;;; Commentary:
 ;;
+;; This code is heavily inspired by erc-button.el!
 
 ;;; Code:
 ;;
@@ -45,28 +46,93 @@ Copied from erc-button.el."
   :type 'regexp
   :group 'weechat-button)
 
+;(defcustom weechat-button-default-log-buffer "*WeeChat URL Log*")
+
+(defcustom weechat-button-list
+  '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0))
+  "List of potential buttons in WeeChat chat buffers.
+Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
+DATA-MATCH...), where
+
+REGEXP is a string or variable containing a regular expression to match buttons.
+
+BUTTON-MATCH is the number of the regexp grouping which represents the actual
+  button.
+
+BUTTONIZE? if t the button is always created if it is a function then the button
+  is only created if it evals to non-nil.
+
+LOG to be implemented ...
+
+HELP-ECHO is the `help-echo' property of the button.
+  See Info node `(elisp) Button Properties'.
+
+ACTION the function to call when the button is selected.
+
+DATA-MATCH... numbers of the regexp groupings whose text will be passed to
+  ACTION.
+
+This is similar (but not identical) to `erc-button-alist' in ERC."
+  :group 'weechat-button
+  :type '(repeat :tag "Buttons"
+          (list (choice :tag "Matches"
+                        regexp
+                        (variable :tag "Variable containing regexp"))
+                (integer :tag "Number of the regexp section that matches")
+                (choice :tag "When to buttonize"
+                        (const :tag "Always" t)
+                        (function :tag "Only when the function returns non-nil"))
+                (choice :tag "Log match"
+                        (const :tag "To default buffer" t)
+                        (const :tag "Never" nil)
+                        (string :tag "To buffer name"))
+                (string :tag "Help echo text")
+                (function :tag "Call this function when button is pressed")
+                (repeat :tag "Sections of regexp to send to the function"
+                        :inline t
+                        (integer :tag "Regexp section number")))))
+
 (defun weechat-button--handler (button)
   "Handle BUTTON actions.
 The function in property `weechat-function' gets called with `weechat-data'."
   (let ((function (button-get button 'weechat-function))
         (data (button-get button 'weechat-data)))
     (when function
-      (funcall function data))))
+      (apply function data))))
+
+(defun weechat-button--add-do (entry)
+  "Handle each button ENTRY."
+  (save-excursion
+    (goto-char (point-min))
+    (let* ((regexp-entry (nth 0 entry))
+           (regexp (or (and (stringp regexp-entry) regexp-entry)
+                       (and (boundp regexp-entry) (symbol-value regexp-entry))))
+           (button-match (nth 1 entry))
+           (buttonize? (nth 2 entry))
+           (log (nth 3 entry))
+           (help-echo (nth 4 entry))
+           (action (nth 5 entry))
+           (data-match (nthcdr 6 entry)))
+      (when regexp
+        (while (re-search-forward regexp nil t)
+          (let ((start (match-beginning button-match))
+                (end (match-end button-match))
+                (data (mapcar #'match-string data-match)))
+            (when (or (eq buttonize? t)
+                      (and (functionp buttonize?)
+                           (funcall buttonize?)))
+              ;; TODO log
+              (make-text-button start end
+                                'action #'weechat-button--handler
+                                'help-echo help-echo
+                                'follow-link t
+                                'weechat-function action
+                                'weechat-data data))))))))
 
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward weechat-button-url-regexp nil t)
-      (let ((start (match-beginning 0))
-            (end (match-end 0))
-            (data (match-string 0)))
-        (make-text-button start end
-                          'action #'weechat-button--handler
-                          'help-wecho "browse url"
-                          'follow-link t
-                          'weechat-function #'browse-url
-                          'weechat-data data)))))
+  (dolist (i weechat-button-list)
+    (weechat-button--add-do i)))
 
 ;; TODO module system
 (defun weechat-button-enable ()
