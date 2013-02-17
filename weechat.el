@@ -135,6 +135,12 @@ Set to nil to disable header line.  Currently only supported format option is %t
   :type 'integer
   :group 'weechat)
 
+(defcustom weechat-insert-modify-hook nil
+  "The hook will be called after new text is inserted into the buffer.
+It is called with narrowing in the correct buffer."
+  :type 'hook
+  :group 'weechat)
+
 ;;; Code:
 
 (defvar weechat-debug-strip-formatting nil)
@@ -664,7 +670,8 @@ The optional paramteres are internal!"
                 ;; Filling is slightly misleading here. We use this
                 ;; awesome text property called `wrap-prefix'.
                 (let ((overlay (make-overlay text-start (point-max))))
-                  (overlay-put overlay 'wrap-prefix prefix-string)))))
+                  (overlay-put overlay 'wrap-prefix prefix-string))))
+            (run-hooks 'weechat-insert-modify-hook))
 
           (when weechat-read-only
             (add-text-properties (point-min) weechat-prompt-start-marker
