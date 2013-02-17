@@ -739,10 +739,10 @@ The optional paramteres are internal!"
     (let ((sender (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
-          (highlight (assoc-default "highlight" line-data))
+          (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (equal 1 (assoc-default "displayed" line-data))))
-      (setq highlight (equal 1 highlight)) ;`=' throws for nil
+          (visible (= 1 (assoc-default "displayed" line-data nil 0))))
+      (setq highlight (= 1 highlight))
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       visible))
