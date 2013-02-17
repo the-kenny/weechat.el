@@ -130,7 +130,10 @@ text-column will be increased for that line."
   :group 'weechat)
 
 (defcustom weechat-notification-mode :monitored
-  "When to notify the user."
+  "When to notify the user.
+
+Possible values are nil (Never), :monitored (Only monitored
+buffers) and t (All buffers)."
   :type '(choice
           (const :tag "Never" nil)
           (const :tag "Monitored buffers" :monitored)
