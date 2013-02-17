@@ -26,7 +26,7 @@ endif
 
 PACKAGE := $(NAME)-$(VERSION)
 TARBALL := $(PACKAGE).tar
-PACKAGE_CONTENT := $(SOURCES) Makefile README.org README.html
+PACKAGE_CONTENT := $(SOURCES) Makefile README README.html
 PKG_EL := $(NAME)-pkg.el
 
 .PHONY: all test doc package clean distclean
@@ -45,7 +45,7 @@ clean:
 distclean: clean
 	@$(RM) -r $(TARBALL)
 
-README.html: README.org
+README.html: README
 	$(info Creating documentation: $@)
 	@$(BATCH) -l org.el --visit=$< -f org-export-as-html-batch
 
