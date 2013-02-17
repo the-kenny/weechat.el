@@ -29,13 +29,21 @@
 (require 'weechat)
 (require 'button)
 
-(defvar weechat-button-url-regexp
+(defgroup weechat-button nil
+  "WeeChat button interface (URLification)."
+  :link '(url-link "https://github.com/the-kenny/weechat.el")
+  :prefix "weechat-button"
+  :group 'weechat)
+
+(defcustom weechat-button-url-regexp
   (concat "\\(www\\.\\|\\(s?https?\\|"
           "ftp\\|file\\|gopher\\|news\\|telnet\\|wais\\|mailto\\):\\)"
           "\\(//[-a-zA-Z0-9_.]+:[0-9]*\\)?"
           "[-a-zA-Z0-9_=!?#$@~`%&*+\\/:;.,()]+[-a-zA-Z0-9_=#$@~`%&*+\\/()]")
   "Regexp to match URLs.
-Copied from erc-button.el.")
+Copied from erc-button.el."
+  :type 'regexp
+  :group 'weechat-button)
 
 (defun weechat-button--handler (button)
   "Handle BUTTON actions.
