@@ -1,3 +1,4 @@
+# -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
 * Short-Term [8/21]
