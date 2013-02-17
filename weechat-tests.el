@@ -129,3 +129,9 @@
   (should (string= (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world")
                    "hi world")))
 
+(ert-deftest weechat-alist-merging ()
+  (should (equal '((x . 42)) (weechat-merge-alists '((x . 23)) '((x . 42)))))
+  (should (equal '(("x" . 42)) (weechat-merge-alists '(("x" . 23)) '(("x" . 42)))))
+  (should (equal '((x . 42)) (weechat-merge-alists '() '((x . 42)))))
+  (should (equal '((x . 42)) (weechat-merge-alists '((x . 42)) '()))))
+

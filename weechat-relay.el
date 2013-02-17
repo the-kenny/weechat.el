@@ -401,7 +401,7 @@ BUFFER defaults to the current buffer."
     (when (weechat--message-available-p (current-buffer))
       (cl-multiple-value-bind (ret len) (weechat-unpack-message
                                          (buffer-string))
-        (weechat-relay-log (format "Consumed %d bytes" len) :warn)
+        (weechat-relay-log (format "Consumed %d bytes" len) :debug)
         (let ((inhibit-read-only t))
           (delete-region (point-min) (+ (point-min) len)))
         ret))))
@@ -440,8 +440,7 @@ CALLBACK takes one argument (the response data) which is a list."
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
-    (weechat-relay-log (format "Received %d bytes" (length string))
-                       :warn)
+    (weechat-relay-log (format "Received %d bytes" (length string)) :debug)
     ;; Insert the text, advancing the process marker.
     (goto-char (point-max))
     (let ((inhibit-read-only t))
