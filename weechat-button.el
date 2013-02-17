@@ -49,17 +49,16 @@ The function in property `weechat-function' gets called with `weechat-data'."
   "Add text buttons to text in buffer."
   (save-excursion
     (goto-char (point-min))
-    (let ((x (re-search-forward weechat-button-url-regexp nil t)))
-      (when x
-        (let ((start (match-beginning 0))
-              (end (match-end 0))
-              (data (match-string 0)))
-          (make-text-button start end
-                            'action #'weechat-button--handler
-                            'help-wecho "browse url"
-                            'follow-link t
-                            'weechat-function #'browse-url
-                            'weechat-data data))))))
+    (while (re-search-forward weechat-button-url-regexp nil t)
+      (let ((start (match-beginning 0))
+            (end (match-end 0))
+            (data (match-string 0)))
+        (make-text-button start end
+                          'action #'weechat-button--handler
+                          'help-wecho "browse url"
+                          'follow-link t
+                          'weechat-function #'browse-url
+                          'weechat-data data)))))
 
 ;; TODO module system
 (defun weechat-button-enable ()
