@@ -578,7 +578,7 @@ The optional paramteres are internal!"
       ((?\x1A) ;; Set ATTR
        (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
          (unless match-data
-           (error "Broken color code (in ?\x1A '%s' %s)" str i))
+           (error "Broken color code (in ?\\x1A '%s' %s)" str i))
          (if (eq (cl-third match-data) 'keep)
              (setq face (weechat--color-keep-attributes face))
            (setq face (list (cl-third match-data))))
@@ -588,7 +588,7 @@ The optional paramteres are internal!"
        (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
              (old-face (copy-sequence face)))
          (unless match-data
-           (error "Broken color code (in ?\x1B '%s' %s)" str i))
+           (error "Broken color code (in ?\\x1B '%s' %s)" str i))
          (if (eq (cl-third match-data) 'keep)
              (setq face nil) ;; TODO Does keep here means delete all or keep all?
            (setq face (delq (cl-third match-data) old-face)))
