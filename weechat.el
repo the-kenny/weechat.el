@@ -64,6 +64,11 @@
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-auto-monitor-buffers ()
+  "List of buffer names to auto-monitor on connect."
+  :type '(choice (const :tag "All" t)
+                 (repeat :tag "List" string )))
+
 (defcustom weechat-time-format "%H:%M:%S"
   "How to format time stamps.
 See `format-time-string' for format description."
@@ -995,10 +1000,28 @@ Default is current buffer."
                (let ((buffer (and (gethash :emacs/buffer hash)
                                   (get-buffer (gethash :emacs/buffer hash)))))
                  (when (buffer-live-p buffer)
+                   (weechat-relay-log (format "Re-monitoring buffer %S" buffer) :info)
                    (weechat-reload-buffer buffer))))
              weechat--buffer-hashes)))
 
 (add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
+
+(defun weechat-auto-monitor ()
+  (let ((available-channels (weechat-channel-names)))
+    (dolist (channel weechat-auto-monitor-buffers)
+      ;; Check if one of the available channels partially matches the
+      ;; channel we want to monitor
+      (let* ((channel-name (cl-some
+                            (lambda (ac)
+                              (when (s-contains? channel ac) ac))
+                            available-channels))
+             (buffer-ptr (weechat--find-buffer channel-name)))
+        ;; Only auto-connect if it there isn't already a buffer monitoring the channel
+        (unless (weechat--emacs-buffer buffer-ptr)
+          (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
+          (weechat-monitor-buffer buffer-ptr nil))))))
+
+(add-hook 'weechat-connect-hook 'weechat-auto-monitor 'append)
 
 (defun weechat--handle-buffer-line-added (response)
   (let* ((hdata (car response))
