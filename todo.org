@@ -1,6 +1,6 @@
 #+STARTUP: nologdone
 
-* Short-Term [8/21]
+* Short-Term [9/21]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [7/15]
@@ -47,8 +47,8 @@
    - [ ] CTCP
    - [ ] WHOIS
 ** TODO Hooks for everything!
-** TODO package.el package
-*** TODO Auto-Upload to melpa
+** DONE package.el package
+*** DONE Auto-Upload to melpa
 ** DONE Colors
    Thanks, Rüdiger
 
