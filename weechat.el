@@ -264,7 +264,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defun weechat-merge-alists (old new)
   (dolist (k new old)
     (let ((to-remove (assoc-string (car k) old)))
-     (setq old (cons k (remove to-remove old))))))
+      (setq old (cons k (remove to-remove old))))))
 
 (defun weechat--handle-localvar-changed (response)
   (let* ((hdata (car response))
@@ -922,9 +922,9 @@ Default is current buffer."
   (add-hook 'kill-buffer-hook
             (lambda ()
               (when (hash-table-p weechat--buffer-hashes)
-               (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
-                 (when (hash-table-p hash)
-                   (remhash :emacs/buffer hash)))))
+                (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+                  (when (hash-table-p hash)
+                    (remhash :emacs/buffer hash)))))
             nil
             'local-hook)
 
