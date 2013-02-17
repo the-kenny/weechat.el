@@ -1,12 +1,14 @@
-* Short-Term [7/21]
+#+STARTUP: nologdone
+
+* Short-Term [8/21]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
-** TODO Handle 'sync' events [6/15]
+** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
    - [X] _buffer_renamed
    - [X] _buffer_title_changed
-   - [ ] _buffer_localvar_added
+   - [X] _buffer_localvar_added
    - [X] _buffer_localvar_changed
    - [ ] _buffer_localvar_removed
    - [ ] _buffer_type_changed
@@ -21,7 +23,7 @@
 ** DONE Input-Ring
 ** TODO Nick Completion
 ** TODO Auto-Reconnect
-** TODO List with buffers to "auto-watch"
+** DONE List with buffers to "auto-watch"
 ** TODO Mark channel as "read" from Emacs
    send command: "input 0x10f29d0 /input set_unread_current_buffer"
 *** This is currently broken on weechat's side. Waiting for FlashCode.
