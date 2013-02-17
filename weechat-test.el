@@ -1,3 +1,4 @@
+(require 'weechat)
 (require 'ert)
 
 ;;; weechat-relay.el
