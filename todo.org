@@ -1,4 +1,4 @@
-* Short-Term [5/19]
+* Short-Term [7/20]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [6/15]
@@ -29,17 +29,29 @@
 ** DONE Fill region when receiving long messages
 ** TODO Buffer-local URL ring for easy access
 ** TODO Limit buffer size
-** TODO Fix /me display
+** DONE Fix /me display
 ** TODO Nicklist handling
    Waiting for delta updates (WeeChat 4.1?)
 ** TODO Buttons for URLs and other stuff
-** TODO Hooks for everything!p
+** TODO Handle different types of messages [1/8]
+   Incomplete List
+   (Some of them can be ignored as they print fine with defaults)
+   - [ ] Quit
+   - [X] /me
+   - [ ] Join
+   - [ ] Part
+   - [ ] 'Day Changed'
+   - [ ] Netsplit
+   - [ ] CTCP
+   - [ ] WHOIS
+** TODO Hooks for everything!
 ** TODO package.el package
 *** TODO Auto-Upload to melpa
-* Big Stuff [1/1]
 ** DONE Colors
    Thanks, Rüdiger
-* Nice to have [2/5]
+
+
+* Nice to have [2/8]
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
@@ -47,3 +59,4 @@
 ** TODO Compression
 ** TODO Read passwords from ~/.authinfo
 ** TODO Speedbar integration
+** TODO Faces based on message type

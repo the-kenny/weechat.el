@@ -693,6 +693,25 @@ The optional paramteres are internal!"
       (buffer-disable-undo)
 	  (buffer-enable-undo))))
 
+(defun weechat-line-type (line-hdata)
+  ;; TODO: Is tags only available on 0.4.0?
+  (let ((tags (mapcar (lambda (x) (intern-soft (concat ":" x)))
+                      (assoc-default "tags_array" line-hdata))))
+    (cond
+     ((not tags) :irc/privmsg)          ;fallback for 0.3.8
+     ((memq :irc_action tags) :irc/action)
+     ((memq :irc_quit tags) :irc/quit)
+     ((memq :irc_privmsg tags) :irc/privmsg)
+     (:error/unknown))))
+
+(defun weechat-print-irc-action (buffer-ptr sender message date highlight)
+  (let ((weechat-text-column 0))
+    (weechat-print-line buffer-ptr
+                        nil
+                        (concat sender message)
+                        date
+                        highlight)))
+
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
          (buffer (weechat--emacs-buffer buffer-ptr)))
@@ -701,7 +720,8 @@ The optional paramteres are internal!"
     (let ((sender (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
-          (highlight (assoc-default "highlight" line-data)))
+          (highlight (assoc-default "highlight" line-data))
+          (line-type (weechat-line-type line-data)))
       (setq highlight (equal 1 highlight)) ;`=' throws for nil
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
@@ -711,7 +731,25 @@ The optional paramteres are internal!"
           (setq message (weechat-strip-formatting message)))
 
         ;; Print the line
-        (weechat-print-line buffer-ptr sender message date highlight))
+        (cl-case line-type
+          (:irc/action
+           (weechat-print-irc-action buffer-ptr
+                                     nil
+                                     (concat sender message)
+                                     date
+                                     highlight))
+          (:error/unknown
+           (progn
+             (warn "Got unknown line. Please see `weechat-relay-log-buffer' for details.")
+             (weechat-relay-log "Unknown line type:" :warn)
+             (weechat-relay-log (pp-to-string line-data) :warn)))
+          (t
+           (progn
+             (weechat-print-line buffer-ptr
+                                 sender
+                                 message
+                                 date
+                                 highlight)))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
@@ -735,11 +773,15 @@ The optional paramteres are internal!"
           (dolist (line-hdata (weechat--hdata-values lines-hdata))
             (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
 
+(defvar weechat-initial-lines-buffer-properties
+  '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
+
 (defun weechat-request-initial-lines (buffer-ptr)
   (weechat-relay-send-command
-   (format "hdata buffer:%s/lines/last_line(-%i)/data message,highlight,prefix,date,buffer,displayed"
+   (format "hdata buffer:%s/lines/last_line(-%i)/data %s"
            buffer-ptr
-           weechat-initial-lines)
+           weechat-initial-lines
+           (s-join "," weechat-initial-lines-buffer-properties))
    #'weechat-add-initial-lines))
 
 (defun weechat-send-input (target input)
