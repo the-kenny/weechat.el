@@ -1013,7 +1013,13 @@ Default is current buffer."
 
 (defun weechat-auto-monitor ()
   (let ((available-channels (weechat-channel-names)))
-    (dolist (channel weechat-auto-monitor-buffers)
+    ;; Either iterate ALL available channels (for `t') or iterate
+    ;; channels user wants to monitor
+    (dolist (channel (if (listp weechat-auto-monitor-buffers)
+                         weechat-auto-monitor-buffers
+                       (progn
+                         (message "Monitoring all available WeeChat buffers. Be patient...")
+                         available-channels)))
       ;; Check if one of the available channels partially matches the
       ;; channel we want to monitor
       (let* ((channel-name (cl-some
