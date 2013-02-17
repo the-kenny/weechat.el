@@ -54,7 +54,7 @@
 
 ** TODO Module System
 
-* Nice to have [2/10]
+* Nice to have [2/11]
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
@@ -65,3 +65,5 @@
 ** TODO Faces based on message type
 ** TODO URL Detection
 ** TODO Typing auto-focuses the "input field"
+** TODO More Notification Handlers
+   - `message'
