@@ -698,11 +698,11 @@ The optional paramteres are internal!"
   (let ((tags (mapcar (lambda (x) (intern-soft (concat ":" x)))
                       (assoc-default "tags_array" line-hdata))))
     (cond
-     ((not tags) :irc/privmsg)          ;fallback for 0.3.8
      ((memq :irc_action tags) :irc/action)
      ((memq :irc_quit tags) :irc/quit)
      ((memq :irc_privmsg tags) :irc/privmsg)
-     (:error/unknown))))
+     (:irc/privmsg)                     ;fallback
+     )))
 
 (defun weechat-print-irc-action (buffer-ptr sender message date highlight)
   (let ((weechat-text-column 0))
@@ -738,11 +738,6 @@ The optional paramteres are internal!"
                                      (concat sender message)
                                      date
                                      highlight))
-          (:error/unknown
-           (progn
-             (warn "Got unknown line. Please see `weechat-relay-log-buffer' for details.")
-             (weechat-relay-log "Unknown line type:" :warn)
-             (weechat-relay-log (pp-to-string line-data) :warn)))
           (t
            (progn
              (weechat-print-line buffer-ptr
