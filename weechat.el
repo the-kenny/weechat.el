@@ -601,9 +601,13 @@ The optional paramteres are internal!"
 
 (defun weechat-sauron-handler (sender _text &optional _date _buffer-name)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
-    (sauron-add-event 'weechat 3
-                      (format "Message from %s"
-                              (weechat-strip-formatting sender)))))
+    (lexical-let ((jump-position (point-max-marker)))
+      (sauron-add-event 'weechat 3
+                        (format "Message from %s"
+                                (weechat-strip-formatting sender))
+                        (lambda ()
+                          (sauron-switch-to-marker-or-buffer jump-position))))))
+
 
 (defun weechat-notify (sender text &optional date buffer-name)
   (when (and (functionp weechat-notification-handler)
