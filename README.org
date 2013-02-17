@@ -15,10 +15,5 @@
 
    : M-x weechat-monitor-buffer
 
-
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
-
-# Local Variables:
-# mode: org
-# End:
