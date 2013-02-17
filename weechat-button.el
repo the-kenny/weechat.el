@@ -33,13 +33,20 @@
   (concat "\\(www\\.\\|\\(s?https?\\|"
           "ftp\\|file\\|gopher\\|news\\|telnet\\|wais\\|mailto\\):\\)"
           "\\(//[-a-zA-Z0-9_.]+:[0-9]*\\)?"
-          "[-a-zA-Z0-9_=!?#$@~`%&*+\\/:;.,()]+[-a-zA-Z0-9_=#$@~`%&*+\\/()]") ;; copied from erc-button.el
-  "Regexp to match URLs")
+          "[-a-zA-Z0-9_=!?#$@~`%&*+\\/:;.,()]+[-a-zA-Z0-9_=#$@~`%&*+\\/()]")
+  "Regexp to match URLs.
+Copied from erc-button.el.")
 
 (defun weechat-button--handler (button)
-  (browse-url (button-get button 'weechat-button-url)))
+  "Handle BUTTON actions.
+The function in property `weechat-function' gets called with `weechat-data'."
+  (let ((function (button-get button 'weechat-function))
+        (data (button-get button 'weechat-data)))
+    (when function
+      (funcall function data))))
 
 (defun weechat-button--add ()
+  "Add text buttons to text in buffer."
   (save-excursion
     (goto-char (point-min))
     (let ((x (re-search-forward weechat-button-url-regexp nil t)))
@@ -51,14 +58,21 @@
                             'action #'weechat-button--handler
                             'help-wecho "browse url"
                             'follow-link t
-                            'weechat-button-url data))))))
+                            'weechat-function #'browse-url
+                            'weechat-data data))))))
 
 ;; TODO module system
-(defun weechat-button-init ()
+(defun weechat-button-enable ()
+  "Enable module."
   (add-hook 'weechat-insert-modify-hook
             #'weechat-button--add))
 
-(defun weechat-button-deinit ()
+(defun weechat-button-disable ()
+  "Disable module."
   (remove-hook 'weechat-insert-modify-hook
                #'weechat-button--add))
 
+
+(provide 'weechat-button)
+
+;;; weechat-button.el ends here
