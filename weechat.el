@@ -729,11 +729,12 @@ The optional paramteres are internal!"
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data))
-          (line-type (weechat-line-type line-data)))
+          (line-type (weechat-line-type line-data))
+          (visible (equal 1 (assoc-default "displayed" line-data))))
       (setq highlight (equal 1 highlight)) ;`=' throws for nil
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
-                      (equal 1 (assoc-default "displayed" line-data))))
+                      visible))
         (when weechat-debug-strip-formatting
           (setq sender (weechat-strip-formatting sender))
           (setq message (weechat-strip-formatting message)))
