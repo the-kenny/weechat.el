@@ -21,7 +21,11 @@
 
 
 ;;; Commentary:
-;;
+
+;; This package provides a way to chat via WeeChat's relay protocol in
+;; Emacs.
+
+;;; Code:
 
 (require 'weechat-relay)
 (require 'cl-lib)
@@ -145,8 +149,6 @@ Set to nil to disable header line.  Currently only supported format option is %t
   "Size for the input ring."
   :type 'integer
   :group 'weechat)
-
-;;; Code:
 
 (defvar weechat-debug-strip-formatting nil)
 
