@@ -87,6 +87,10 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
+(defface weechat-nick-self-face '((t :weight bold :foreground "brown"))
+  "Face for your own nick."
+  :group 'weechat)
+
 (defface weechat-time-face '((t :inherit default))
   "Weechat face used for timestamps."
   :group 'weechat)
@@ -526,6 +530,60 @@ This is an internal function of `weechat-handle-color-codes'."
     (cl-values (cl-second match-data)
                face)))
 
+(defvar weechat-color-options-list
+  '(("weechat.color.separator" . "blue") ;; KEEP THE ORDER!
+    ("weechat.color.chat" . default)
+    ("weechat.color.chat_time" . weechat-time-face)
+    ("weechat.color.chat_time_delimiters" . weechat-time-face)
+    ("weechat.color.chat_prefix_error" . "yellow")
+    ("weechat.color.chat_prefix_network" . "magenta")
+    ("weechat.color.chat_prefix_action" . "white")
+    ("weechat.color.chat_prefix_join" . "light green")
+    ("weechat.color.chat_prefix_quit" . "light red")
+    ("weechat.color.chat_prefix_more" . "light magenta")
+    ("weechat.color.chat_prefix_suffix" . "green")
+    ("weechat.color.chat_buffer" . "white")
+    ("weechat.color.chat_server" . "brown")
+    ("weechat.color.chat_channel" . "white")
+    ("weechat.color.chat_nick" . "light cyan")
+    ("weechat.color.chat_nick_self" . weechat-nick-self-face)
+    ("weechat.color.chat_nick_other" . "cyan")
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    ("weechat.color.chat_host" . "cyan")
+    ("weechat.color.chat_delimiters" . "green")
+    ("weechat.color.chat_highlight" . weechat-highlight-face)
+    ("weechat.color.chat_read_marker" . "magenta")
+    ("weechat.color.chat_text_found" . "yellow")
+    ("weechat.color.chat_value" . "cyan")
+    ("weechat.color.chat_prefix_buffer")
+    ("weechat.color.chat_tags" . "red")
+    ("weechat.color.chat_inactive_window" . "dark grey")
+    ("weechat.color.chat_inactive_buffer" . "dark grey")
+    ("weechat.color.chat_prefix_buffer_inactive_buffer" . "dark grey")
+    ("weechat.color.chat_nick_offline" . "dark grey")
+    ("weechat.color.chat_nick_offline_highlight" . default))
+  "List of color options for \x19XX.")
+;; TODO every option here should probably be a face!
+
+(defun weechat--color-std-to-theme (num)
+  "Turn color code in NUM using option into face."
+  (if (or (not (integerp num))
+          (> num (length weechat-color-options-list)))
+      'default
+    (let ((face (cdr (nth num weechat-color-options-list))))
+      (if (stringp face) ;; color value
+          (list (list :foreground face ))
+        face))))
+
 (defun weechat-handle-color-codes (str &optional i ret face)
   "Convert the Weechat color codes in STR to properties.
 Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
@@ -548,7 +606,7 @@ The optional paramteres are internal!"
           ((and (<= ?0 next) (<= next ?9)) ;; STD
            (let ((match-data (weechat--match-color-code 'std str i)))
              (when match-data
-               ;; TODO
+               (setq face (weechat--color-std-to-theme (cl-third match-data)))
                (setq i (cl-second match-data)))))
           ((= next ?@) ;; EXT
            (let ((match-data (weechat--match-color-code 'ext str i)))
