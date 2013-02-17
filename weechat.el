@@ -724,18 +724,15 @@ The optional paramteres are internal!"
 	  (buffer-enable-undo))))
 
 (defun weechat-line-type (line-hdata)
-  ;; TODO: Is tags only available on 0.4.0?
-  (let ((tags (mapcar (lambda (x) (intern-soft (concat ":" x)))
-                      (assoc-default "tags_array" line-hdata))))
+  (let ((tags (cdr (assoc "tags_array" line-hdata))))
     (cond
-     ((memq :irc_action tags) :irc/action)
-     ((memq :irc_quit tags) :irc/quit)
-     ((memq :irc_privmsg tags) :irc/privmsg)
-     ((memq :irc_join tags) :irc/join)
-     ((memq :irc_part tags) :irc/part)
-     ((memq :irc_mode tags) :irc/mode)
-     (:irc/privmsg)                     ;fallback
-     )))
+     ((member "irc_action" tags) :irc/action)
+     ((member "irc_quit" tags) :irc/quit)
+     ((member "irc_privmsg" tags) :irc/privmsg)
+     ((member "irc_join" tags) :irc/join)
+     ((member "irc_part" tags) :irc/part)
+     ((member "irc_mode" tags) :irc/mode)
+     (:irc/privmsg))))                     ;fallback
 
 (defun weechat-print-irc-action (buffer-ptr sender message date highlight)
   (let ((weechat-text-column 0))
