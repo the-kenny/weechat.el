@@ -453,7 +453,7 @@ Used to identify it on the relay server.")
                                             "dark magenta" "magenta" "dark cyan"
                                             "light cyan" "gray" "white")
   "Mapping of Weechat colors.
-See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings"
+See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
   :type '(repeat (choice (const :tag "Unspecified" unspecified)
                          (const :tag "Color" color)))
   :group 'weechat)
@@ -520,7 +520,7 @@ This is an internal function of `weechat-handle-color-codes'."
 Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
 
 Be aware that Weechat does not use mIRC color codes.
-See http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings.
+See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'.
 
 The optional paramteres are internal!"
   (setq i (or i 0))
