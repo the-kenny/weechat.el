@@ -259,6 +259,11 @@ Set to nil to disable header line.  Currently only supported format option is %t
 
 (weechat-relay-add-id-callback "_buffer_title_changed" #'weechat--handle-buffer-title-changed nil 'force)
 
+(defun weechat-merge-alists (old new)
+  (let ((old (copy-alist old)))
+    (dolist (k new old)
+      (setq old (cons k (assq-delete-all (car k) old))))))
+
 (defun weechat--handle-localvar-changed (response)
   (let* ((hdata (car response))
          (value (car (weechat--hdata-values hdata)))
