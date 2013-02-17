@@ -260,9 +260,9 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (weechat-relay-add-id-callback "_buffer_title_changed" #'weechat--handle-buffer-title-changed nil 'force)
 
 (defun weechat-merge-alists (old new)
-  (let ((old (copy-alist old)))
-    (dolist (k new old)
-      (setq old (cons k (assq-delete-all (car k) old))))))
+  (dolist (k new old)
+    (let ((to-remove (assoc-string (car k) old)))
+     (setq old (cons k (remove to-remove old))))))
 
 (defun weechat--handle-localvar-changed (response)
   (let* ((hdata (car response))
@@ -271,17 +271,21 @@ Set to nil to disable header line.  Currently only supported format option is %t
          (hash (weechat-buffer-hash buffer-ptr))
          (alist (weechat--hdata-value-alist value))
          (buffer (gethash :emacs/buffer hash))
+         (old-local-variables (gethash "local_variables" hash))
          (new-local-variables (cdr (assoc-string "local_variables" alist))))
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_localvar_changed' event for '%s' but the buffer doesn't exist"
              buffer-ptr))
-    (puthash "local_variables" new-local-variables hash)
+    (puthash "local_variables"
+             (weechat-merge-alists old-local-variables new-local-variables)
+             hash)
     (when buffer
       (with-current-buffer buffer
         (weechat-update-prompt)
         (weechat-update-header-line-buffer buffer)))))
 
 (weechat-relay-add-id-callback "_buffer_localvar_changed" #'weechat--handle-localvar-changed nil 'force)
+(weechat-relay-add-id-callback "_buffer_localvar_added" #'weechat--handle-localvar-changed nil 'force)
 
 ;;;###autoload
 (defun weechat-connect (host port password)
