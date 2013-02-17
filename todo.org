@@ -1,7 +1,7 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
-* Short-Term [8/21]
+* Short-Term [9/21]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [7/15]
@@ -35,7 +35,7 @@
 ** DONE Fix /me display
 ** TODO Nicklist handling
    Waiting for delta updates (WeeChat 4.1?)
-** TODO Buttons for URLs and other stuff
+** DONE Buttons for URLs and other stuff
 ** TODO Handle different types of messages [1/8]
    Incomplete List
    (Some of them can be ignored as they print fine with defaults)
@@ -64,4 +64,3 @@
 ** TODO Read passwords from ~/.authinfo
 ** TODO Speedbar integration
 ** TODO Faces based on message type
-** TODO URL Detection
