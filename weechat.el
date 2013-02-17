@@ -89,32 +89,32 @@ See `format-time-string' for format description."
   :group 'weechat)
 
 (defcustom weechat-text-column 22
-  "Column after which text will be inserted. If `(length (concat
-nick timestamp))' is longer than this value, text-column will be
-increased for that line."
+  "Column after which text will be inserted.
+If `(length (concat nick timestamp))' is longer than this value,
+text-column will be increased for that line."
   :type 'integer
   :group 'weechat)
 
 (defcustom weechat-fill-text t
-  "Wether weechat should fill text paragraphs automatically"
+  "Wether weechat should fill text paragraphs automatically."
   :type 'boolean
   :group 'weechat)
 
 (defcustom weechat-fill-column 'frame-width
-  "Column used for filling text in buffers"
+  "Column used for filling text in buffers."
   :type '(choice
           (const :tag "Frame width" 'frame-width)
           (integer :tag "Number")
           (const :tag "Default" t)))
 
 (defcustom weechat-notification-icon nil
-  "Icon used in notifications"
+  "Icon used in notifications."
   :type '(choice (const :tag "No icon" nil)
                  (file :tag "Icon file"))
   :group 'weechat)
 
 (defcustom weechat-notification-handler nil
-  "Function called to display notificiations"
+  "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
           (const :tag "Sauron" 'weechat-sauron-handler)
@@ -123,7 +123,7 @@ increased for that line."
   :group 'weechat)
 
 (defcustom weechat-notification-mode :monitored
-  "When to notify the user"
+  "When to notify the user."
   :type '(choice
           (const :tag "Never" nil)
           (const :tag "Monitored buffers" :monitored)
@@ -141,7 +141,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
   :group 'weechat)
 
 (defcustom weechat-input-ring-size 20
-  "Size for the input ring"
+  "Size for the input ring."
   :type 'integer
   :group 'weechat)
 
@@ -154,7 +154,7 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defvar weechat--connected nil)
 
 (defvar weechat-inhibit-notifications nil
-  "Non-nil means don't display any weechat notifications")
+  "Non-nil means don't display any weechat notifications.")
 
 (defun weechat-connected-p ()
   (and (weechat-relay-connected-p)
@@ -382,8 +382,8 @@ Set to nil to disable header line.  Currently only supported format option is %t
     (gethash :emacs/buffer hash)))
 
 (defvar weechat-buffer-ptr nil
-  "The pointer of the channel buffer. Used to identify it on the
-relay server.")
+  "The pointer of the channel buffer.
+Used to identify it on the relay server.")
 (defvar weechat-server-buffer nil
   "The relay buffer associated with this channel buffer.")
 (defvar weechat-buffer-number nil)
@@ -480,7 +480,7 @@ This is internal and used by `weechat-handle-color-codes'."
               (x (cdr (assq a weechat-color-attributes-alist))))
          (when x
            (list 'attr (1+ i) x))))
-      (t (error "unknown parameter %s" what)))))
+      (t (error "Unknown parameter %s" what)))))
 
 (defun weechat--color-keep-attributes (old-face)
   "Remove color settings from OLD-FACE but keep the attributes."
