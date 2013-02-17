@@ -187,13 +187,15 @@ Set to nil to disable header line.  Currently only supported format option is %t
         (if (hash-table-p buffer-hash)
             (dolist (v alist)
               (puthash (car v) (cdr v) buffer-hash))
-          (weechat--store-buffer-hash buffer-ptr alist))))
-    (run-hooks 'weechat-connect-hook)))
+          (weechat--store-buffer-hash buffer-ptr alist))))))
 
-(defun weechat-update-buffer-list ()
+(defun weechat-update-buffer-list (&optional callback)
   (weechat-relay-send-command
    "hdata buffer:gui_buffers(*) number,name,short_name,title,local_variables"
-   #'weechat--handle-buffer-list))
+   (lambda (response)
+     (weechat--handle-buffer-list response)
+     (when (functionp callback)
+       (funcall callback)))))
 
 (defun weechat--handle-buffer-opened (response)
   (let* ((hdata (car response))
@@ -307,15 +309,17 @@ Set to nil to disable header line.  Currently only supported format option is %t
         "info version"
         (lambda (data)
           (message "Connected to '%s', version %s" host (cdar data))
-          (weechat-update-buffer-list)
-          (weechat-relay-send-command
-           "sync"
-           (lambda (_) (setq weechat--connected t)))))))))
+          (weechat-update-buffer-list
+           (lambda ()
+             (weechat-relay-send-command "sync")
+             (setq weechat--connected t)
+             (run-hooks 'weechat-connect-hook)))))))))
 
 (defun weechat-disconnect ()
   (interactive)
   (weechat-relay-disconnect)
-  (clrhash weechat--buffer-hashes))
+  (clrhash weechat--buffer-hashes)
+  (setq weechat--connected nil))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil)
