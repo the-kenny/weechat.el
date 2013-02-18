@@ -793,6 +793,7 @@ The optional paramteres are internal!"
      ((member "irc_join" tags) :irc/join)
      ((member "irc_part" tags) :irc/part)
      ((member "irc_mode" tags) :irc/mode)
+     ((member "irc_numeric" tags) :irc/numeric)
      (:irc/privmsg))))                     ;fallback
 
 (defun weechat-print-irc-action (buffer-ptr sender message date highlight)
