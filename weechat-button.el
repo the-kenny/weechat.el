@@ -150,7 +150,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
                   (setq log weechat-button-default-log-buffer))
                 (when (or (stringp log) (bufferp log))
                   (weechat-button--insert-log log button-data properties))
-                (apply #'make-text-button start end properties)))))))))
+                (apply #'make-button start end properties)))))))))
 
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
