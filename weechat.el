@@ -55,6 +55,15 @@
   :type 'string
   :group 'weechat)
 
+(defcustom weechat-return-always-replace-input t
+  "Always replace current input with line on return.
+
+If set to t, pressing return will always copy the current line to
+the input prompt. If nil, only copy when the input line is
+empty."
+  :type 'boolean
+  :group 'weechat)
+
 (defcustom weechat-hide-like-weechat t
   "Hide lines in buffer when they're hidden in Weechat."
   :type 'boolean
@@ -879,10 +888,12 @@ The optional paramteres are internal!"
         (weechat-input-ring-insert input)
         (weechat-replace-input ""))))
    ((< (point) weechat-prompt-start-marker)
-    ;; Copy current line to input line
-    (weechat-replace-input
-     (buffer-substring-no-properties
-      (point-at-bol) (point-at-eol)))
+    (when (or (string-equal "" (weechat-get-input))
+              weechat-return-always-replace-input)
+     ;; Copy current line to input line
+     (weechat-replace-input
+      (buffer-substring-no-properties
+       (point-at-bol) (point-at-eol))))
     (goto-char (point-max)))))
 
 (defvar weechat-mode-map
