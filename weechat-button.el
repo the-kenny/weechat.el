@@ -49,9 +49,15 @@ Copied from erc-button.el."
   :group 'weechat-button)
 
 (defcustom weechat-button-default-log-buffer "*WeeChat URL Log*"
-  "Buffer name for URL log."
+  "Buffer name for URL log.
+
+Valid values include a string describing a buffer name or nil to
+disable url logging (except when an explicit buffer name is
+defined in `weechat-button-list')"
   :group 'weechat-button
-  :type 'string)
+  :type '(choice
+          (string :tag "Buffer name")
+          (const :tag "Disable" nil)))
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0)
@@ -118,18 +124,20 @@ The function in property `weechat-function' gets called with `weechat-data'."
     (when function
       (apply function data))))
 
-(defun weechat-button--insert-log (button-data button-properties)
-  (let ((weechat-buffer-name (buffer-name)))
-    (with-current-buffer (get-buffer-create
-                          weechat-button-default-log-buffer)
-      (goto-char (point-max))
-      (unless (bolp)
-        (insert "\n"))
-      (insert weechat-buffer-name "\t")
-      (apply #'insert-text-button button-data button-properties)
-      (insert "\n"))))
+(defun weechat-button--log-to-buffer (button-data button-properties)
+  (when (and weechat-button-default-log-buffer
+             (buffer-live-p (get-buffer weechat-button-default-log-buffer)))
+    (let ((weechat-buffer-name (buffer-name)))
+      (with-current-buffer (get-buffer-create
+                            weechat-button-default-log-buffer)
+        (goto-char (point-max))
+        (unless (bolp)
+          (insert "\n"))
+        (insert weechat-buffer-name "\t")
+        (apply #'insert-text-button button-data button-properties)
+        (insert "\n")))))
 
-(add-hook 'weechat-button-log-functions 'weechat-button--insert-log)
+(add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
 
 (defun weechat-button--add-do (entry)
   "Handle each button ENTRY."
