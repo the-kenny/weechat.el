@@ -705,7 +705,7 @@ The optional paramteres are internal!"
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date buffer-name)))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date highlight)
+(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -734,7 +734,10 @@ The optional paramteres are internal!"
                       " "))
 
             (unless (s-blank? (weechat-handle-color-codes sender))
-              (insert (weechat-handle-color-codes sender) ": "))
+              (insert (weechat-handle-color-codes sender))
+              (when (or (eq line-type :irc/privmsg)
+                        (not line-type))
+                (insert ":")))
 
             (let ((chars-to-insert
                    (- weechat-text-column
@@ -855,6 +858,7 @@ The optional paramteres are internal!"
                                  sender
                                  message
                                  date
+                                 line-type
                                  highlight)))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
