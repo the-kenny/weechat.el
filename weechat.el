@@ -21,11 +21,18 @@
 
 
 ;;; Commentary:
-;;
+
+;; This package provides a way to chat via WeeChat's relay protocol in
+;; Emacs.
+
+;; Please see README.org on how to use it.
+
+;;; Code:
 
 (require 'weechat-relay)
 (require 'cl-lib)
 (require 'rx)
+(require 'format-spec)
 
 (defgroup weechat nil
   "Weechat based IRC client for Emacs."
@@ -117,7 +124,10 @@ text-column will be increased for that line."
                  (file :tag "Icon file"))
   :group 'weechat)
 
-(defcustom weechat-notification-handler nil
+(defcustom weechat-notification-handler
+  (cond
+   ((featurep 'sauron) 'weechat-sauron-handler)
+   ((featurep 'notifications) 'weechat-notifications-handler))
   "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
@@ -127,7 +137,10 @@ text-column will be increased for that line."
   :group 'weechat)
 
 (defcustom weechat-notification-mode :monitored
-  "When to notify the user."
+  "When to notify the user.
+
+Possible values are nil (Never), :monitored (Only monitored
+buffers) and t (All buffers)."
   :type '(choice
           (const :tag "Never" nil)
           (const :tag "Monitored buffers" :monitored)
@@ -584,7 +597,7 @@ The optional paramteres are internal!"
       ((?\x1A) ;; Set ATTR
        (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
          (unless match-data
-           (error "Broken color code (in ?\x1A '%s' %s)" str i))
+           (error "Broken color code (in ?\\x1A '%s' %s)" str i))
          (if (eq (cl-third match-data) 'keep)
              (setq face (weechat--color-keep-attributes face))
            (setq face (list (cl-third match-data))))
@@ -594,7 +607,7 @@ The optional paramteres are internal!"
        (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
              (old-face (copy-sequence face)))
          (unless match-data
-           (error "Broken color code (in ?\x1B '%s' %s)" str i))
+           (error "Broken color code (in ?\\x1B '%s' %s)" str i))
          (if (eq (cl-third match-data) 'keep)
              (setq face nil) ;; TODO Does keep here means delete all or keep all?
            (setq face (delq (cl-third match-data) old-face)))
@@ -746,10 +759,10 @@ The optional paramteres are internal!"
     (let ((sender (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
-          (highlight (assoc-default "highlight" line-data))
+          (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (equal 1 (assoc-default "displayed" line-data))))
-      (setq highlight (equal 1 highlight)) ;`=' throws for nil
+          (visible (= 1 (assoc-default "displayed" line-data nil 0))))
+      (setq highlight (= 1 highlight))
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       visible))
