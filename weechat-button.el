@@ -69,7 +69,7 @@ BUTTON-MATCH is the number of the regexp grouping which represents the actual
 BUTTONIZE? if t the button is always created if it is a function then the button
   is only created if it evals to non-nil.
 
-LOG to be implemented ...
+LOG decides if `weechat-button-log-functions' gets called.
 
 HELP-ECHO is the `help-echo' property of the button.
   See Info node `(elisp) Button Properties'.
@@ -99,6 +99,15 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                                :inline t
                                (integer :tag "Regexp section number")))))
 
+(defvar weechat-button-log-functions nil
+  "List of function to run when a button should be logged.
+
+This hook only runs when `LOG' is set to `t' for the particular
+button type.
+
+Functions in list must have two arguments: The button data (the
+match string) and a plist describing the button properties.")
+
 ;;; Internal functions
 
 (defun weechat-button--handler (button)
@@ -109,15 +118,18 @@ The function in property `weechat-function' gets called with `weechat-data'."
     (when function
       (apply function data))))
 
-(defun weechat-button--insert-log (log-buffer button-data button-properties)
+(defun weechat-button--insert-log (button-data button-properties)
   (let ((weechat-buffer-name (buffer-name)))
-    (with-current-buffer (get-buffer-create log-buffer)
+    (with-current-buffer (get-buffer-create
+                          weechat-button-default-log-buffer)
       (goto-char (point-max))
       (unless (bolp)
         (insert "\n"))
       (insert weechat-buffer-name "\t")
       (apply #'insert-text-button button-data button-properties)
       (insert "\n"))))
+
+(add-hook 'weechat-button-log-functions 'weechat-button--insert-log)
 
 (defun weechat-button--add-do (entry)
   "Handle each button ENTRY."
@@ -146,10 +158,17 @@ The function in property `weechat-function' gets called with `weechat-data'."
                                       'follow-link t
                                       'weechat-function action
                                       'weechat-data data)))
-                (when (eq log t)
-                  (setq log weechat-button-default-log-buffer))
-                (when (or (stringp log) (bufferp log))
-                  (weechat-button--insert-log log button-data properties))
+                (when log
+                  ;; Hack: Rebind `weechat-button-default-log-buffer'
+                  ;; to the value supplied by the button type in
+                  ;; `weechat-button-list'
+                  (let ((weechat-button-default-log-buffer
+                         (if (or (stringp log) (bufferp log))
+                             log
+                           weechat-button-default-log-buffer)))
+                    (run-hook-with-args 'weechat-button-log-functions
+                                        button-data
+                                        properties)))
                 (apply #'make-button start end properties)))))))))
 
 (defun weechat-button--add ()
