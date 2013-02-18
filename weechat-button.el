@@ -134,7 +134,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
         (unless (bolp)
           (insert "\n"))
         (insert weechat-buffer-name "\t")
-        (apply #'insert-text-button button-data button-properties)
+        (apply #'insert-button button-data button-properties)
         (insert "\n")))))
 
 (add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
@@ -157,6 +157,8 @@ The function in property `weechat-function' gets called with `weechat-data'."
           (let ((start (match-beginning button-match))
                 (end (match-end button-match))
                 (button-data (match-string button-match))
+                (button-data-no-properties
+                 (match-string-no-properties button-match))
                 (data (mapcar #'match-string data-match)))
             (when (or (eq buttonize? t)
                       (and (functionp buttonize?)
@@ -175,7 +177,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
                              log
                            weechat-button-default-log-buffer)))
                     (run-hook-with-args 'weechat-button-log-functions
-                                        button-data
+                                        button-data-no-properties
                                         properties)))
                 (apply #'make-button start end properties)))))))))
 
