@@ -838,11 +838,11 @@ The optional paramteres are internal!"
         (with-current-buffer buffer
           (when weechat-debug-strip-formatting
             (setq sender (weechat-strip-formatting sender))
-            (setq message (weechat-strip-formatting message))))
+            (setq message (weechat-strip-formatting message)))
 
-        (cl-case line-type
-          (:irc/join (weechat--user-list-add nick))
-          ((:irc/part :irc/quit) (weechat--user-list-remove nick)))
+          (cl-case line-type
+            (:irc/join (weechat--user-list-add nick))
+            ((:irc/part :irc/quit) (weechat--user-list-remove nick))))
 
         ;; Print the line
         (cl-case line-type
