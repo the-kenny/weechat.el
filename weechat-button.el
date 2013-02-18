@@ -200,17 +200,16 @@ and `apropos' for other symbols."
 
 ;;; Module load/unload
 
-;; TODO module system
-(defun weechat-button-enable ()
-  "Enable module."
-  (add-hook 'weechat-insert-modify-hook
-            #'weechat-button--add))
+;;; This is done automatically by `load-library' or `require'.
+;;; Unloading is taken care of, because hooks added via `add-hook'
+;;; will be removed automatically by `unload-feature'.
 
-(defun weechat-button-disable ()
-  "Disable module."
-  (remove-hook 'weechat-insert-modify-hook
-               #'weechat-button--add))
+;;; If you need special cleanup code, use define a function named
+;;; `FEATURE-unload-function'. This function will be called by emacs
+;;; right before unloading the feature. Check the docstring of
+;;; `unload-feature' for details.
 
+(add-hook 'weechat-insert-modify-hook #'weechat-button--add)
 
 (provide 'weechat-button)
 
