@@ -785,7 +785,7 @@ The optional paramteres are internal!"
 	  (buffer-enable-undo))))
 
 (defun weechat-line-type (line-hdata)
-  (let ((tags (cdr (assoc "tags_array" line-hdata))))
+  (let ((tags (cdr (assoc-string "tags_array" line-hdata))))
     (cond
      ((member "irc_action" tags) :irc/action)
      ((member "irc_quit" tags) :irc/quit)
@@ -810,10 +810,10 @@ The optional paramteres are internal!"
   (setq weechat-user-list (delete nick weechat-user-list)))
 
 (defun weechat--get-nick-from-line-data (line-hdata)
-  (let ((tags-array (cdr (assoc "tags_array" line-hdata))))
+  (let ((tags-array (cdr (assoc-string "tags_array" line-hdata))))
     (if tags-array
         (s-chop-prefix "nick_" (cl-find-if (lambda (s) (s-prefix? "nick_" s)) tags-array))
-      (let* ((prefix (cdr (assoc "prefix" line-hdata)))
+      (let* ((prefix (cdr (assoc-string "prefix" line-hdata)))
              ;; Try to strip the color and prefix from nick
              (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
         (or (cadr nick-match) prefix "")))))
