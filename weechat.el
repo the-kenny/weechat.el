@@ -837,7 +837,6 @@ The optional paramteres are internal!"
             (setq sender (weechat-strip-formatting sender))
             (setq message (weechat-strip-formatting message))))
 
-        (message "nick %s" nick)
         (cl-case line-type
           (:irc/join (weechat--user-list-add nick))
           ((:irc/part :irc/quit) (weechat--user-list-remove nick)))
