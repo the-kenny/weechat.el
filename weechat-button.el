@@ -82,22 +82,22 @@ DATA-MATCH... numbers of the regexp groupings whose text will be passed to
 This is similar (but not identical) to `erc-button-alist' in ERC."
   :group 'weechat-button
   :type '(repeat :tag "Buttons"
-          (list (choice :tag "Matches"
-                        regexp
-                        (variable :tag "Variable containing regexp"))
-                (integer :tag "Number of the regexp section that matches")
-                (choice :tag "When to buttonize"
-                        (const :tag "Always" t)
-                        (function :tag "Only when the function returns non-nil"))
-                (choice :tag "Log match"
-                        (const :tag "To default buffer" t)
-                        (const :tag "Never" nil)
-                        (string :tag "To buffer name"))
-                (string :tag "Help echo text")
-                (function :tag "Call this function when button is pressed")
-                (repeat :tag "Sections of regexp to send to the function"
-                        :inline t
-                        (integer :tag "Regexp section number")))))
+                 (list (choice :tag "Matches"
+                               regexp
+                               (variable :tag "Variable containing regexp"))
+                       (integer :tag "Number of the regexp section that matches")
+                       (choice :tag "When to buttonize"
+                               (const :tag "Always" t)
+                               (function :tag "Only when the function returns non-nil"))
+                       (choice :tag "Log match"
+                               (const :tag "To default buffer" t)
+                               (const :tag "Never" nil)
+                               (string :tag "To buffer name"))
+                       (string :tag "Help echo text")
+                       (function :tag "Call this function when button is pressed")
+                       (repeat :tag "Sections of regexp to send to the function"
+                               :inline t
+                               (integer :tag "Regexp section number")))))
 
 ;;; Internal functions
 
