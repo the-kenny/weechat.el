@@ -1230,6 +1230,10 @@ Default is current buffer."
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
+(defun weechat-join (channel)
+  "Join CHANNEL."
+  (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))
+
 (provide 'weechat)
 
 ;;; weechat.el ends here
