@@ -1148,13 +1148,56 @@ Default is current buffer."
   :type 'string
   :group 'weechat)
 
+(defun weechat-pcompletions-at-point ()
+  "ERC completion data from pcomplete.
+for use on `completion-at-point-function'."
+  (when (>= (point) weechat-prompt-end-marker)
+    (or (let ((pcomplete-default-completion-function #'ignore))
+          (pcomplete-completions-at-point))
+        (let ((c (pcomplete-completions-at-point)))
+          (if c (nconc c '(:exclusive no)))))))
+
 (defun pcomplete-weechat-setup ()
   "Setup pcomplete for `weechat-mode'."
   (set (make-local-variable 'pcomplete-ignore-case) t)
+  (set (make-local-variable 'pcomplete-parse-arguments-function)
+       #'pcomplete-weechat-parse-arguments)
   (set (make-local-variable 'pcomplete-command-completion-function)
        #'pcomplete/weechat/complete-command)
+  (set (make-local-variable 'pcomplete-command-name-function)
+       #'pcomplete-weechat-command-name)
   (set (make-local-variable 'pcomplete-default-completion-function)
        (lambda () (pcomplete-here (pcomplete-weechat-nicks)))))
+
+(defun pcomplete-weechat-parse-arguments ()
+  "Return a list of parsed whitespace-separated arguments.
+These are the words from the beginning of the line after the prompt
+up to where point is right now.
+
+Copied from `pcomplete-erc-parse-arguments'."
+  (let* ((start weechat-prompt-end-marker)
+         (end (point))
+         args beginnings)
+    (save-excursion
+      (when (< (skip-chars-backward " \t\n" start) 0)
+        (setq args '("")
+              beginnings (list end)))
+      (setq end (point))
+      (while (< (skip-chars-backward "^ \t\n" start) 0)
+        (setq beginnings (cons (point) beginnings)
+              args (cons (buffer-substring-no-properties
+                          (point) end)
+                         args))
+        (skip-chars-backward " \t\n" start)
+        (setq end (point))))
+    (cons args beginnings)))
+
+(defun pcomplete-weechat-command-name ()
+  "Return the command name of the first argument.
+Copied from `pcomplete-erc-command-name'."
+  (if (eq (aref (pcomplete-arg 'first) 0) ?/)
+      (upcase (substring (pcomplete-arg 'first) 1))
+    "SAY"))
 
 (defun pcomplete/weechat/complete-command ()
   "Complete the initial command argument."
@@ -1165,7 +1208,7 @@ Default is current buffer."
 
 (defun pcomplete-weechat-commands ()
   "Return a list of user commands."
-  '("nick" "join" "part")) ;; TODO
+  '("/NICK" "/JOIN" "/PART")) ;; TODO
 
 (defun pcomplete-weechat-nicks (&optional postfix ignore-self)
   "Return a list of nicks in the current channel.
