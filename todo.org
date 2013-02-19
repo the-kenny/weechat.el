@@ -1,7 +1,7 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
-* Short-Term [9/21]
+* Short-Term [10/21]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [7/15]
@@ -22,7 +22,7 @@
    - [ ] _upgrade_ended
 ** DONE Print 'connection lost' message to all buffers
 ** DONE Input-Ring
-** TODO Nick Completion
+** DONE Nick Completion
 ** TODO Auto-Reconnect
 ** DONE List with buffers to "auto-watch"
 ** TODO Mark channel as "read" from Emacs

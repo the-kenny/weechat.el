@@ -96,6 +96,10 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
+(defface weechat-nick-self-face '((t :weight bold :foreground "brown"))
+  "Face for your own nick."
+  :group 'weechat)
+
 (defface weechat-time-face '((t :inherit default))
   "Weechat face used for timestamps."
   :group 'weechat)
@@ -169,6 +173,11 @@ Set to nil to disable header line.  Currently only supported format option is %t
 (defcustom weechat-input-ring-size 20
   "Size for the input ring."
   :type 'integer
+  :group 'weechat)
+
+(defcustom weechat-complete-order-nickname t
+  "If non-nil nicknames are completed in order of most recent speaker."
+  :type 'boolean
   :group 'weechat)
 
 (defvar weechat-debug-strip-formatting nil)
@@ -541,6 +550,60 @@ This is an internal function of `weechat-handle-color-codes'."
     (cl-values (cl-second match-data)
                face)))
 
+(defvar weechat-color-options-list
+  '(("weechat.color.separator" . "blue") ;; KEEP THE ORDER!
+    ("weechat.color.chat" . default)
+    ("weechat.color.chat_time" . weechat-time-face)
+    ("weechat.color.chat_time_delimiters" . weechat-time-face)
+    ("weechat.color.chat_prefix_error" . "yellow")
+    ("weechat.color.chat_prefix_network" . "magenta")
+    ("weechat.color.chat_prefix_action" . "white")
+    ("weechat.color.chat_prefix_join" . "light green")
+    ("weechat.color.chat_prefix_quit" . "light red")
+    ("weechat.color.chat_prefix_more" . "light magenta")
+    ("weechat.color.chat_prefix_suffix" . "green")
+    ("weechat.color.chat_buffer" . "white")
+    ("weechat.color.chat_server" . "brown")
+    ("weechat.color.chat_channel" . "white")
+    ("weechat.color.chat_nick" . "light cyan")
+    ("weechat.color.chat_nick_self" . weechat-nick-self-face)
+    ("weechat.color.chat_nick_other" . "cyan")
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    (nil . default)
+    ("weechat.color.chat_host" . "cyan")
+    ("weechat.color.chat_delimiters" . "green")
+    ("weechat.color.chat_highlight" . weechat-highlight-face)
+    ("weechat.color.chat_read_marker" . "magenta")
+    ("weechat.color.chat_text_found" . "yellow")
+    ("weechat.color.chat_value" . "cyan")
+    ("weechat.color.chat_prefix_buffer")
+    ("weechat.color.chat_tags" . "red")
+    ("weechat.color.chat_inactive_window" . "dark grey")
+    ("weechat.color.chat_inactive_buffer" . "dark grey")
+    ("weechat.color.chat_prefix_buffer_inactive_buffer" . "dark grey")
+    ("weechat.color.chat_nick_offline" . "dark grey")
+    ("weechat.color.chat_nick_offline_highlight" . default))
+  "List of color options for \x19XX.")
+;; TODO every option here should probably be a face!
+
+(defun weechat--color-std-to-theme (num)
+  "Turn color code in NUM using option into face."
+  (if (or (not (integerp num))
+          (> num (length weechat-color-options-list)))
+      'default
+    (let ((face (cdr (nth num weechat-color-options-list))))
+      (if (stringp face) ;; color value
+          (list (list :foreground face ))
+        face))))
+
 (defun weechat-handle-color-codes (str &optional i ret face)
   "Convert the Weechat color codes in STR to properties.
 Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
@@ -563,7 +626,7 @@ The optional paramteres are internal!"
           ((and (<= ?0 next) (<= next ?9)) ;; STD
            (let ((match-data (weechat--match-color-code 'std str i)))
              (when match-data
-               ;; TODO
+               (setq face (weechat--color-std-to-theme (cl-third match-data)))
                (setq i (cl-second match-data)))))
           ((= next ?@) ;; EXT
            (let ((match-data (weechat--match-color-code 'ext str i)))
@@ -662,7 +725,7 @@ The optional paramteres are internal!"
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date buffer-name)))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date highlight)
+(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -691,7 +754,10 @@ The optional paramteres are internal!"
                       " "))
 
             (unless (s-blank? (weechat-handle-color-codes sender))
-              (insert (weechat-handle-color-codes sender) ": "))
+              (insert (weechat-handle-color-codes sender))
+              (when (or (eq line-type :irc/privmsg)
+                        (not line-type))
+                (insert ":")))
 
             (let ((chars-to-insert
                    (- weechat-text-column
@@ -739,15 +805,18 @@ The optional paramteres are internal!"
 	  (buffer-enable-undo))))
 
 (defun weechat-line-type (line-hdata)
-  ;; TODO: Is tags only available on 0.4.0?
-  (let ((tags (mapcar (lambda (x) (intern-soft (concat ":" x)))
-                      (assoc-default "tags_array" line-hdata))))
+  (let ((tags (cdr (assoc-string "tags_array" line-hdata))))
     (cond
-     ((memq :irc_action tags) :irc/action)
-     ((memq :irc_quit tags) :irc/quit)
-     ((memq :irc_privmsg tags) :irc/privmsg)
-     (:irc/privmsg)                     ;fallback
-     )))
+     ((member "irc_privmsg" tags) :irc/privmsg)
+     ((member "irc_join" tags) :irc/join)
+     ((member "irc_action" tags) :irc/action)
+     ((member "irc_part" tags) :irc/part)
+     ((member "irc_quit" tags) :irc/quit)
+     ((member "irc_mode" tags) :irc/mode)
+     ((member "irc_nick" tags) :irc/nick)
+     ((member "irc_topic" tags) :irc/topic)
+     ((member "irc_numeric" tags) :irc/numeric)
+     (:irc/privmsg))))                     ;fallback
 
 (defun weechat-print-irc-action (buffer-ptr sender message date highlight)
   (let ((weechat-text-column 0))
@@ -756,6 +825,31 @@ The optional paramteres are internal!"
                         (concat sender message)
                         date
                         highlight)))
+
+(defvar weechat-user-list)
+(defun weechat--user-list-add (nick)
+  (setq weechat-user-list (cons nick (delete nick weechat-user-list))))
+(defun weechat--user-list-remove (nick)
+  (setq weechat-user-list (delete nick weechat-user-list)))
+
+(defun weechat--get-nick-from-tag (line-hdata &optional nick-tag)
+  "Get nick name from tags_array in LINE-HDATA.
+If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
+  (setq nick-tag (or nick-tag "nick_"))
+  (let ((tags-array (cdr (assoc-string "tags_array" line-hdata))))
+    (when tags-array
+      (s-chop-prefix
+       nick-tag
+       (cl-find-if (lambda (s) (s-prefix? nick-tag s)) tags-array)))))
+
+(defun weechat--get-nick-from-line-data (line-hdata)
+  "Get nick name from LINE-HDATA."
+  (or
+   (weechat--get-nick-from-tag line-hdata)
+   (let* ((prefix (cdr (assoc-string "prefix" line-hdata)))
+          ;; Try to strip the color and prefix from nick
+          (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
+     (or (cadr nick-match) prefix ""))))
 
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
@@ -767,14 +861,29 @@ The optional paramteres are internal!"
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (= 1 (assoc-default "displayed" line-data nil 0))))
+          (visible (= 1 (assoc-default "displayed" line-data nil 0)))
+          (nick (weechat--get-nick-from-line-data line-data)))
       (setq highlight (= 1 highlight))
       (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
                  (and weechat-hide-like-weechat
                       visible))
-        (when weechat-debug-strip-formatting
-          (setq sender (weechat-strip-formatting sender))
-          (setq message (weechat-strip-formatting message)))
+
+        (with-current-buffer buffer
+          (when weechat-debug-strip-formatting
+            (setq sender (weechat-strip-formatting sender))
+            (setq message (weechat-strip-formatting message)))
+
+          (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
+                  (eq line-type :irc/join))
+              (weechat--user-list-add nick)
+            (cl-case line-type
+              (:irc/nick
+               (let ((from-nick (weechat--get-nick-from-tag line-data "irc_nick1_"))
+                     (to-nick (weechat--get-nick-from-tag line-data "irc_nick2_")))
+                 (when (and from-nick to-nick)
+                   (weechat--user-list-remove from-nick)
+                   (weechat--user-list-add to-nick))))
+              ((:irc/part :irc/quit)) (weechat--user-list-remove nick))))
 
         ;; Print the line
         (cl-case line-type
@@ -790,6 +899,7 @@ The optional paramteres are internal!"
                                  sender
                                  message
                                  date
+                                 line-type
                                  highlight)))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
@@ -908,6 +1018,7 @@ The optional paramteres are internal!"
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
+    (define-key map "\t" 'completion-at-point)
     map)
   "Keymap for weechat mode.")
 
@@ -977,6 +1088,7 @@ Default is current buffer."
   (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
   (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
 
+  (set (make-local-variable 'weechat-user-list) nil)
   (make-local-variable 'weechat-local-prompt)
   (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
   (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
