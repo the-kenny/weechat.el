@@ -799,6 +799,7 @@ The optional paramteres are internal!"
      ((member "irc_quit" tags) :irc/quit)
      ((member "irc_mode" tags) :irc/mode)
      ((member "irc_nick" tags) :irc/nick)
+     ((member "irc_topic" tags) :irc/topic)
      ((member "irc_numeric" tags) :irc/numeric)
      (:irc/privmsg))))                     ;fallback
 
