@@ -419,10 +419,11 @@ It is called with narrowing in the correct buffer."
     acc))
 
 (defun weechat-channel-names-unmonitored ()
-  (remove-if (lambda (name)
-               (weechat--emacs-buffer
-                (weechat--find-buffer name)))
-             (weechat-channel-names)))
+  (cl-remove-if
+   (lambda (name)
+     (weechat--emacs-buffer
+      (weechat--find-buffer name)))
+   (weechat-channel-names)))
 
 (defun weechat--emacs-buffer (buffer-ptr)
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
@@ -1206,11 +1207,14 @@ Default is current buffer."
                             (lambda (ac)
                               (when (s-contains? channel ac) ac))
                             available-channels))
-             (buffer-ptr (weechat--find-buffer channel-name)))
+             (buffer-ptr (and (weechat--find-buffer channel-name))))
         ;; Only auto-connect if it there isn't already a buffer monitoring the channel
-        (unless (weechat--emacs-buffer buffer-ptr)
-          (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
-          (weechat-monitor-buffer buffer-ptr nil))))))
+        (if buffer-ptr
+         (unless (weechat--emacs-buffer buffer-ptr)
+           (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
+           (weechat-monitor-buffer buffer-ptr nil))
+         (warn "Couldn't monitor channel '%s'. Not found." channel))))))
+
 
 (add-hook 'weechat-connect-hook 'weechat-auto-monitor 'append)
 
