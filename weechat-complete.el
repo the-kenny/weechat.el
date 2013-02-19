@@ -33,6 +33,9 @@
 (require 'weechat)
 (require 'pcomplete)
 
+(defvar weechat-user-list)
+(defvar weechat-prompt-end-marker)
+
 (defcustom weechat-complete-nick-postfix ":"
   "Postfix to nick completions at the beginning of the prompt."
   :type 'string
@@ -98,9 +101,15 @@ Copied from `pcomplete-erc-command-name'."
     (pcomplete-weechat-commands)
     (pcomplete-weechat-nicks weechat-complete-nick-postfix 'ignore-self))))
 
+(defun pcomplete/weechat-mode/WHOIS ()
+  (pcomplete-here (pcomplete-weechat-all-nicks)))
+
+(defun pcomplete/weechat-mode/QUERY ()
+  (pcomplete-here (pcomplete-weechat-all-nicks)))
+
 (defun pcomplete-weechat-commands ()
   "Return a list of user commands."
-  '("/NICK" "/JOIN" "/PART")) ;; TODO
+  '("/NICK" "/JOIN" "/PART" "/WHOIS" "/QUERY")) ;; TODO
 
 (defun pcomplete-weechat-nicks (&optional postfix ignore-self)
   "Return a list of nicks in the current channel.
@@ -112,6 +121,13 @@ If IGNORE-SELF is non-nil the users nick is ignored."
     (if (stringp postfix)
         (mapcar (lambda (nick) (concat nick postfix)) users)
       users)))
+
+(defun pcomplete-weechat-all-nicks ()
+  "Return nick list of all weechat buffers."
+  (let (result)
+    (dolist (i (weechat-buffer-list) result)
+      (with-current-buffer i
+        (setq result (cl-union weechat-user-list result :test #'s-equals?))))))
 
 (provide 'weechat-complete)
 
