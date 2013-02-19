@@ -792,12 +792,13 @@ The optional paramteres are internal!"
 (defun weechat-line-type (line-hdata)
   (let ((tags (cdr (assoc-string "tags_array" line-hdata))))
     (cond
-     ((member "irc_action" tags) :irc/action)
-     ((member "irc_quit" tags) :irc/quit)
      ((member "irc_privmsg" tags) :irc/privmsg)
      ((member "irc_join" tags) :irc/join)
+     ((member "irc_action" tags) :irc/action)
      ((member "irc_part" tags) :irc/part)
+     ((member "irc_quit" tags) :irc/quit)
      ((member "irc_mode" tags) :irc/mode)
+     ((member "irc_nick" tags) :irc/nick)
      ((member "irc_numeric" tags) :irc/numeric)
      (:irc/privmsg))))                     ;fallback
 
@@ -811,18 +812,28 @@ The optional paramteres are internal!"
 
 (defvar weechat-user-list)
 (defun weechat--user-list-add (nick)
-  (setq weechat-user-list (cons nick (delq nick weechat-user-list))))
+  (setq weechat-user-list (cons nick (delete nick weechat-user-list))))
 (defun weechat--user-list-remove (nick)
   (setq weechat-user-list (delete nick weechat-user-list)))
 
-(defun weechat--get-nick-from-line-data (line-hdata)
+(defun weechat--get-nick-from-tag (line-hdata &optional nick-tag)
+  "Get nick name from tags_array in LINE-HDATA.
+If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
+  (setq nick-tag (or nick-tag "nick_"))
   (let ((tags-array (cdr (assoc-string "tags_array" line-hdata))))
-    (if tags-array
-        (s-chop-prefix "nick_" (cl-find-if (lambda (s) (s-prefix? "nick_" s)) tags-array))
-      (let* ((prefix (cdr (assoc-string "prefix" line-hdata)))
-             ;; Try to strip the color and prefix from nick
-             (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
-        (or (cadr nick-match) prefix "")))))
+    (when tags-array
+      (s-chop-prefix
+       nick-tag
+       (cl-find-if (lambda (s) (s-prefix? nick-tag s)) tags-array)))))
+
+(defun weechat--get-nick-from-line-data (line-hdata)
+  "Get nick name from LINE-HDATA."
+  (or
+   (weechat--get-nick-from-tag line-hdata)
+   (let* ((prefix (cdr (assoc-string "prefix" line-hdata)))
+          ;; Try to strip the color and prefix from nick
+          (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
+     (or (cadr nick-match) prefix ""))))
 
 (defun weechat-print-line-data (line-data)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
@@ -849,8 +860,14 @@ The optional paramteres are internal!"
           (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
                   (eq line-type :irc/join))
               (weechat--user-list-add nick)
-            (when (memq line-type '(:irc/part :irc/quit))
-              (weechat--user-list-remove nick))))
+            (cl-case line-type
+              (:irc/nick
+               (let ((from-nick (weechat--get-nick-from-tag line-data "irc_nick1_"))
+                     (to-nick (weechat--get-nick-from-tag line-data "irc_nick2_")))
+                 (when (and from-nick to-nick)
+                   (weechat--user-list-remove from-nick)
+                   (weechat--user-list-add to-nick))))
+              ((:irc/part :irc/quit)) (weechat--user-list-remove nick))))
 
         ;; Print the line
         (cl-case line-type
