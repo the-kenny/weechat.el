@@ -108,7 +108,7 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
 (defvar weechat-button-log-functions nil
   "List of function to run when a button should be logged.
 
-This hook only runs when `LOG' is set to `t' for the particular
+This hook only runs when `LOG' is set to t for the particular
 button type.
 
 Functions in list must have two arguments: The button data (the
