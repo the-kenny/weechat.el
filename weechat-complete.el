@@ -92,7 +92,7 @@ Copied from `pcomplete-erc-parse-arguments'."
 Copied from `pcomplete-erc-command-name'."
   (if (eq (aref (pcomplete-arg 'first) 0) ?/)
       (upcase (substring (pcomplete-arg 'first) 1))
-    "/SAY"))
+    "SAY"))
 
 (defun pcomplete/weechat/complete-command ()
   "Complete the initial command argument."
@@ -106,6 +106,9 @@ Copied from `pcomplete-erc-command-name'."
 
 (defun pcomplete/weechat-mode/QUERY ()
   (pcomplete-here (pcomplete-weechat-all-nicks)))
+
+(defun pcomplete/weechat-mode/SAY ()
+  (while (pcomplete-here (pcomplete-weechat-nicks))))
 
 (defun pcomplete-weechat-commands ()
   "Return a list of user commands."
