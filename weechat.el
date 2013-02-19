@@ -419,10 +419,10 @@ It is called with narrowing in the correct buffer."
     acc))
 
 (defun weechat-channel-names-unmonitored ()
-  (remove-if (lambda (name)
-               (weechat--emacs-buffer
-                (weechat--find-buffer name)))
-             (weechat-channel-names)))
+  (cl-remove-if (lambda (name)
+                  (weechat--emacs-buffer
+                   (weechat--find-buffer name)))
+                (weechat-channel-names)))
 
 (defun weechat--emacs-buffer (buffer-ptr)
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
