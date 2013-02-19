@@ -181,8 +181,6 @@ It is called with narrowing in the correct buffer."
   :type 'hook
   :group 'weechat)
 
-;;; Code:
-
 (defcustom weechat-complete-order-nickname t
   "If non-nil nicknames are completed in order of most recent speaker."
   :type 'boolean
