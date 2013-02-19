@@ -1033,7 +1033,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
 (defun weechat-return ()
   (interactive)
   (cond
-   ((> (point) weechat-prompt-end-marker)
+   ((>= (point) weechat-prompt-end-marker)
     ;; Submit
     (let ((input (weechat-get-input)))
       (unless (string= "" input)
@@ -1044,10 +1044,10 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
    ((< (point) weechat-prompt-start-marker)
     (when (or (string-equal "" (weechat-get-input))
               weechat-return-always-replace-input)
-     ;; Copy current line to input line
-     (weechat-replace-input
-      (buffer-substring-no-properties
-       (point-at-bol) (point-at-eol))))
+      ;; Copy current line to input line
+      (weechat-replace-input
+       (buffer-substring-no-properties
+        (point-at-bol) (point-at-eol))))
     (goto-char (point-max)))))
 
 (defvar weechat-mode-map
