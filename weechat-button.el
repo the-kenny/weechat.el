@@ -83,11 +83,20 @@ defined in `weechat-button-list')"
           (const :tag "Never" t)
           (sexp :tag "Only when this evaluates to non-nil")))
 
+(defcustom weechat-button-buttonize-emails nil
+  "Buttonize e-mail link?"
+  :group 'weechat-button
+  :type '(choice
+          (const :tag "Always" t)
+          (const :tag "Never" t)
+          (sexp :tag "Only when this evaluates to non-nil")))
+
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
                                browse-url 0)
     ("#[-#+_[:alnum:]]+" 0 weechat-button-buttonize-channels nil "Join Channel"
      weechat-join 0)
+    ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
      weechat-button--describe-symbol 1))
   "List of potential buttons in WeeChat chat buffers.
@@ -236,6 +245,10 @@ and `apropos' for other symbols."
           ((and symbol (boundp symbol))
            (describe-variable symbol))
           (t (apropos symbol-name)))))
+
+(defun weechat-button--mailto (email)
+  "Call `browse-url' on email with \"mailto:\" prepend."
+  (browse-url (concat "mailto:" email)))
 
 ;;; Module load/unload
 
