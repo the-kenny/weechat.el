@@ -655,6 +655,15 @@ The optional paramteres are internal!"
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler sender text date buffer-name)))
 
+(defun weechat-narrow-to-line ()
+  (interactive)
+  (unless (eq major-mode 'weechat-mode)
+    (error "No weechat-mode buffer"))
+  (when (> (point) weechat-prompt-start-marker)
+    (error "Only narrowing to lines is supported"))
+  (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
+                                        (point-at-eol))))
+
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
@@ -674,8 +683,7 @@ The optional paramteres are internal!"
             (set-marker-insertion-type weechat-prompt-start-marker t)
             (set-marker-insertion-type weechat-prompt-end-marker t)
 
-            (narrow-to-region (point-at-bol)
-                              weechat-prompt-start-marker)
+            (weechat-narrow-to-line)
 
             (when date
               (insert (propertize
