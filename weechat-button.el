@@ -127,28 +127,22 @@ The function in property `weechat-function' gets called with `weechat-data'."
     (when function
       (apply function data))))
 
-(defvar-local weechat-button-log-buffer-last-log nil)
 (defun weechat-button--log-to-buffer (button-data button-properties)
   (when (and weechat-button-default-log-buffer)
     (let ((weechat-buffer-name (buffer-name))
           (line-date (weechat-line-date)))
       (with-current-buffer (get-buffer-create
-                            weechat-button-default-log-buffer)
-        (when (and line-date
-                   (or (null weechat-button-log-buffer-last-log)
-                       (time-less-p weechat-button-log-buffer-last-log
-                                    line-date)))
-          (goto-char (point-max))
-          (unless (bolp)
-            (insert "\n"))
-          (insert weechat-buffer-name "\t")
-          (apply #'insert-button button-data button-properties)
-          (insert "\n")
-          (setq-local weechat-button-log-buffer-last-log
-                      line-date))))))
+                            weechat-button-default-log-buffer) 
+        (goto-char (point-max))
+        (unless (bolp)
+          (insert "\n"))
+        (insert weechat-buffer-name "\t")
+        (apply #'insert-button button-data button-properties)
+        (insert "\n")))))
 
 (add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
 
+(defvar weechat-button-log-buffer-last-log nil)
 (defun weechat-button--add-do (entry)
   "Handle each button ENTRY."
   (save-excursion
@@ -161,7 +155,13 @@ The function in property `weechat-function' gets called with `weechat-data'."
            (log (nth 3 entry))
            (help-echo (nth 4 entry))
            (action (nth 5 entry))
-           (data-match (nthcdr 6 entry)))
+           (data-match (nthcdr 6 entry))
+           (line-date (weechat-line-date))
+           (run-hooks?
+            (and line-date
+                 (or (null weechat-button-log-buffer-last-log)
+                     (time-less-p weechat-button-log-buffer-last-log
+                                  line-date)))))
       (when regexp
         (while (re-search-forward regexp nil t)
           (let ((start (match-beginning button-match))
@@ -178,7 +178,8 @@ The function in property `weechat-function' gets called with `weechat-data'."
                                       'follow-link t
                                       'weechat-function action
                                       'weechat-data data)))
-                (when log
+                (when (and log
+                           run-hooks?)
                   ;; Hack: Rebind `weechat-button-default-log-buffer'
                   ;; to the value supplied by the button type in
                   ;; `weechat-button-list'
@@ -188,7 +189,8 @@ The function in property `weechat-function' gets called with `weechat-data'."
                            weechat-button-default-log-buffer)))
                     (run-hook-with-args 'weechat-button-log-functions
                                         button-data-no-properties
-                                        properties)))
+                                        properties))
+                  (setq weechat-button-log-buffer-last-log line-date))
                 (apply #'make-button start end properties)))))))))
 
 (defun weechat-button--add ()
