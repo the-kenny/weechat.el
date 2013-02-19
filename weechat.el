@@ -1056,7 +1056,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
-    (define-key map "\t" 'completion-at-point)
+    (define-key map (kbd "TAB") 'completion-at-point)
+    (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
     map)
   "Keymap for weechat mode.")
 
