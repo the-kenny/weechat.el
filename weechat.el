@@ -678,6 +678,10 @@ Must be called with `weechat-narrow-to-line' active."
     (add-text-properties (point-min) (point-max)
                          '(read-only t))))
 
+(defun weechat-line-date ()
+  "Returns the date of the line under point resides in."
+  (get-text-property (point) 'weechat-date))
+
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
