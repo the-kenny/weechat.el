@@ -418,6 +418,15 @@ It is called with narrowing in the correct buffer."
              weechat--buffer-hashes)
     acc))
 
+(defmacro weechat-do-buffers (&rest body)
+  "Evaluate body in each WeeChat buffer."
+  `(maphash (lambda (_ v)
+              (let ((buffer (gethash :emacs/buffer v)))
+                (when (buffer-live-p buffer)
+                  (with-current-buffer buffer
+                    ,@body))))
+            weechat--buffer-hashes))
+
 (defun weechat-channel-names-unmonitored ()
   (cl-remove-if (lambda (name)
                   (weechat--emacs-buffer
