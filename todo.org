@@ -1,7 +1,7 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
-* Short-Term [9/21]
+* Short-Term [12/21]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [7/15]
@@ -22,7 +22,7 @@
    - [ ] _upgrade_ended
 ** DONE Print 'connection lost' message to all buffers
 ** DONE Input-Ring
-** TODO Nick Completion
+** DONE Nick Completion
 ** TODO Auto-Reconnect
 ** DONE List with buffers to "auto-watch"
 ** TODO Mark channel as "read" from Emacs
@@ -33,7 +33,7 @@
 ** TODO Buffer-local URL ring for easy access
 ** TODO Limit buffer size
 ** DONE Fix /me display
-** TODO Nicklist handling
+** DONE Nicklist handling
    Waiting for delta updates (WeeChat 4.1?)
 ** DONE Buttons for URLs and other stuff
 ** TODO Handle different types of messages [1/8]
@@ -64,10 +64,8 @@
 ** TODO Read passwords from ~/.authinfo
 ** TODO Speedbar integration
 ** TODO Faces based on message type
-<<<<<<< HEAD
-=======
 ** DONE URL Detection
 ** TODO Typing auto-focuses the "input field"
 ** TODO More Notification Handlers
    - `message'
->>>>>>> master
+
