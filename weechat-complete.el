@@ -129,6 +129,8 @@ If IGNORE-SELF is non-nil the users nick is ignored."
       (with-current-buffer i
         (setq result (cl-union weechat-user-list result :test #'s-equals?))))))
 
+(add-hook 'completion-at-point-functions #'weechat-pcompletions-at-point)
+
 (provide 'weechat-complete)
 
 ;;; weechat-complete.el ends here

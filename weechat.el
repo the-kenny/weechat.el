@@ -983,6 +983,7 @@ The optional paramteres are internal!"
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
+    (define-key map "\t" 'completion-at-point)
     map)
   "Keymap for weechat mode.")
 
