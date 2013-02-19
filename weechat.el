@@ -621,93 +621,94 @@ This is an internal function of `weechat-handle-color-codes'."
           (list (list :foreground face ))
         face))))
 
-(defun weechat-handle-color-codes (str &optional i ret face)
+(defun weechat-handle-color-codes (str)
   "Convert the Weechat color codes in STR to properties.
-Currently only Fxx and Bxx are handled.  Any color codes left are stripped.
+EXT colors are currently not supported.  Any color codes left are stripped.
 
 Be aware that Weechat does not use mIRC color codes.
-See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'.
-
-The optional paramteres are internal!"
-  (setq i (or i 0))
-  (if (>= i (length str))
-      (or ret "")
-    (setq ret (or ret ""))
-    (cl-case (aref str i)
-      ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
-       (let ((old-face face)
-             (next (aref str (1+ i))))
-         (setq face nil)
-         (setq i (1+ i))
-         (cond
-          ((and (<= ?0 next) (<= next ?9)) ;; STD
-           (let ((match-data (weechat--match-color-code 'std str i)))
-             (when match-data
-               (setq face (weechat--color-std-to-theme (cl-third match-data)))
-               (setq i (cl-second match-data)))))
-          ((= next ?@) ;; EXT
-           (let ((match-data (weechat--match-color-code 'ext str i)))
-             (when match-data
-               ;; TODO
-               (setq i (cl-second match-data)))))
-          ((= next ?F) ;; ?F(A)STD|?F(A)EXT
-           (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face)))
-          ((= next ?B) ;; ?BSTD|?BEXT
-           (let ((match-data (weechat--match-color-code 'std str i)))
-             (if match-data
-                 (setq face (list (list :background (nth (cl-third match-data)
-                                                         weechat-color-list))))
-               (setq match-data (weechat--match-color-code 'ext str i))
-               (if match-data
-                   t ;; TODO ext
-                 (error "Broken color code (in ?B '%s' %s)" str i)))
-             (when match-data
-               (setq i (cl-second match-data)))))
-          ((= next ?*) ;; (A)STD | (A)EXT | (A)STD ?, (A)STD | ...
-           (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face))
-           (if (= (aref str i) ?,)
-               (let* ((i (1+ i))
-                      (match-data (weechat--match-color-code 'std str i)))
-                 (if match-data
-                     (setq face (append (list (list :background (nth (cl-third match-data)
-                                                                     weechat-color-list)))
-                                        face))
-                   (setq match-data (weechat--match-color-code 'ext str i))
-                   (if match-data
-                       t ;; TODO ext
-                     (error "Broken color code (in ?* '%s' %s)" str i)))
+See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
+  (let ((i 0)
+        face
+        (ret "")
+        (len (length str)))
+    (while (< i len)
+      (cl-case (aref str i)
+        ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
+         (let ((old-face face)
+               (next (aref str (1+ i))))
+           (setq face nil)
+           (setq i (1+ i))
+           (cond
+            ((and (<= ?0 next) (<= next ?9)) ;; STD
+             (let ((match-data (weechat--match-color-code 'std str i)))
+               (when match-data
+                 (setq face (weechat--color-std-to-theme (cl-third match-data)))
                  (setq i (cl-second match-data)))))
-          ((= next ?b) 'b) ;; ignore for now
-          ((= next ?\x1C)  ;; Clear color, leave attributes
-           (setq face (weechat--color-keep-attributes old-face))))))
+            ((= next ?@) ;; EXT
+             (let ((match-data (weechat--match-color-code 'ext str i)))
+               (when match-data
+                 ;; TODO
+                 (setq i (cl-second match-data)))))
+            ((= next ?F) ;; ?F(A)STD|?F(A)EXT
+             (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face)))
+            ((= next ?B) ;; ?BSTD|?BEXT
+             (let ((match-data (weechat--match-color-code 'std str i)))
+               (if match-data
+                   (setq face (list (list :background (nth (cl-third match-data)
+                                                           weechat-color-list))))
+                 (setq match-data (weechat--match-color-code 'ext str i))
+                 (if match-data
+                     t ;; TODO ext
+                   (error "Broken color code (in ?B '%s' %s)" str i)))
+               (when match-data
+                 (setq i (cl-second match-data)))))
+            ((= next ?*) ;; (A)STD | (A)EXT | (A)STD ?, (A)STD | ...
+             (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face))
+             (if (= (aref str i) ?,)
+                 (let* ((i (1+ i))
+                        (match-data (weechat--match-color-code 'std str i)))
+                   (if match-data
+                       (setq face (append (list (list :background (nth (cl-third match-data)
+                                                                       weechat-color-list)))
+                                          face))
+                     (setq match-data (weechat--match-color-code 'ext str i))
+                     (if match-data
+                         t ;; TODO ext
+                       (error "Broken color code (in ?* '%s' %s)" str i)))
+                   (setq i (cl-second match-data)))))
+            ((= next ?b) 'b) ;; ignore for now
+            ((= next ?\x1C)  ;; Clear color, leave attributes
+             (setq face (weechat--color-keep-attributes old-face))))))
 
-      ((?\x1A) ;; Set ATTR
-       (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
-         (unless match-data
-           (error "Broken color code (in ?\\x1A '%s' %s)" str i))
-         (if (eq (cl-third match-data) 'keep)
-             (setq face (weechat--color-keep-attributes face))
-           (setq face (list (cl-third match-data))))
-         (setq i (cl-second match-data))))
+        ((?\x1A) ;; Set ATTR
+         (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
+           (unless match-data
+             (error "Broken color code (in ?\\x1A '%s' %s)" str i))
+           (if (eq (cl-third match-data) 'keep)
+               (setq face (weechat--color-keep-attributes face))
+             (setq face (list (cl-third match-data))))
+           (setq i (cl-second match-data))))
 
-      ((?\x1B) ;; Delete ATTR
-       (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
-             (old-face (copy-sequence face)))
-         (unless match-data
-           (error "Broken color code (in ?\\x1B '%s' %s)" str i))
-         (if (eq (cl-third match-data) 'keep)
-             (setq face nil) ;; TODO Does keep here means delete all or keep all?
-           (setq face (delq (cl-third match-data) old-face)))
-         (setq i (cl-second match-data))))
+        ((?\x1B) ;; Delete ATTR
+         (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
+               (old-face (copy-sequence face)))
+           (unless match-data
+             (error "Broken color code (in ?\\x1B '%s' %s)" str i))
+           (if (eq (cl-third match-data) 'keep)
+               (setq face nil) ;; TODO Does keep here means delete all or keep all?
+             (setq face (delq (cl-third match-data) old-face)))
+           (setq i (cl-second match-data))))
 
-      ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
-    (let ((r (string-match-p "\\(\x19\\|\x1A\\|\x1B\\|\x1C\\)" str i)))
-      (if r
-          (weechat-handle-color-codes
-           str r (concat ret
-                         (propertize  (substring str i r) 'face face))
-           face)
-        (concat ret (propertize (substring str i) 'face face))))))
+        ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
+
+      (let ((r (string-match-p "\\(\x19\\|\x1A\\|\x1B\\|\x1C\\)" str i)))
+        (if r
+            (setq ret (concat ret
+                              (propertize  (substring str i r) 'face (or face 'default)))
+                  i r)
+          (setq ret (concat ret (propertize (substring str i) 'face (or face 'default)))
+                i len)))) ;; STOP
+    ret))
 
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
