@@ -197,6 +197,12 @@ It is called with narrowing in the correct buffer."
 (defvar weechat-inhibit-notifications nil
   "Non-nil means don't display any weechat notifications.")
 
+(defvar weechat-buffer-opened-functions nil
+  "Hook ran when a WeeChat buffer opens")
+
+(defvar weechat-buffer-closed-functions nil
+  "Hook ran when a WeeChat buffer closes")
+
 (defun weechat-connected-p ()
   (and (weechat-relay-connected-p)
        weechat--connected))
@@ -254,7 +260,9 @@ It is called with narrowing in the correct buffer."
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
     (when (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_opened' event for '%s' but the buffer exists already!" buffer-ptr))
-    (weechat--store-buffer-hash buffer-ptr (weechat--hdata-value-alist value))))
+    (weechat--store-buffer-hash buffer-ptr (weechat--hdata-value-alist value))
+    (run-hook-with-args 'weechat-buffer-opened-functions
+                        buffer-ptr)))
 
 (defun weechat--handle-buffer-closed (response)
   (let* ((hdata (car response))
@@ -262,7 +270,9 @@ It is called with narrowing in the correct buffer."
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
-    (weechat--remove-buffer-hash buffer-ptr)))
+    (weechat--remove-buffer-hash buffer-ptr)
+    (run-hook-with-args 'weechat-buffer-closed-functions
+                        buffer-ptr)))
 
 (defmacro weechat->> (&rest body)
   (let ((result (pop body)))
