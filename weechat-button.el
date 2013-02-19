@@ -112,7 +112,10 @@ This hook only runs when `LOG' is set to `t' for the particular
 button type.
 
 Functions in list must have two arguments: The button data (the
-match string) and a plist describing the button properties.")
+match string) and a plist describing the button properties.
+
+The functions in this list will be called with
+`weechat-narrow-to-line' active.")
 
 ;;; Internal functions
 
@@ -124,18 +127,25 @@ The function in property `weechat-function' gets called with `weechat-data'."
     (when function
       (apply function data))))
 
+(defvar-local weechat-button-log-buffer-last-log nil)
 (defun weechat-button--log-to-buffer (button-data button-properties)
-  (when (and weechat-button-default-log-buffer
-             (buffer-live-p (get-buffer weechat-button-default-log-buffer)))
-    (let ((weechat-buffer-name (buffer-name)))
+  (when (and weechat-button-default-log-buffer)
+    (let ((weechat-buffer-name (buffer-name))
+          (line-date (weechat-line-date)))
       (with-current-buffer (get-buffer-create
                             weechat-button-default-log-buffer)
-        (goto-char (point-max))
-        (unless (bolp)
-          (insert "\n"))
-        (insert weechat-buffer-name "\t")
-        (apply #'insert-button button-data button-properties)
-        (insert "\n")))))
+        (when (and line-date
+                   (or (null weechat-button-log-buffer-last-log)
+                       (time-less-p weechat-button-log-buffer-last-log
+                                    line-date)))
+          (goto-char (point-max))
+          (unless (bolp)
+            (insert "\n"))
+          (insert weechat-buffer-name "\t")
+          (apply #'insert-button button-data button-properties)
+          (insert "\n")
+          (setq-local weechat-button-log-buffer-last-log
+                      line-date))))))
 
 (add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
 
