@@ -59,10 +59,36 @@ defined in `weechat-button-list')"
           (string :tag "Buffer name")
           (const :tag "Disable" nil)))
 
+(defcustom weechat-button-buttonize-url t
+  "Buttonize url links?"
+  :group 'weechat-button
+  :type '(choice
+          (const :tag "Always" t)
+          (const :tag "Never" t)
+          (sexp :tag "Only when this evaluates to non-nil")))
+
+(defcustom weechat-button-buttonize-channels t
+  "Buttonize channel links?"
+  :group 'weechat-button
+  :type '(choice
+          (const :tag "Always" t)
+          (const :tag "Never" t)
+          (sexp :tag "Only when this evaluates to non-nil")))
+
+(defcustom weechat-button-buttonize-symbols t
+  "Buttonize symbol links?"
+  :group 'weechat-button
+  :type '(choice
+          (const :tag "Always" t)
+          (const :tag "Never" t)
+          (sexp :tag "Only when this evaluates to non-nil")))
+
 (defcustom weechat-button-list
-  '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0)
-    ("#[-#+_[:alnum:]]+" 0 t nil "Join Channel" weechat-join 0)
-    ("[`]\\([-_.[:alnum:]]+\\)[']" 1 t nil "Describe Symbol"
+  '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
+                               browse-url 0)
+    ("#[-#+_[:alnum:]]+" 0 weechat-button-buttonize-channels nil "Join Channel"
+     weechat-join 0)
+    ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
      weechat-button--describe-symbol 1))
   "List of potential buttons in WeeChat chat buffers.
 Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
@@ -73,8 +99,8 @@ REGEXP is a string or variable containing a regular expression to match buttons.
 BUTTON-MATCH is the number of the regexp grouping which represents the actual
   button.
 
-BUTTONIZE? if t the button is always created if it is a function then the button
-  is only created if it evals to non-nil.
+BUTTONIZE? is `eval'd and the button is only created if the return value is
+  non-nil.
 
 LOG decides if `weechat-button-log-functions' gets called.
 
@@ -95,7 +121,8 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                        (integer :tag "Number of the regexp section that matches")
                        (choice :tag "When to buttonize"
                                (const :tag "Always" t)
-                               (function :tag "Only when the function returns non-nil"))
+                               (const :tag "Never" t)
+                               (sexp :tag "Only when this evaluates to non-nil"))
                        (choice :tag "Log match"
                                (const :tag "To default buffer" t)
                                (const :tag "Never" nil)
@@ -170,8 +197,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
                  (match-string-no-properties button-match))
                 (data (mapcar #'match-string data-match)))
             (when (or (eq buttonize? t)
-                      (and (functionp buttonize?)
-                           (funcall buttonize?)))
+                      (eval buttonize?))
               (let ((properties (list 'action #'weechat-button--handler
                                       'help-echo help-echo
                                       'follow-link t
