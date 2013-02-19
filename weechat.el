@@ -88,7 +88,25 @@ monitored on connect. A value of t will monitor all available
 buffers. Be warned, a too long list will use much bandwidth on
 connect."
   :type '(choice (const :tag "All" t)
-                 (repeat :tag "List" string )))
+                 (repeat :tag "List" string ))
+  :group 'weechat)
+
+(defcustom weechat-auto-monitor-new-buffers 'silent
+  "Wether to auto-monitor new WeeChat buffers.
+
+Value can be t, silent or nil. If t, new Emacs buffers will be
+created when a new buffer in WeeChat is opened. If value
+is (quote silent), new buffers will be opened in background. If
+nil, no action will be taken for new WeeChat buffers."
+  :type '(choice (const :tag "Popup new buffer" t)
+                 (const :tag "Open in background" 'silent)
+                 (const :tag "Do nothing" nil))
+  :group 'weechat)
+
+(defcustom weechat-auto-close-buffers nil
+  "Wether to auto-close closed WeeChat buffers."
+  :type 'boolean
+  :group 'weechat)
 
 (defcustom weechat-time-format "%H:%M:%S"
   "How to format time stamps.
@@ -196,10 +214,10 @@ It is called with narrowing in the correct buffer."
   "Non-nil means don't display any weechat notifications.")
 
 (defvar weechat-buffer-opened-functions nil
-  "Hook ran when a WeeChat buffer opens")
+  "Hook ran when a WeeChat buffer opens.")
 
 (defvar weechat-buffer-closed-functions nil
-  "Hook ran when a WeeChat buffer closes")
+  "Hook ran when a WeeChat buffer closes.")
 
 (defun weechat-connected-p ()
   (and (weechat-relay-connected-p)
@@ -259,16 +277,28 @@ It is called with narrowing in the correct buffer."
     (when (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_opened' event for '%s' but the buffer exists already!" buffer-ptr))
     (weechat--store-buffer-hash buffer-ptr (weechat--hdata-value-alist value))
+
+    (when weechat-auto-monitor-new-buffers
+      (weechat-monitor-buffer
+       buffer-ptr
+       (not (eq weechat-auto-monitor-new-buffers 'silent))))
+    
     (run-hook-with-args 'weechat-buffer-opened-functions
                         buffer-ptr)))
 
 (defun weechat--handle-buffer-closed (response)
   (let* ((hdata (car response))
          (value (car (weechat--hdata-values hdata)))
-         (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
+         (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
+         (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (weechat--remove-buffer-hash buffer-ptr)
+
+    (when (and weechat-auto-close-buffers
+               (buffer-live-p emacs-buffer))
+      (kill-buffer emacs-buffer))
+    
     (run-hook-with-args 'weechat-buffer-closed-functions
                         buffer-ptr)))
 
@@ -1229,10 +1259,10 @@ Default is current buffer."
              (buffer-ptr (and (weechat--find-buffer channel-name))))
         ;; Only auto-connect if it there isn't already a buffer monitoring the channel
         (if buffer-ptr
-         (unless (weechat--emacs-buffer buffer-ptr)
-           (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
-           (weechat-monitor-buffer buffer-ptr nil))
-         (warn "Couldn't monitor channel '%s'. Not found." channel))))))
+            (unless (weechat--emacs-buffer buffer-ptr)
+              (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
+              (weechat-monitor-buffer buffer-ptr nil))
+          (warn "Couldn't monitor channel '%s'. Not found." channel))))))
 
 
 (add-hook 'weechat-connect-hook 'weechat-auto-monitor 'append)
@@ -1251,3 +1281,4 @@ Default is current buffer."
 (provide 'weechat)
 
 ;;; weechat.el ends here
+
