@@ -137,10 +137,11 @@ If IGNORE-SELF is non-nil the users nick is ignored."
 (defun pcomplete-weechat-all-nicks ()
   "Return nick list of all weechat buffers."
   (let (result)
-    (dolist (i (weechat-buffer-list) result)
-      (with-current-buffer i
-        (setq result (cl-union weechat-user-list result :test #'s-equals?))))))
+    (weechat-do-buffers
+     (setq result (cl-union weechat-user-list result :test #'s-equals?)))
+    result))
 
+(weechat-do-buffers (pcomplete-weechat-setup))
 (add-hook 'weechat-mode-hook #'pcomplete-weechat-setup) ;; TODO run in all existing buffers?
 (add-hook 'completion-at-point-functions #'weechat-pcompletions-at-point)
 

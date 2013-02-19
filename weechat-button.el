@@ -129,8 +129,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
 
 (defun weechat-button--log-to-buffer (button-data button-properties)
   (when (and weechat-button-default-log-buffer)
-    (let ((weechat-buffer-name (buffer-name))
-          (line-date (weechat-line-date)))
+    (let ((weechat-buffer-name (buffer-name)))
       (with-current-buffer (get-buffer-create
                             weechat-button-default-log-buffer) 
         (goto-char (point-max))
@@ -166,7 +165,6 @@ The function in property `weechat-function' gets called with `weechat-data'."
         (while (re-search-forward regexp nil t)
           (let ((start (match-beginning button-match))
                 (end (match-end button-match))
-                (button-data (match-string button-match))
                 (button-data-no-properties
                  (match-string-no-properties button-match))
                 (data (mapcar #'match-string data-match)))
