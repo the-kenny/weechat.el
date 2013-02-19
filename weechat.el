@@ -664,6 +664,20 @@ The optional paramteres are internal!"
   (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
                                         (point-at-eol))))
 
+(defun weechat-line-add-properties (date highlight)
+  "Adds various text properties (read-only, etc.) to a line.
+
+Must be called with `weechat-narrow-to-line' active."
+  ;; Add `date' and `highlighted' to the whole line
+  (add-text-properties (point-min) (point-max)
+                       (list 'weechat-date date
+                             'weechat-highlighted highlight))
+
+  ;; Make line read-only if `weechat-read-only' is t
+  (when weechat-read-only
+    (add-text-properties (point-min) (point-max)
+                         '(read-only t))))
+
 (defun weechat-print-line (buffer-ptr sender text &optional date highlight)
   (setq text   (or text ""))
   (setq sender (or sender ""))
@@ -700,9 +714,11 @@ The optional paramteres are internal!"
               (when (> chars-to-insert 0)
                 (insert-char ?\s chars-to-insert)))
 
+            ;; Calculate `prefix-string' for nice `auto-fill' (using
+            ;; overlays)
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
-
+              ;; trim & handle color codes
               (let ((text (weechat-handle-color-codes
                            (s-trim text))))
                 (insert (if highlight
@@ -715,11 +731,10 @@ The optional paramteres are internal!"
                 ;; awesome text property called `wrap-prefix'.
                 (let ((overlay (make-overlay text-start (point-max))))
                   (overlay-put overlay 'wrap-prefix prefix-string))))
-            (run-hooks 'weechat-insert-modify-hook))
+            (run-hooks 'weechat-insert-modify-hook)
 
-          (when weechat-read-only
-            (add-text-properties (point-min) weechat-prompt-start-marker
-                                 '(read-only t))))
+            ;; Add general properties
+            (weechat-line-add-properties date highlight)))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
