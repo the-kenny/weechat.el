@@ -401,6 +401,12 @@ Set to nil to disable header line.  Currently only supported format option is %t
              weechat--buffer-hashes)
     acc))
 
+(defun weechat-channel-names-unmonitored ()
+  (remove-if (lambda (name)
+               (weechat--emacs-buffer
+                (weechat--find-buffer name)))
+             (weechat-channel-names)))
+
 (defun weechat--emacs-buffer (buffer-ptr)
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
     (gethash :emacs/buffer hash)))
@@ -997,7 +1003,7 @@ Default is current buffer."
                  (funcall (or (and (featurep 'ido)
                                    (symbol-function 'ido-completing-read))
                               #'completing-read)
-                          "Channel Name: " (weechat-channel-names)))
+                          "Channel Name: " (weechat-channel-names-unmonitored)))
                 t))
   (save-excursion
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
