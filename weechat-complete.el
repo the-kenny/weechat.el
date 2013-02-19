@@ -41,6 +41,14 @@
   :type 'string
   :group 'weechat)
 
+(defcustom weechat-complete-nick-ignore-self t
+  "Wether to ignore yourself when completing at the begginning of
+the input line
+
+Make sure to rebuild each buffer after changing this variable."
+  :type 'boolean
+  :group 'weechat)
+
 (defun weechat-pcompletions-at-point ()
   "WeeChat completion data from pcomplete.
 for use on `completion-at-point-function'.
@@ -100,7 +108,7 @@ Copied from `pcomplete-erc-command-name'."
   (pcomplete-here
    (append
     (pcomplete-weechat-commands)
-    (pcomplete-weechat-nicks weechat-complete-nick-postfix 'ignore-self))))
+    (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self))))
 
 (defun pcomplete/weechat-mode/WHOIS ()
   (pcomplete-here (pcomplete-weechat-all-nicks)))
