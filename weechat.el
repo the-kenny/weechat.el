@@ -735,10 +735,12 @@ Must be called with `weechat-narrow-to-line' active."
                 ;; awesome text property called `wrap-prefix'.
                 (let ((overlay (make-overlay text-start (point-max))))
                   (overlay-put overlay 'wrap-prefix prefix-string))))
-            (run-hooks 'weechat-insert-modify-hook)
 
             ;; Add general properties
-            (weechat-line-add-properties date highlight)))
+            (weechat-line-add-properties date highlight)
+
+            ;; Important: Run the hook after everything else
+            (run-hooks 'weechat-insert-modify-hook)))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
