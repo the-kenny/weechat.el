@@ -55,6 +55,7 @@ Copied from `erc-pcompletions-at-point'."
 (defun pcomplete-weechat-setup ()
   "Setup pcomplete for `weechat-mode'."
   (set (make-local-variable 'pcomplete-ignore-case) t)
+  (set (make-local-variable 'pcomplete-use-paring) nil)
   (set (make-local-variable 'pcomplete-parse-arguments-function)
        #'pcomplete-weechat-parse-arguments)
   (set (make-local-variable 'pcomplete-command-completion-function)
