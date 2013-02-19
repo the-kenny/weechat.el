@@ -166,6 +166,11 @@ Set to nil to disable header line.  Currently only supported format option is %t
   :type 'integer
   :group 'weechat)
 
+(defcustom weechat-complete-order-nickname t
+  "If non-nil nicknames are completed in order of most recent speaker."
+  :type 'boolean
+  :group 'weechat)
+
 (defvar weechat-debug-strip-formatting nil)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
@@ -806,7 +811,7 @@ The optional paramteres are internal!"
 
 (defvar weechat-user-list)
 (defun weechat--user-list-add (nick)
-  (setq weechat-user-list (cl-adjoin nick weechat-user-list)))
+  (setq weechat-user-list (cons nick (delq nick weechat-user-list))))
 (defun weechat--user-list-remove (nick)
   (setq weechat-user-list (delete nick weechat-user-list)))
 
@@ -841,9 +846,11 @@ The optional paramteres are internal!"
             (setq sender (weechat-strip-formatting sender))
             (setq message (weechat-strip-formatting message)))
 
-          (cl-case line-type
-            (:irc/join (weechat--user-list-add nick))
-            ((:irc/part :irc/quit) (weechat--user-list-remove nick))))
+          (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
+                  (eq line-type :irc/join))
+              (weechat--user-list-add nick)
+            (when (memq line-type '(:irc/part :irc/quit))
+              (weechat--user-list-remove nick))))
 
         ;; Print the line
         (cl-case line-type
