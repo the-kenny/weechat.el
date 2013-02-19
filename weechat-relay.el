@@ -36,7 +36,7 @@ Set to nil to disable logging.")
 
 (defvar weechat-relay-log-level :info
   "Minimum log level.
-Might be one of :debug :info :warn :error")
+Might be one of :debug, :info, :warn, :error or nil")
 
 (defvar weechat-relay-message-function nil
   "Function to call when receiving a new weechat message.")
@@ -63,22 +63,23 @@ corresponding function will be called.")
   "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled.
 `LEVEL' might be one of :debug :info :warn :error.  Defaults
 to :info"
-  (when (bufferp (get-buffer weechat-relay-log-buffer-name))
-    (with-current-buffer weechat-relay-log-buffer-name
-      (let ((log-level-alist '((:debug . 0)
-                               (:info  . 1)
-                               (:warn  . 2)
-                               (:error . 3))))
-        (when (>= (assoc-default (or level :info) log-level-alist)
-                  (assoc-default weechat-relay-log-level log-level-alist))
-          (let ((old-point (point)))
-            (save-excursion
-              (save-restriction
-                (widen)
-                (goto-char (point-max))
-                (insert (s-trim text))
-                (newline)))
-            (goto-char old-point)))))))
+  (let ((log-level-alist '((:debug . 0)
+                           (:info  . 1)
+                           (:warn  . 2)
+                           (:error . 3))))
+    (when (and (>= (assoc-default (or level :info) log-level-alist)
+                   (assoc-default weechat-relay-log-level log-level-alist))
+               weechat-relay-log-level
+               weechat-relay-log-buffer-name)
+      (with-current-buffer (get-buffer-create weechat-relay-log-buffer-name)
+        (let ((old-point (point)))
+          (save-excursion
+            (save-restriction
+              (widen)
+              (goto-char (point-max))
+              (insert (s-trim text))
+              (newline)))
+          (goto-char old-point))))))
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message TEXT with optional ID.

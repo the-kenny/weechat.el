@@ -964,7 +964,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
       (with-current-buffer (or (and (buffer-live-p buffer) buffer)
-                               weechat-relay-log-buffer-name)
+                               (get-buffer weechat-relay-log-buffer-name)
+                               (current-buffer))
         (when (and (not weechat-inhibit-notifications) highlight)
           (weechat-notify sender message date (buffer-name)))))))
 
