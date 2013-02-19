@@ -61,6 +61,7 @@ defined in `weechat-button-list')"
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 t t "Browse URL" browse-url 0)
+    ("#[-#+_[:alnum:]]+" 0 t nil "Join Channel" weechat-join 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 t nil "Describe Symbol"
      weechat-button--describe-symbol 1))
   "List of potential buttons in WeeChat chat buffers.
