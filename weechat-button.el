@@ -175,49 +175,45 @@ The function in property `weechat-function' gets called with `weechat-data'."
   "Handle each button ENTRY."
   (save-excursion
     (goto-char (point-min))
-    (let* ((regexp-entry (nth 0 entry))
-           (regexp (or (and (stringp regexp-entry) regexp-entry)
-                       (and (boundp regexp-entry) (symbol-value regexp-entry))))
-           (button-match (nth 1 entry))
-           (buttonize? (nth 2 entry))
-           (log (nth 3 entry))
-           (help-echo (nth 4 entry))
-           (action (nth 5 entry))
-           (data-match (nthcdr 6 entry))
-           (line-date (weechat-line-date))
-           (run-hooks?
-            (and line-date
-                 (or (null weechat-button-log-buffer-last-log)
-                     (time-less-p weechat-button-log-buffer-last-log
-                                  line-date)))))
-      (when regexp
-        (while (re-search-forward regexp nil t)
-          (let ((start (match-beginning button-match))
-                (end (match-end button-match))
-                (button-data-no-properties
-                 (match-string-no-properties button-match))
-                (data (mapcar #'match-string data-match)))
-            (when (or (eq buttonize? t)
-                      (eval buttonize?))
-              (let ((properties (list 'action #'weechat-button--handler
-                                      'help-echo help-echo
-                                      'follow-link t
-                                      'weechat-function action
-                                      'weechat-data data)))
-                (when (and log
-                           run-hooks?)
-                  ;; Hack: Rebind `weechat-button-default-log-buffer'
-                  ;; to the value supplied by the button type in
-                  ;; `weechat-button-list'
-                  (let ((weechat-button-default-log-buffer
-                         (if (or (stringp log) (bufferp log))
-                             log
-                           weechat-button-default-log-buffer)))
-                    (run-hook-with-args 'weechat-button-log-functions
-                                        button-data-no-properties
-                                        properties))
-                  (setq weechat-button-log-buffer-last-log line-date))
-                (apply #'make-button start end properties)))))))))
+    (cl-destructuring-bind
+        (regexp-entry button-match buttonize?
+                      log help-echo action &rest data-match) entry
+      (let* ((regexp (or (and (stringp regexp-entry) regexp-entry)
+                         (and (boundp regexp-entry) (symbol-value regexp-entry))))
+             (line-date (weechat-line-date))
+             (run-hooks?
+              (and line-date
+                   (or (null weechat-button-log-buffer-last-log)
+                       (time-less-p weechat-button-log-buffer-last-log
+                                    line-date)))))
+        (when regexp
+          (while (re-search-forward regexp nil t)
+            (let ((start (match-beginning button-match))
+                  (end (match-end button-match))
+                  (button-data-no-properties
+                   (match-string-no-properties button-match))
+                  (data (mapcar #'match-string data-match)))
+              (when (or (eq buttonize? t)
+                        (eval buttonize?))
+                (let ((properties (list 'action #'weechat-button--handler
+                                        'help-echo help-echo
+                                        'follow-link t
+                                        'weechat-function action
+                                        'weechat-data data)))
+                  (when (and log
+                             run-hooks?)
+                    ;; Hack: Rebind `weechat-button-default-log-buffer'
+                    ;; to the value supplied by the button type in
+                    ;; `weechat-button-list'
+                    (let ((weechat-button-default-log-buffer
+                           (if (or (stringp log) (bufferp log))
+                               log
+                             weechat-button-default-log-buffer)))
+                      (run-hook-with-args 'weechat-button-log-functions
+                                          button-data-no-properties
+                                          properties))
+                    (setq weechat-button-log-buffer-last-log line-date))
+                  (apply #'make-button start end properties))))))))))
 
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
