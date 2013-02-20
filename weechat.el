@@ -1286,13 +1286,6 @@ Default is current buffer."
 
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
-  (interactive (list
-                (weechat--find-buffer
-                 (funcall (or (and (featurep 'ido)
-                                   (symbol-function 'ido-completing-read))
-                              #'completing-read)
-                          "Channel Name: " (weechat-channel-names-unmonitored)))
-                t))
   (save-excursion
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
            (name (weechat-buffer-name buffer-ptr)))
@@ -1308,6 +1301,21 @@ Default is current buffer."
                       buffer-hash)
         (when show-buffer
           (switch-to-buffer (current-buffer)))))))
+
+(defun weechat-switch-buffer (buffer-ptr)
+  "Like `switch-buffer' but limited to WeeChat buffers
+
+Will monitor channels if necessary."
+  (interactive (list
+                (weechat--find-buffer
+                 (funcall (or (and (featurep 'ido)
+                                   (symbol-function 'ido-completing-read))
+                              #'completing-read)
+                          "Channel Name: " (weechat-channel-names)))))
+  (let ((buffer (weechat--emacs-buffer buffer-ptr)))
+    (if (buffer-live-p buffer)
+        (switch-to-buffer buffer)
+      (weechat-monitor-buffer buffer-ptr 'show))))
 
 (defun weechat-reload-buffer (&optional buffer)
   (interactive)
@@ -1366,7 +1374,7 @@ Default is current buffer."
   (let ((full-name (cl-some (lambda (x) (when (s-contains? channel x) x))
                             (weechat-channel-names))))
     (if full-name
-        (weechat-monitor-buffer (weechat--find-buffer full-name))
+        (weechat-monitor-buffer (weechat--find-buffer full-name) 'show)
       (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))))
 
 (provide 'weechat)
