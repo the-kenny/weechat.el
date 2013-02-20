@@ -945,6 +945,19 @@ Must be called with `weechat-narrow-to-line' active."
           ;; ...for active buffer
           (goto-char p-to-go))
 
+        ;; Recenter window if there are more lines than fit in the
+        ;; frame. This is borrowed from rcirc.
+        (let ((window (get-buffer-window)))
+	      (when window
+            (with-selected-window window
+              (when (eq major-mode 'rcirc-mode)
+                (when (<= (- (window-height)
+                             (count-screen-lines (window-point)
+                                                 (window-start))
+                             1)
+                          0)
+                  (recenter -1))))))
+
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil))
 
