@@ -1363,7 +1363,11 @@ Default is current buffer."
 
 (defun weechat-join (channel)
   "Join CHANNEL."
-  (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))
+  (let ((full-name (cl-some (lambda (x) (when (s-contains? channel x) x))
+                            (weechat-channel-names))))
+    (if full-name
+        (weechat-monitor-buffer (weechat--find-buffer full-name))
+      (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))))
 
 (provide 'weechat)
 
