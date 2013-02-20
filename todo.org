@@ -68,4 +68,4 @@
 ** TODO Typing auto-focuses the "input field"
 ** TODO More Notification Handlers
    - `message'
-
+** TODO Buttons for nick names.
