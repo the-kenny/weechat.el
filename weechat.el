@@ -885,7 +885,7 @@ Must be called with `weechat-narrow-to-line' active."
         (with-selected-window window
           (when (eq major-mode 'weechat-mode)
             (when (or force
-                      (<= (- (window-height)
+                      (<= (- (window-body-height)
                              (count-screen-lines (window-point)
                                                  (window-start))
                              2)         ;2, not 1 (like in rcirc)
