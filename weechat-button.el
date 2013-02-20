@@ -55,41 +55,38 @@ Valid values include a string describing a buffer name or nil to
 disable url logging (except when an explicit buffer name is
 defined in `weechat-button-list')"
   :group 'weechat-button
-  :type '(choice
-          (string :tag "Buffer name")
-          (const :tag "Disable" nil)))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-url t
   "Buttonize url links?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-channels t
   "Buttonize channel links?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-symbols t
   "Buttonize symbol links?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-emails nil
   "Buttonize e-mail link?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
+
+(defcustom weechat-button-buttonize-info nil
+  "Buttonize info links?
+Format is (info \"link\")."
+  :group 'weechat-button
+  :type 'boolean)
+
+(defcustom weechat-button-buttonize-nicks t
+  "Buttonize nicknames?"
+  :group 'weechat-button
+  :type 'boolean)
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
@@ -98,7 +95,9 @@ defined in `weechat-button-list')"
      weechat-join 0)
     ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
-     weechat-button--describe-symbol 1))
+     weechat-button--describe-symbol 1)
+    ("(info \"\\(([[:alnum:]]+) .+?\\)\"" 1 weechat-button-buttonize-info nil "info"
+     info 1))
   "List of potential buttons in WeeChat chat buffers.
 Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
 DATA-MATCH...), where
@@ -141,6 +140,7 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                        (repeat :tag "Sections of regexp to send to the function"
                                :inline t
                                (integer :tag "Regexp section number")))))
+(put 'weechat-button-list 'risky-local-variable t)
 
 (defvar weechat-button-log-functions nil
   "List of function to run when a button should be logged.
@@ -179,58 +179,72 @@ The function in property `weechat-function' gets called with `weechat-data'."
 (add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
 
 (defvar weechat-button-log-buffer-last-log nil)
-(defun weechat-button--add-do (entry)
-  "Handle each button ENTRY."
+(defun weechat-button--add-do (entry &optional text-buttons)
+  "Handle each button ENTRY.
+If TEXT-BUTTONS is non-nil then use `make-text-button instead of `make-button'."
   (save-excursion
     (goto-char (point-min))
-    (let* ((regexp-entry (nth 0 entry))
-           (regexp (or (and (stringp regexp-entry) regexp-entry)
-                       (and (boundp regexp-entry) (symbol-value regexp-entry))))
-           (button-match (nth 1 entry))
-           (buttonize? (nth 2 entry))
-           (log (nth 3 entry))
-           (help-echo (nth 4 entry))
-           (action (nth 5 entry))
-           (data-match (nthcdr 6 entry))
-           (line-date (weechat-line-date))
-           (run-hooks?
-            (and line-date
-                 (or (null weechat-button-log-buffer-last-log)
-                     (time-less-p weechat-button-log-buffer-last-log
-                                  line-date)))))
-      (when regexp
-        (while (re-search-forward regexp nil t)
-          (let ((start (match-beginning button-match))
-                (end (match-end button-match))
-                (button-data-no-properties
-                 (match-string-no-properties button-match))
-                (data (mapcar #'match-string data-match)))
-            (when (or (eq buttonize? t)
-                      (eval buttonize?))
-              (let ((properties (list 'action #'weechat-button--handler
-                                      'help-echo help-echo
-                                      'follow-link t
-                                      'weechat-function action
-                                      'weechat-data data)))
-                (when (and log
-                           run-hooks?)
-                  ;; Hack: Rebind `weechat-button-default-log-buffer'
-                  ;; to the value supplied by the button type in
-                  ;; `weechat-button-list'
-                  (let ((weechat-button-default-log-buffer
-                         (if (or (stringp log) (bufferp log))
-                             log
-                           weechat-button-default-log-buffer)))
-                    (run-hook-with-args 'weechat-button-log-functions
-                                        button-data-no-properties
-                                        properties))
-                  (setq weechat-button-log-buffer-last-log line-date))
-                (apply #'make-button start end properties)))))))))
+    (cl-destructuring-bind
+        (regexp-entry button-match buttonize?
+                      log help-echo action &rest data-match) entry
+      (let* ((regexp (or (and (stringp regexp-entry) regexp-entry)
+                         (and (boundp regexp-entry) (symbol-value regexp-entry))))
+             (line-date (weechat-line-date))
+             (run-hooks?
+              (and line-date
+                   (or (null weechat-button-log-buffer-last-log)
+                       (time-less-p weechat-button-log-buffer-last-log
+                                    line-date))))
+             (button-fn (if text-buttons
+                            #'make-text-button
+                          #'make-button)))
+        (when regexp
+          (while (re-search-forward regexp nil t)
+            (let ((start (match-beginning button-match))
+                  (end (match-end button-match))
+                  (button-data-no-properties
+                   (match-string-no-properties button-match))
+                  (data (mapcar #'match-string data-match)))
+              (when (or (eq buttonize? t)
+                        (eval buttonize?))
+                (let ((properties (list 'action #'weechat-button--handler
+                                        'help-echo help-echo
+                                        'follow-link t
+                                        'weechat-function action
+                                        'weechat-data data)))
+                  (when (and log
+                             run-hooks?)
+                    ;; Hack: Rebind `weechat-button-default-log-buffer'
+                    ;; to the value supplied by the button type in
+                    ;; `weechat-button-list'
+                    (let ((weechat-button-default-log-buffer
+                           (if (or (stringp log) (bufferp log))
+                               log
+                             weechat-button-default-log-buffer)))
+                      (run-hook-with-args 'weechat-button-log-functions
+                                          button-data-no-properties
+                                          properties))
+                    (setq weechat-button-log-buffer-last-log line-date))
+                  (apply button-fn start end properties))))))))))
 
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
   (dolist (i weechat-button-list)
-    (weechat-button--add-do i)))
+    (weechat-button--add-do i))
+  (when weechat-button-buttonize-nicks
+    (weechat-button--add-nickname-buttons)))
+
+(defvar weechat-user-list) ;; See weechat.el
+
+(defun weechat-button--add-nickname-buttons ()
+  "Add nick name buttons."
+  (dolist (nick weechat-user-list)
+    (unless (s-blank? nick)
+      (weechat-button--add-do (list (concat "\\b" (regexp-quote nick) "\\b")
+                                    0 t 0 "Nick Action"
+                                    #'weechat-button--nick-action
+                                    0)
+                              'text-button))))
 
 ;;; Callback functions
 
@@ -249,6 +263,40 @@ and `apropos' for other symbols."
 (defun weechat-button--mailto (email)
   "Call `browse-url' on email with \"mailto:\" prepend."
   (browse-url (concat "mailto:" email)))
+
+(defun weechat-button--send-cmd (cmd &rest options)
+  "Send CMD with OPTIONS to WeeChat."
+  (weechat-send-input weechat-buffer-ptr
+                      (concat cmd " "
+                              (when options
+                                (cl-reduce (lambda (l r)
+                                             (concat l " " r))
+                                           options )))))
+
+(defcustom weechat-button-nick-operations
+  '(("DeOp" .  (weechat-button--send-cmd "/deop" nick))
+    ("Kick" . (weechat-button--send-cmd "/kick" nick
+                                        (read-from-minibuffer
+                                         (concat "Kick " nick ", reason: "))))
+    ("Query" . (weechat-button--send-cmd "/query" nick))
+    ("Whois" . (weechat-button--send-cmd "/whois" nick))
+    ("Op" . (weechat-button--send-cmd "/op" nick))
+    ("Voice" . (weechat-button--send-cmd "/voice" nick)))
+  "An alist of possible nickname actions.
+The format is (\"Action\" . SEXP) wher SEXP is evaluated with `nick' bound."
+  :group 'weechat-button
+  :type '(repeat (const (string :tag "Action")
+                        sexp)))
+
+(defun weechat-button--nick-action (nick)
+  "Ask user for action on NICK and `eval' it."
+  (let* ((completion-ignore-case t)
+         (action (completing-read (concat "What action to take on '" nick "'? ")
+                                  weechat-button-nick-operations))
+         (code `(let ((nick ,nick))
+                  ,(cdr (assoc-string action weechat-button-nick-operations)))))
+    (when code
+      (eval code))))
 
 ;;; Module load/unload
 
