@@ -490,7 +490,7 @@ CALLBACK takes one argument (the response data) which is a list."
                         weechat-relay-log-buffer-name)
     (buffer-disable-undo))
   (with-current-buffer (get-buffer weechat-relay-buffer-name)
-    (read-only-mode 1)
+    (setq buffer-read-only t)
     (set-buffer-multibyte nil)
     (buffer-disable-undo)))
 
