@@ -142,7 +142,7 @@ If IGNORE-SELF is non-nil the users nick is ignored."
     result))
 
 (weechat-do-buffers (pcomplete-weechat-setup))
-(add-hook 'weechat-mode-hook #'pcomplete-weechat-setup) ;; TODO run in all existing buffers?
+(add-hook 'weechat-mode-hook #'pcomplete-weechat-setup)
 (add-hook 'completion-at-point-functions #'weechat-pcompletions-at-point)
 
 (provide 'weechat-complete)
