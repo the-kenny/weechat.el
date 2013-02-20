@@ -229,12 +229,19 @@ It is called with narrowing in the correct buffer."
 (defvar weechat-buffer-closed-functions nil
   "Hook ran when a WeeChat buffer closes.")
 
+(defun weechat-warn (message &rest args)
+  "Displays MESSAGE with `warn' and logs it to
+  `weechat-relay-log-buffer-name'"
+  (let ((str (format message args)))
+    (weechat-relay-log str :warn)
+    (display-warning 'weechat str)))
+
 (defun weechat-load-modules-maybe ()
   "Load all modules listed in `weechat-modules'"
   ;; Inspired by `org-load-modules-maybe'
   (dolist (module weechat-modules)
     (condition-case nil (require module)
-      (error (message "Problems while trying to load feature `%s'" ext)))))
+      (error (weechat-warn "Problems while trying to load feature `%s'" module)))))
 
 ;;; This is a hack to load modules after weechat.el is loaded
 ;;; completely
@@ -1287,7 +1294,7 @@ Default is current buffer."
             (unless (weechat--emacs-buffer buffer-ptr)
               (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
               (weechat-monitor-buffer buffer-ptr nil))
-          (warn "Couldn't monitor channel '%s'. Not found." channel))))))
+          (weechat-warn "Couldn't monitor channel '%s'. Not found." channel))))))
 
 
 (add-hook 'weechat-connect-hook 'weechat-auto-monitor 'append)
