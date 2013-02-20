@@ -77,6 +77,12 @@ defined in `weechat-button-list')"
   :group 'weechat-button
   :type 'boolean)
 
+(defcustom weechat-button-buttonize-info nil
+  "Buttonize info links?
+Format is (info \"link\")."
+  :group 'weechat-button
+  :type 'boolean)
+
 (defcustom weechat-button-buttonize-nicks nil
   "Buttonize nicknames?"
   :group 'weechat-button
@@ -89,7 +95,9 @@ defined in `weechat-button-list')"
      weechat-join 0)
     ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
-     weechat-button--describe-symbol 1))
+     weechat-button--describe-symbol 1)
+    ("(info \"\\(([[:alnum:]]+) .+?\\)\"" 1 weechat-button-buttonize-info nil "info"
+     info 1))
   "List of potential buttons in WeeChat chat buffers.
 Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
 DATA-MATCH...), where
