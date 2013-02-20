@@ -77,6 +77,11 @@ defined in `weechat-button-list')"
   :group 'weechat-button
   :type 'boolean)
 
+(defcustom weechat-button-buttonize-nicks nil
+  "Buttonize nicknames?"
+  :group 'weechat-button
+  :type 'boolean)
+
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
                                browse-url 0)
@@ -127,6 +132,7 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                        (repeat :tag "Sections of regexp to send to the function"
                                :inline t
                                (integer :tag "Regexp section number")))))
+(put 'weechat-button-list 'risky-local-variable t)
 
 (defvar weechat-button-log-functions nil
   "List of function to run when a button should be logged.
@@ -216,7 +222,19 @@ The function in property `weechat-function' gets called with `weechat-data'."
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
   (dolist (i weechat-button-list)
-    (weechat-button--add-do i)))
+    (weechat-button--add-do i))
+  (when weechat-button-buttonize-nicks
+    (weechat-button--add-nickname-buttons)))
+
+(defvar weechat-user-list) ;; See weechat.el
+
+(defun weechat-button--add-nickname-buttons ()
+  "Add nick name buttons."
+  (dolist (nick weechat-user-list)
+    (weechat-button--add-do (list (concat "\\b" (regexp-quote nick) "\\b")
+                                  0 t 0 "Nick Action"
+                                  #'weechat-button--nick-action
+                                  0))))
 
 ;;; Callback functions
 
@@ -235,6 +253,40 @@ and `apropos' for other symbols."
 (defun weechat-button--mailto (email)
   "Call `browse-url' on email with \"mailto:\" prepend."
   (browse-url (concat "mailto:" email)))
+
+(defun weechat-button--send-cmd (cmd &rest options)
+  "Send CMD with OPTIONS to WeeChat."
+  (weechat-send-input weechat-buffer-ptr
+                      (concat cmd " "
+                              (when options
+                                (cl-reduce (lambda (l r)
+                                             (concat l " " r))
+                                           options )))))
+
+(defcustom weechat-button-nick-operations
+  '(("DeOp" .  (weechat-button--send-cmd "/deop" nick))
+    ("Kick" . (weechat-button--send-cmd "/kick" nick
+                                        (read-from-minibuffer
+                                         (concat "Kick " nick ", reason: "))))
+    ("Query" . (weechat-button--send-cmd "/query" nick))
+    ("Whois" . (weechat-button--send-cmd "/whois" nick))
+    ("Op" . (weechat-button--send-cmd "/op" nick))
+    ("Voice" . (weechat-button--send-cmd "/voice" nick)))
+  "An alist of possible nickname actions.
+The format is (\"Action\" . SEXP) wher SEXP is evaluated with `nick' bound."
+  :group 'weechat-button
+  :type '(repeat (const (string :tag "Action")
+                        sexp)))
+
+(defun weechat-button--nick-action (nick)
+  "Ask user for action on NICK and `eval' it."
+  (let* ((completion-ignore-case t)
+         (action (completing-read (concat "What action to take on '" nick "'? ")
+                                  weechat-button-nick-operations))
+         (code `(let ((nick ,nick))
+                  ,(cdr (assoc-string action weechat-button-nick-operations)))))
+    (when code
+      (eval code))))
 
 ;;; Module load/unload
 
