@@ -83,7 +83,7 @@ Format is (info \"link\")."
   :group 'weechat-button
   :type 'boolean)
 
-(defcustom weechat-button-buttonize-nicks nil
+(defcustom weechat-button-buttonize-nicks t
   "Buttonize nicknames?"
   :group 'weechat-button
   :type 'boolean)
