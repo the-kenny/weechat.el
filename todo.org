@@ -55,7 +55,7 @@
 
 ** TODO Module System
 
-* Nice to have [4/12]
+* Nice to have [4/13]
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
@@ -69,3 +69,4 @@
 ** TODO More Notification Handlers
    - `message'
 ** DONE Buttons for nick names.
+** TODO Marker for away state
