@@ -42,6 +42,13 @@
 ;;     ;; "smile" must be come after "evil"
 ;;     ("\\(\\^?:-?)\\)\\W" 1 "smile")))
 
+;; It might be necessary to run
+;;
+;;   (setq smiley-cached-regexp-alist nil)
+;;   (smiley-update-cache)
+;;
+;; To make it work when smiley is already loaded.
+
 ;;; Code:
 
 (defun weechat-smiley-buffer ()
