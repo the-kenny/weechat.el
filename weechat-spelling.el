@@ -51,7 +51,7 @@ See `ispell-valid-dictionary-list' for a list of valid dictionaries."
   (with-current-buffer (or buffer (current-buffer))
     (dolist (entry weechat-spelling-dictionaries)
       (when (s-matches? (car entry) (buffer-name))
-        (setq ispell-local-dictionary (cadr entry))))
+        (setq ispell-local-dictionary (cdr entry))))
     (setq flyspell-generic-check-word-predicate #'weechat-mode-flyspell-verify)
     (flyspell-mode 1)))
 
