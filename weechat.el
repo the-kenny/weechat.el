@@ -1266,6 +1266,8 @@ Default is current buffer."
   (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
   (setq major-mode 'weechat-mode)
 
+  (setq scroll-conservatively 1000)
+
   (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
   (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
   (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
