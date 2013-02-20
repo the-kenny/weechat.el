@@ -55,7 +55,7 @@
 
 ** TODO Module System
 
-* Nice to have [3/11]
+* Nice to have [4/12]
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
@@ -68,4 +68,4 @@
 ** TODO Typing auto-focuses the "input field"
 ** TODO More Notification Handlers
    - `message'
-** TODO Buttons for nick names.
+** DONE Buttons for nick names.
