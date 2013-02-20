@@ -156,6 +156,8 @@ The functions in this list will be called with
 
 ;;; Internal functions
 
+(defvar weechat-button-create-invisible-buttons nil)
+
 (defun weechat-button--handler (button)
   "Handle BUTTON actions.
 The function in property `weechat-function' gets called with `weechat-data'."
@@ -193,7 +195,10 @@ The function in property `weechat-function' gets called with `weechat-data'."
               (and line-date
                    (or (null weechat-button-log-buffer-last-log)
                        (time-less-p weechat-button-log-buffer-last-log
-                                    line-date)))))
+                                    line-date))))
+             (button-fn (if weechat-button-create-invisible-buttons
+                            #'make-text-button
+                          #'make-button)))
         (when regexp
           (while (re-search-forward regexp nil t)
             (let ((start (match-beginning button-match))
@@ -221,7 +226,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
                                           button-data-no-properties
                                           properties))
                     (setq weechat-button-log-buffer-last-log line-date))
-                  (apply #'make-button start end properties))))))))))
+                  (apply button-fn start end properties))))))))))
 
 (defun weechat-button--add ()
   "Add text buttons to text in buffer."
