@@ -841,7 +841,7 @@ Must be called with `weechat-narrow-to-line' active."
   "Returns the date of the line under point resides in."
   (get-text-property (point) 'weechat-date))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight)
+(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight invisible)
   (setq text   (or text ""))
   (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -980,13 +980,11 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (= 1 (assoc-default "displayed" line-data nil 0)))
+          (invisible (or (not (= 1 (assoc-default "displayed" line-data nil 0)))
+                         (not weechat-hide-like-weechat)))
           (nick (weechat--get-nick-from-line-data line-data)))
       (setq highlight (= 1 highlight))
-      (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
-                 (and weechat-hide-like-weechat
-                      visible))
-
+      (when (bufferp (weechat--emacs-buffer buffer-ptr))
         (with-current-buffer buffer
           (when weechat-debug-strip-formatting
             (setq sender (weechat-strip-formatting sender))
@@ -1019,7 +1017,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                  message
                                  date
                                  line-type
-                                 highlight)))))
+                                 highlight
+                                 invisible)))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
