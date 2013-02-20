@@ -1,13 +1,17 @@
 * weechat.el - Chat via Weechat in Emacs
-  Please note: This README is just a placeholder. A more detailed
+  Please note: This README is just a placeholder.  A more detailed
   documentation will follow.
-  
+
+  weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions below
+  24.3 you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is
+  recommended!
+
 ** Usage
-   First, setup the relay server in weechat. Please refer to the
+   First, setup the relay server in weechat.  Please refer to the
    [[http://www.weechat.org/files/doc/stable/weechat_user.en.html#relay_weechat_protocol][manual]].
 
    To load and establish a connection:
-   
+
    : (require 'weechat)
    : M-x weechat-connect
 
