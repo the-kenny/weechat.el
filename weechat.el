@@ -1001,7 +1001,8 @@ Must be called with `weechat-narrow-to-line' active."
 
 (defvar weechat-user-list)
 (defun weechat--user-list-add (nick)
-  (setq weechat-user-list (cons nick (delete nick weechat-user-list))))
+  (unless (s-blank? nick)
+    (setq weechat-user-list (cons nick (delete nick weechat-user-list)))))
 (defun weechat--user-list-remove (nick)
   (setq weechat-user-list (delete nick weechat-user-list)))
 
