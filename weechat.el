@@ -74,8 +74,15 @@ empty."
   :type 'boolean
   :group 'weechat)
 
-(defcustom weechat-hide-like-weechat t
-  "Hide lines in buffer when they're hidden in Weechat."
+(defcustom weechat-auto-recenter t
+  "Wether the prompt will always stay at the bottom"
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-hidden-text-hidden t
+  "Wether weechat.el should hide or show hidden text.
+
+Use `weechat-toggle-hidden' to toggle hidden text in buffers."
   :type 'boolean
   :group 'weechat)
 
@@ -823,7 +830,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
   (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
                                         (point-at-eol))))
 
-(defun weechat-line-add-properties (date highlight)
+(defun weechat-line-add-properties (date highlight invisible)
   "Adds various text properties (read-only, etc.) to a line.
 
 Must be called with `weechat-narrow-to-line' active."
@@ -835,13 +842,56 @@ Must be called with `weechat-narrow-to-line' active."
   ;; Make line read-only if `weechat-read-only' is t
   (when weechat-read-only
     (add-text-properties (point-min) (point-max)
-                         '(read-only t))))
+                         '(read-only t)))
+
+  ;; Make line invisible if `invisible' is t
+  (when invisible
+    (add-text-properties (point-min) (point-max)
+                         `(invisible ,weechat-hidden-text-hidden
+                                     weechat-hidden-text t))))
+
+(defun weechat-toggle-hidden (&optional buffer)
+  (interactive)
+  (setq weechat-hidden-text-hidden (not weechat-hidden-text-hidden))
+  (with-current-buffer (or buffer (current-buffer))
+    (unless (eq major-mode 'weechat-mode)
+      (error "Can only toggle hidden in weechat-mode buffers"))
+    (save-excursion
+      (goto-char (point-min))
+      (let ((inhibit-read-only t)
+            (start (or (when (get-text-property (point) 'weechat-hidden-text) (point))
+                       (next-single-property-change (point) 'weechat-hidden-text)))
+            end)
+        (while start
+          (setq end (next-single-property-change start 'weechat-hidden-text))
+          (when end
+            (when end
+              (if weechat-hidden-text-hidden
+                  (add-text-properties start end '(invisible t))
+                (remove-text-properties start end '(invisible t))))
+            (setq start (next-single-property-change end 'weechat-hidden-text))))))
+    (weechat-recenter-bottom-maybe nil 'force)))
+
+(defun weechat-recenter-bottom-maybe (&optional window force)
+  (when weechat-auto-recenter
+    (let ((window (or (windowp window) (get-buffer-window))))
+      (when window
+        (with-selected-window window
+          (when (eq major-mode 'weechat-mode)
+            (when (or force
+                      (<= (- (window-height)
+                             (count-screen-lines (window-point)
+                                                 (window-start))
+                             2)         ;2, not 1 (like in rcirc)
+                                        ;because of the header-line
+                          0))
+              (recenter -1))))))))
 
 (defun weechat-line-date ()
   "Returns the date of the line under point resides in."
   (get-text-property (point) 'weechat-date))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight)
+(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight invisible)
   (setq text   (or text ""))
   (setq sender (or sender ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -899,7 +949,7 @@ Must be called with `weechat-narrow-to-line' active."
                   (overlay-put overlay 'wrap-prefix prefix-string))))
 
             ;; Add general properties
-            (weechat-line-add-properties date highlight)
+            (weechat-line-add-properties date highlight invisible)
 
             ;; Important: Run the hook after everything else
             (run-hooks 'weechat-insert-modify-hook)))
@@ -915,6 +965,10 @@ Must be called with `weechat-narrow-to-line' active."
 
           ;; ...for active buffer
           (goto-char p-to-go))
+
+        ;; Recenter window if there are more lines than fit in the
+        ;; frame. This is borrowed from rcirc.
+        (weechat-recenter-bottom-maybe)
 
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil))
@@ -980,13 +1034,10 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (= 1 (assoc-default "displayed" line-data nil 0)))
+          (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
           (nick (weechat--get-nick-from-line-data line-data)))
       (setq highlight (= 1 highlight))
-      (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
-                 (and weechat-hide-like-weechat
-                      visible))
-
+      (when (bufferp (weechat--emacs-buffer buffer-ptr))
         (with-current-buffer buffer
           (when weechat-debug-strip-formatting
             (setq sender (weechat-strip-formatting sender))
@@ -1019,7 +1070,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                  message
                                  date
                                  line-type
-                                 highlight)))))
+                                 highlight
+                                 invisible)))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
@@ -1042,7 +1094,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
       (save-excursion
         (let ((weechat-inhibit-notifications t))
           (dolist (line-hdata (weechat--hdata-values lines-hdata))
-            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
+            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
+        (weechat-recenter-bottom-maybe nil 'force)))))
 
 (defvar weechat-initial-lines-buffer-properties
   '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
@@ -1140,6 +1193,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
     (define-key map (kbd "TAB") 'completion-at-point)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
+    (define-key map (kbd "C-c C-t") 'weechat-toggle-hidden)
     map)
   "Keymap for weechat mode.")
 
@@ -1149,6 +1203,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     ["Previous Input" weechat-previous-input t]
     ["Next Input" weechat-next-input t]
     "-"
+    ["Toggle Hidden Lines" weechat-toggle-hidden t]
     ["Reload Buffer" weechat-reload-buffer t]
     ["Close Buffer" kill-buffer t]
     ["Monitor Buffer" weechat-monitor-buffer t]
