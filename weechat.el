@@ -40,6 +40,16 @@
   :prefix "weechat-"
   :group 'applications)
 
+(defcustom weechat-modules '(weechat-button weechat-complete)
+  "Modules that should always be loaded together with weechat.el
+
+Each module must be in `load-path' and must have a call to
+provide in order to be loaded correctly.
+
+To unload modules, use (unload-feature FEATURE)."
+  :type '(repeat symbol)
+  :group 'weechat)
+
 (defcustom weechat-read-only t
   "Whether to make text in weechat buffers read-only."
   :type 'boolean
@@ -218,6 +228,18 @@ It is called with narrowing in the correct buffer."
 
 (defvar weechat-buffer-closed-functions nil
   "Hook ran when a WeeChat buffer closes.")
+
+(defun weechat-load-modules-maybe ()
+  "Load all modules listed in `weechat-modules'"
+  ;; Inspired by `org-load-modules-maybe'
+  (dolist (module weechat-modules)
+    (condition-case nil (require module)
+      (error (message "Problems while trying to load feature `%s'" ext)))))
+
+;;; This is a hack to load modules after weechat.el is loaded
+;;; completely
+(eval-after-load 'weechat
+  '(weechat-load-modules-maybe))
 
 (defun weechat-connected-p ()
   (and (weechat-relay-connected-p)
