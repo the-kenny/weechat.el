@@ -156,8 +156,6 @@ The functions in this list will be called with
 
 ;;; Internal functions
 
-(defvar weechat-button-create-invisible-buttons nil)
-
 (defun weechat-button--handler (button)
   "Handle BUTTON actions.
 The function in property `weechat-function' gets called with `weechat-data'."
@@ -181,8 +179,9 @@ The function in property `weechat-function' gets called with `weechat-data'."
 (add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
 
 (defvar weechat-button-log-buffer-last-log nil)
-(defun weechat-button--add-do (entry)
-  "Handle each button ENTRY."
+(defun weechat-button--add-do (entry &optional text-buttons)
+  "Handle each button ENTRY.
+If TEXT-BUTTONS is non-nil then use `make-text-button instead of `make-button'."
   (save-excursion
     (goto-char (point-min))
     (cl-destructuring-bind
@@ -196,7 +195,7 @@ The function in property `weechat-function' gets called with `weechat-data'."
                    (or (null weechat-button-log-buffer-last-log)
                        (time-less-p weechat-button-log-buffer-last-log
                                     line-date))))
-             (button-fn (if weechat-button-create-invisible-buttons
+             (button-fn (if text-buttons
                             #'make-text-button
                           #'make-button)))
         (when regexp
@@ -244,7 +243,8 @@ The function in property `weechat-function' gets called with `weechat-data'."
       (weechat-button--add-do (list (concat "\\b" (regexp-quote nick) "\\b")
                                     0 t 0 "Nick Action"
                                     #'weechat-button--nick-action
-                                    0)))))
+                                    0)
+                              'text-button))))
 
 ;;; Callback functions
 
