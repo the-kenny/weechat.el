@@ -74,6 +74,11 @@ empty."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-auto-recenter t
+  "Wether the prompt will always stay at the bottom"
+  :type 'boolean
+  :group 'weechat)
+
 (defcustom weechat-hidden-text-hidden t
   "Wether weechat.el should hide or show hidden text.
 
@@ -866,6 +871,21 @@ Must be called with `weechat-narrow-to-line' active."
                 (remove-text-properties start end '(invisible t))))
             (setq start (next-single-property-change end 'weechat-hidden-text))))))))
 
+(defun weechat-recenter-bottom-maybe (&optional window force)
+  (when weechat-auto-recenter
+    (let ((window (or (windowp window) (get-buffer-window))))
+      (when window
+        (with-selected-window window
+          (when (eq major-mode 'weechat-mode)
+            (when (or force
+                      (<= (- (window-height)
+                             (count-screen-lines (window-point)
+                                                 (window-start))
+                             2)         ;2, not 1 (like in rcirc)
+                                        ;because of the header-line
+                          0))
+              (recenter -1))))))))
+
 (defun weechat-line-date ()
   "Returns the date of the line under point resides in."
   (get-text-property (point) 'weechat-date))
@@ -947,16 +967,7 @@ Must be called with `weechat-narrow-to-line' active."
 
         ;; Recenter window if there are more lines than fit in the
         ;; frame. This is borrowed from rcirc.
-        (let ((window (get-buffer-window)))
-	      (when window
-            (with-selected-window window
-              (when (eq major-mode 'rcirc-mode)
-                (when (<= (- (window-height)
-                             (count-screen-lines (window-point)
-                                                 (window-start))
-                             1)
-                          0)
-                  (recenter -1))))))
+        (weechat-recenter-bottom-maybe)
 
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil))
@@ -1082,7 +1093,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
       (save-excursion
         (let ((weechat-inhibit-notifications t))
           (dolist (line-hdata (weechat--hdata-values lines-hdata))
-            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
+            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
+        (weechat-recenter-bottom-maybe nil 'force)))))
 
 (defvar weechat-initial-lines-buffer-properties
   '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
