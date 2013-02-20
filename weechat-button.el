@@ -55,41 +55,27 @@ Valid values include a string describing a buffer name or nil to
 disable url logging (except when an explicit buffer name is
 defined in `weechat-button-list')"
   :group 'weechat-button
-  :type '(choice
-          (string :tag "Buffer name")
-          (const :tag "Disable" nil)))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-url t
   "Buttonize url links?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-channels t
   "Buttonize channel links?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-symbols t
   "Buttonize symbol links?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-buttonize-emails nil
   "Buttonize e-mail link?"
   :group 'weechat-button
-  :type '(choice
-          (const :tag "Always" t)
-          (const :tag "Never" t)
-          (sexp :tag "Only when this evaluates to non-nil")))
+  :type 'boolean)
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
