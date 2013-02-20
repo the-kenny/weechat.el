@@ -869,7 +869,8 @@ Must be called with `weechat-narrow-to-line' active."
               (if weechat-hidden-text-hidden
                   (add-text-properties start end '(invisible t))
                 (remove-text-properties start end '(invisible t))))
-            (setq start (next-single-property-change end 'weechat-hidden-text))))))))
+            (setq start (next-single-property-change end 'weechat-hidden-text))))))
+    (weechat-recenter-bottom-maybe nil 'force)))
 
 (defun weechat-recenter-bottom-maybe (&optional window force)
   (when weechat-auto-recenter
