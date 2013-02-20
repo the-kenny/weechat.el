@@ -1060,7 +1060,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                  (when (and from-nick to-nick)
                    (weechat--user-list-remove from-nick)
                    (weechat--user-list-add to-nick))))
-              ((:irc/part :irc/quit)) (weechat--user-list-remove nick))))
+              ((:irc/part :irc/quit) (weechat--user-list-remove nick)))))
 
         ;; Print the line
         (cl-case line-type
