@@ -641,9 +641,12 @@ This is an internal function of `weechat-handle-color-codes'."
       (setq match-data (weechat--match-color-code 'ext str j))
       (if match-data
           t ;; TODO ext
-        (error "Broken color code (in ?F '%s' %s)" str i)))
-    (cl-values (cl-second match-data)
-               face)))
+        (weechat-relay-log (format "Broken color code (in ?F '%s' %s)" str i)
+                           :warn)))
+    (if match-data
+        (cl-values (cl-second match-data)
+                   face)
+      (cl-values j face))))
 
 (defvar weechat-color-options-list
   '(("weechat.color.separator" . "blue") ;; KEEP THE ORDER!
@@ -737,7 +740,8 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                  (setq match-data (weechat--match-color-code 'ext str i))
                  (if match-data
                      t ;; TODO ext
-                   (error "Broken color code (in ?B '%s' %s)" str i)))
+                   (weechat-relay-log (format "Broken color code (in ?B '%s' %s)" str i)
+                                      :warn)))
                (when match-data
                  (setq i (cl-second match-data)))))
             ((= next ?*) ;; (A)STD | (A)EXT | (A)STD ?, (A)STD | ...
@@ -752,30 +756,32 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                      (setq match-data (weechat--match-color-code 'ext str i))
                      (if match-data
                          t ;; TODO ext
-                       (error "Broken color code (in ?* '%s' %s)" str i)))
-                   (setq i (cl-second match-data)))))
+                       (weechat-relay-log (format "Broken color code (in ?* '%s' %s)" str i)
+                                          :warn)))
+                   (when match-data
+                     (setq i (cl-second match-data))))))
             ((= next ?b) 'b) ;; ignore for now
             ((= next ?\x1C)  ;; Clear color, leave attributes
              (setq face (weechat--color-keep-attributes old-face))))))
 
         ((?\x1A) ;; Set ATTR
          (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
-           (unless match-data
-             (error "Broken color code (in ?\\x1A '%s' %s)" str i))
-           (if (eq (cl-third match-data) 'keep)
-               (setq face (weechat--color-keep-attributes face))
-             (setq face (list (cl-third match-data))))
-           (setq i (cl-second match-data))))
+           (if (not match-data)
+               (weechat-relay-log (format "Broken color code (in ?\\x1A '%s' %s)" str i) :warn)
+             (if (eq (cl-third match-data) 'keep)
+                 (setq face (weechat--color-keep-attributes face))
+               (setq face (list (cl-third match-data))))
+             (setq i (cl-second match-data)))))
 
         ((?\x1B) ;; Delete ATTR
          (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
                (old-face (copy-sequence face)))
-           (unless match-data
-             (error "Broken color code (in ?\\x1B '%s' %s)" str i))
-           (if (eq (cl-third match-data) 'keep)
-               (setq face nil) ;; TODO Does keep here means delete all or keep all?
-             (setq face (delq (cl-third match-data) old-face)))
-           (setq i (cl-second match-data))))
+           (if (not match-data)
+               (weechat-relay-log (format "Broken color code (in ?\\x1B '%s' %s)" str i) :warn)
+             (if (eq (cl-third match-data) 'keep)
+                 (setq face nil) ;; TODO Does keep here means delete all or keep all?
+               (setq face (delq (cl-third match-data) old-face)))
+             (setq i (cl-second match-data)))))
 
         ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
 

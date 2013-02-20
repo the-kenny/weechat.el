@@ -132,7 +132,8 @@
   (should (string= (weechat-handle-color-codes "foo bar baz")
                    "foo bar baz"))
   (should (string= (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world")
-                   "hi world")))
+                   "hi world"))
+  (should (string= (weechat-handle-color-codes "\x19\Fkaputt") "kaputt")))
 
 (ert-deftest weechat-alist-merging ()
   (should (equal '((x . 42)) (weechat-merge-alists '((x . 23)) '((x . 42)))))
