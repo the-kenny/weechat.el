@@ -90,6 +90,11 @@ empty."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-auto-reconnect-retries 5
+  "Number of max. retries when reconnecting"
+  :type '(choice (integer :tag "Number of retries")
+                 (const :tag "No auto-reconnect" nil)))
+
 (defcustom weechat-auto-monitor-buffers ()
   "List of buffer names to auto-monitor on connect.
 
