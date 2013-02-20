@@ -74,8 +74,10 @@ empty."
   :type 'boolean
   :group 'weechat)
 
-(defcustom weechat-hide-like-weechat t
-  "Hide lines in buffer when they're hidden in Weechat."
+(defcustom weechat-hidden-text-hidden t
+  "Wether weechat.el should hide or show hidden text.
+
+Use `weechat-toggle-hidden' to toggle hidden text in buffers."
   :type 'boolean
   :group 'weechat)
 
@@ -840,7 +842,29 @@ Must be called with `weechat-narrow-to-line' active."
   ;; Make line invisible if `invisible' is t
   (when invisible
     (add-text-properties (point-min) (point-max)
-                         '(invisible t))))
+                         `(invisible ,weechat-hidden-text-hidden
+                                     weechat-hidden-text t))))
+
+(defun weechat-toggle-hidden (&optional buffer)
+  (interactive)
+  (setq weechat-hidden-text-hidden (not weechat-hidden-text-hidden))
+  (with-current-buffer (or buffer (current-buffer))
+    (unless (eq major-mode 'weechat-mode)
+      (error "Can only toggle hidden in weechat-mode buffers"))
+    (save-excursion
+      (goto-char (point-min))
+      (let ((inhibit-read-only t)
+            (start (or (when (get-text-property (point) 'weechat-hidden-text) (point))
+                       (next-single-property-change (point) 'weechat-hidden-text)))
+            end)
+        (while start
+          (setq end (next-single-property-change start 'weechat-hidden-text))
+          (when end
+            (when end
+              (if weechat-hidden-text-hidden
+                  (add-text-properties start end '(invisible t))
+                (remove-text-properties start end '(invisible t))))
+            (setq start (next-single-property-change end 'weechat-hidden-text))))))))
 
 (defun weechat-line-date ()
   "Returns the date of the line under point resides in."
@@ -985,8 +1009,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (invisible (or (not (= 1 (assoc-default "displayed" line-data nil 0)))
-                         (not weechat-hide-like-weechat)))
+          (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
           (nick (weechat--get-nick-from-line-data line-data)))
       (setq highlight (= 1 highlight))
       (when (bufferp (weechat--emacs-buffer buffer-ptr))
