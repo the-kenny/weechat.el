@@ -823,7 +823,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
   (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
                                         (point-at-eol))))
 
-(defun weechat-line-add-properties (date highlight)
+(defun weechat-line-add-properties (date highlight invisible)
   "Adds various text properties (read-only, etc.) to a line.
 
 Must be called with `weechat-narrow-to-line' active."
@@ -835,7 +835,12 @@ Must be called with `weechat-narrow-to-line' active."
   ;; Make line read-only if `weechat-read-only' is t
   (when weechat-read-only
     (add-text-properties (point-min) (point-max)
-                         '(read-only t))))
+                         '(read-only t)))
+
+  ;; Make line invisible if `invisible' is t
+  (when invisible
+    (add-text-properties (point-min) (point-max)
+                         '(invisible t))))
 
 (defun weechat-line-date ()
   "Returns the date of the line under point resides in."
@@ -899,7 +904,7 @@ Must be called with `weechat-narrow-to-line' active."
                   (overlay-put overlay 'wrap-prefix prefix-string))))
 
             ;; Add general properties
-            (weechat-line-add-properties date highlight)
+            (weechat-line-add-properties date highlight invisible)
 
             ;; Important: Run the hook after everything else
             (run-hooks 'weechat-insert-modify-hook)))
