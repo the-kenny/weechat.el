@@ -989,7 +989,7 @@ Must be called with `weechat-narrow-to-line' active."
      ((member "irc_nick" tags) :irc/nick)
      ((member "irc_topic" tags) :irc/topic)
      ((member "irc_numeric" tags) :irc/numeric)
-     (:irc/privmsg))))                     ;fallback
+     (:irc/unknown))))                     ;fallback
 
 (defun weechat-print-irc-action (buffer-ptr sender message date highlight)
   (let ((weechat-text-column 0))
