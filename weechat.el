@@ -1167,6 +1167,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
     (define-key map (kbd "TAB") 'completion-at-point)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
+    (define-key map (kbd "C-c C-t") 'weechat-toggle-hidden)
     map)
   "Keymap for weechat mode.")
 
@@ -1176,6 +1177,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     ["Previous Input" weechat-previous-input t]
     ["Next Input" weechat-next-input t]
     "-"
+    ["Toggle Hidden Lines" weechat-toggle-hidden t]
     ["Reload Buffer" weechat-reload-buffer t]
     ["Close Buffer" kill-buffer t]
     ["Monitor Buffer" weechat-monitor-buffer t]
