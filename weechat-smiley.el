@@ -60,8 +60,14 @@
 
 (defun weechat-smiley-unload-function ()
   "Remove smileys from buffer."
-  (let ((inhibit-read-only t))
-    (weechat-do-buffers (smiley-toggle-buffer -1))))
+  (save-restriction
+    (widen)
+    (let ((inhibit-read-only t))
+      (weechat-do-buffers
+       ;; smiley-toggle-buffer is broken somewhere in
+       ;; `gnus-with-article-buffer'. Remove smileys directly.
+       (smiley-region (point-min) (point-max))
+       (gnus-delete-images 'smiley)))))
 
 (provide 'weechat-smiley)
 
