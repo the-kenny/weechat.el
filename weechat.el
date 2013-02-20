@@ -292,13 +292,16 @@ It is called with narrowing in the correct buffer."
          (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
          (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
-      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
+      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr)) 
+    (when (buffer-live-p emacs-buffer)
+      ;; Add text about quitting etc. bla
+      (weechat-print-line buffer-ptr "" "Buffer closed")
+      ;; Close buffer if user wants this
+      (when weechat-auto-close-buffers
+        (kill-buffer emacs-buffer)))
+    ;; Remove from buffer hash map
     (weechat--remove-buffer-hash buffer-ptr)
-
-    (when (and weechat-auto-close-buffers
-               (buffer-live-p emacs-buffer))
-      (kill-buffer emacs-buffer))
-    
+    ;; Finally, run hook
     (run-hook-with-args 'weechat-buffer-closed-functions
                         buffer-ptr)))
 
