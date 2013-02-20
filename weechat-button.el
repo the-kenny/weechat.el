@@ -240,10 +240,11 @@ The function in property `weechat-function' gets called with `weechat-data'."
 (defun weechat-button--add-nickname-buttons ()
   "Add nick name buttons."
   (dolist (nick weechat-user-list)
-    (weechat-button--add-do (list (concat "\\b" (regexp-quote nick) "\\b")
-                                  0 t 0 "Nick Action"
-                                  #'weechat-button--nick-action
-                                  0))))
+    (unless (s-blank? nick)
+      (weechat-button--add-do (list (concat "\\b" (regexp-quote nick) "\\b")
+                                    0 t 0 "Nick Action"
+                                    #'weechat-button--nick-action
+                                    0)))))
 
 ;;; Callback functions
 
