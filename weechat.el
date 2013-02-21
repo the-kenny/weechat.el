@@ -558,7 +558,8 @@ PASSWORD is either a string, a function or nil."
                (with-current-buffer (gethash :emacs/buffer v)
                  (weechat-print-line k "!!!" "Lost connection to relay server"))))
            weechat--buffer-hashes)
-  (weechat-notify :disconnect nil nil (current-time)))
+  (weechat-notify :disconnect
+                  :date (current-time)))
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
@@ -944,7 +945,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                             (list :sender sender))))))
 
 
-(defun weechat-notify (type &optional sender text date buffer-ptr)
+(cl-defun weechat-notify (type &key sender text date buffer-ptr)
   (when (and (memq type weechat-notification-types)
              (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
@@ -1212,7 +1213,11 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                (get-buffer weechat-relay-log-buffer-name)
                                (current-buffer))
         (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify :highlight sender message date buffer-ptr))))))
+          (weechat-notify :highlight
+                          :sender sender
+                          :text message
+                          :date date
+                          :buffer-ptr buffer-ptr))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
