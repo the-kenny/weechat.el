@@ -214,7 +214,13 @@ buffers) and t (All buffers)."
 
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
-Set to nil to disable header line.  Currently only supported format option is %t for the title."
+Set to nil to disable header line.  Supported options are:
+
+- %n nick name
+- %s server name
+- %c channel name
+- %N buffer name
+- %t topic"
   :type '(choice (const :tag "Disabled" nil)
                  string)
   :set (lambda (sym val)
