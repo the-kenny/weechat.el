@@ -8,8 +8,8 @@
   You can install both s and cl-lib via package.el (marmelade
   required):
 
-  : M-x package-install s RET
-  : M-x package-install cl-lib RET
+  : M-x package-install RET s RET
+  : M-x package-install RET cl-lib RET
 
 ** Usage
    First, setup the relay server in weechat.  Please refer to the
