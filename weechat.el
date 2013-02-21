@@ -451,7 +451,7 @@ See (info \"(auth) Top\") for details."
 (defun weechat-get-password (host port)
   "Get password for HOST and PORT.
 
-Returns either a string or nil."
+Returns either a string, a function returning a string, or nil."
   (when (functionp weechat-password-callback)
     (funcall weechat-password-callback host port)))
 
