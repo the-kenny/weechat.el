@@ -911,7 +911,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
 
-(defun weechat-notifications-handler (sender text &optional _date _buffer-name)
+(defun weechat-notifications-handler (sender text &optional _date _buffer-ptr)
   (when (and (featurep 'notifications) (fboundp 'notifications-notify))
     (setq weechat--last-notification-id
           (notifications-notify
@@ -922,7 +922,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (sender _text &optional _date _buffer-name)
+(defun weechat-sauron-handler (sender _text &optional _date _buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (lexical-let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
@@ -934,14 +934,14 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                         '(:sender sender)))))
 
 
-(defun weechat-notify (sender text type &optional date buffer-name)
+(defun weechat-notify (sender text type &optional date buffer-ptr)
   (when (and (memq type weechat-notification-types)
              (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
-    (funcall weechat-notification-handler sender text date buffer-name)))
+    (funcall weechat-notification-handler sender text date buffer-ptr)))
 
 (defun weechat-narrow-to-line ()
   (interactive)
@@ -1202,7 +1202,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                (get-buffer weechat-relay-log-buffer-name)
                                (current-buffer))
         (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify sender message :highlight date (buffer-name)))))))
+          (weechat-notify sender message :highlight date buffer-ptr))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
