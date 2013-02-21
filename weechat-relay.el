@@ -128,7 +128,7 @@ Return the value and number of bytes consumed."
 (defun weechat--relay-unpack-lon (data)
   (let ((obj (bindat-unpack weechat--relay-lon-spec data)))
     (cl-values (string-to-number (decode-coding-string (bindat-get-field obj 'val) 'utf-8))
-            (bindat-length weechat--relay-lon-spec obj))))
+               (bindat-length weechat--relay-lon-spec obj))))
 
 (defun weechat--relay-unpack-chr (data)
   "Unpack a one byte char from unibyte string DATA.
@@ -152,7 +152,7 @@ Returns value and bytes consumed."
 Optional second return value contains length of parsed data."
   (let ((obj (bindat-unpack weechat--relay-str-spec data)))
     (cl-values (decode-coding-string (bindat-get-field obj 'val) 'utf-8)
-            (bindat-length weechat--relay-str-spec obj))))
+               (bindat-length weechat--relay-str-spec obj))))
 
 (defconst weechat--relay-buf-spec
   '((len u32)
@@ -165,7 +165,7 @@ Optional second return value contains length of parsed data."
 (defun weechat--relay-unpack-buf (data)
   (let ((obj (bindat-unpack weechat--relay-buf-spec data)))
     (cl-values (bindat-get-field obj 'val)
-            (bindat-length weechat--relay-buf-spec obj))))
+               (bindat-length weechat--relay-buf-spec obj))))
 
 (defconst weechat--relay-ptr-spec
   '((len u8)
@@ -181,7 +181,7 @@ DATA must be an unibyte string.  Return string-value and number
 of bytes consumed."
   (let ((obj (bindat-unpack weechat--relay-ptr-spec data)))
     (cl-values (concat "0x" (bindat-get-field obj 'val))
-            (bindat-length weechat--relay-ptr-spec obj))))
+               (bindat-length weechat--relay-ptr-spec obj))))
 
 (defconst weechat--relay-tim-spec
   '((len u8)
@@ -221,7 +221,7 @@ of bytes consumed."
           (setq acc (cons (cons key val) acc))
           (setq offset (+ offset key-len val-len)))))
     (cl-values acc
-            offset)))
+               offset)))
 
 (defconst weechat--relay-arr-spec
   '((type str 3)
@@ -255,7 +255,7 @@ of bytes consumed."
   (cl-multiple-value-bind (name len) (weechat--relay-unpack-str data)
     (cl-multiple-value-bind (value len*) (weechat--relay-unpack-str (substring data len))
       (cl-values (cons name value)
-              (+ len len*)))))
+                 (+ len len*)))))
 
 (defconst weechat--relay-inl-item-spec
   '((name struct weechat--relay-str-spec)
@@ -280,7 +280,7 @@ of bytes consumed."
                      (cons (bindat-get-field obj 'name 'val) value)
                      acc)))))
     (cl-values acc
-            offset)))
+               offset)))
 
 (defconst weechat--relay-inl-spec
   '((name struct weechat--relay-str-spec)
@@ -298,7 +298,7 @@ of bytes consumed."
         (setq acc (cons item acc))
         (setq offset (+ offset offset*))))
     (cl-values acc
-            offset)))
+               offset)))
 
 (defun weechat--relay-parse-hda-item (h-path-length name-type-alist data)
   (let ((p-path ())
@@ -314,7 +314,7 @@ of bytes consumed."
           (setq result (cons (cons (car name-type) obj) result))
           (setq offset (+ offset offset*)))))
     (cl-values (cons (reverse p-path) result)
-            offset)))
+               offset)))
 
 (defconst weechat--relay-hdh-spec
   '((h-path struct weechat--relay-str-spec)
@@ -350,7 +350,7 @@ of bytes consumed."
         (setq offset (+ offset offset*))))
     (let ((h-path (bindat-get-field obj 'h-path 'val)))
       (cl-values (list h-path acc)
-              offset))))
+                 offset))))
 
 (defconst weechat--relay-message-spec
   '((length u32)
@@ -367,7 +367,7 @@ of bytes consumed."
          (fun (symbol-function (intern (concat "weechat--relay-parse-" type)))))
     (cl-multiple-value-bind (obj len) (funcall fun (string-make-unibyte (substring data 3)))
       (cl-values obj
-              (+ len 3)))))
+                 (+ len 3)))))
 
 (defun weechat-unpack-message (message-data)
   "Unpack weechat relay message in MESSAGE-DATA.
@@ -388,7 +388,7 @@ Return a list: (id data)."
           (setq offset (+ offset offset*))
           (setq acc (cons obj acc)))))
     (cl-values (cons msg-id (if ignore-msg '(ignored) (reverse acc)))
-            (bindat-get-field msg 'length))))
+               (bindat-get-field msg 'length))))
 
 (defun weechat--message-available-p (&optional buffer)
   "Check if a weechat relay message available in BUFFER.
@@ -502,7 +502,7 @@ CALLBACK takes one argument (the response data) which is a list."
       (buffer-disable-undo))
     (unless nowait-supported
       (when (functionp weechat--relay-connected-callback)
-       (funcall weechat--relay-connected-callback))
+        (funcall weechat--relay-connected-callback))
       (setq weechat--relay-connected-callback nil)
       (run-hooks 'weechat-relay-connect-hook))))
 
