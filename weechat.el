@@ -143,7 +143,15 @@ See `format-time-string' for format description."
   "Weechat face used for the prompt."
   :group 'weechat)
 
-(defface weechat-highlight-face '((t :background "light blue"))
+(defface weechat-highlight-face
+  '((((class grayscale) (background light)) :foreground "LightGray" :weight bold)
+    (((class grayscale) (background dark)) :foreground "DimGray" :weight bold)
+    (((class color) (min-colors 88) (background light)) :foreground "Purple")
+    (((class color) (min-colors 88) (background dark))  :foreground "Cyan1")
+    (((class color) (min-colors 16) (background light)) :foreground "Purple")
+    (((class color) (min-colors 16) (background dark))  :foreground "Cyan")
+    (((class color) (min-colors 8)) :foreground "cyan" :weight bold)
+    (t :weight bold)) ;; Stolen from rcirc.el!
   "Weechat face for highlighted lines."
   :group 'weechat)
 
