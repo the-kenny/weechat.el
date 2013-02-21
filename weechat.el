@@ -442,7 +442,8 @@ See (info \"(auth) Top\") for details."
             (car (auth-source-search
                   :max 1
                   :host host
-                  :port port))
+                  :port port
+                  :require '(:secret)))
             :secret)))
       (if (functionp secret)
           (funcall secret)
