@@ -466,42 +466,33 @@ CALLBACK takes one argument (the response data) which is a list."
     (weechat-relay-log (format "Received event: %s\n" event))
     (cl-case event
       ('closed (run-hooks 'weechat-relay-disconnect-hook))
-      ('open (progn
-               (when (functionp weechat--relay-connected-callback)
-                 (funcall weechat--relay-connected-callback)
-                 (setq weechat--relay-connected-callback nil))
-               (run-hooks 'weechat-relay-connect-hook)))
+      ('open (run-hooks 'weechat-relay-connect-hook))
       ('failed (progn (error "Failed to connect to weechat relay")
                       (weechat-relay-disconnect))))))
 
-(defun weechat-relay-connect (host port &optional callback)
+(defun weechat-relay-connect (host port ssl &optional callback)
   "Open a new weechat relay connection to HOST at PORT."
-  (setq weechat--relay-connected-callback callback)
-  (let ((nowait-supported (featurep 'make-network-process '(:nowait t))))
-    (let ((process
-           (open-network-stream "weechat-relay"
-                                weechat-relay-buffer-name host
-                                port
-                                :type 'plain
-                                :nowait nowait-supported
-                                :filter-multibyte nil
-                                :coding 'binary)))
-      (set-process-coding-system process 'binary)
-      (set-process-filter-multibyte process nil)
-      (set-process-filter process #'weechat--relay-process-filter)
-      (set-process-sentinel process #'weechat--relay-process-sentinel))
-    (with-current-buffer (get-buffer-create
-                          weechat-relay-log-buffer-name)
-      (buffer-disable-undo))
+  (get-buffer-create weechat-relay-buffer-name)
+  (let ((process
+         (open-network-stream "weechat-relay"
+                              weechat-relay-buffer-name
+                              host
+                              port
+                              :type (if ssl 'tls 'plain)
+                              :coding 'binary)))
+    (set-process-sentinel process #'weechat--relay-process-sentinel)
+    (set-process-coding-system process 'binary)
+    (set-process-filter-multibyte process nil)
+    (set-process-filter process #'weechat--relay-process-filter)
     (with-current-buffer (get-buffer weechat-relay-buffer-name)
       (setq buffer-read-only t)
       (set-buffer-multibyte nil)
       (buffer-disable-undo))
-    (unless nowait-supported
-      (when (functionp weechat--relay-connected-callback)
-        (funcall weechat--relay-connected-callback))
-      (setq weechat--relay-connected-callback nil)
-      (run-hooks 'weechat-relay-connect-hook))))
+    (when (functionp callback)
+      (funcall callback)))
+  (with-current-buffer (get-buffer-create
+                        weechat-relay-log-buffer-name)
+    (buffer-disable-undo)))
  
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)

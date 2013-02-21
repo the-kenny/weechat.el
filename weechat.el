@@ -418,10 +418,11 @@ It is called with narrowing in the correct buffer."
 (weechat-relay-add-id-callback "_buffer_localvar_added" #'weechat--handle-localvar-changed nil 'force)
 
 ;;;###autoload
-(defun weechat-connect (host port password)
+(defun weechat-connect (host port password &optional ssl)
   (interactive (list (read-string "Relay Host: ")
                      (read-number "Port: ")
-                     (read-passwd "Password: ")))
+                     (read-passwd "Password: ")
+                     (y-or-n-p "SSL? ")))
   (when (weechat-relay-connected-p)
     (if (y-or-n-p "Already connected.  Disconnect other connection? ")
         (weechat-relay-disconnect)
@@ -430,7 +431,9 @@ It is called with narrowing in the correct buffer."
   (when (and (stringp host)
              (integerp port))
     (weechat-relay-connect
-     host port
+     host
+     port
+     ssl
      (lambda ()
        (weechat-relay-authenticate password)
        (weechat-relay-send-command
