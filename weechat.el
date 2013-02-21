@@ -927,14 +927,16 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (type &optional sender _text _date _buffer-ptr)
+(defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (lexical-let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
                         (case type
                           (:highlight
-                           (format "Message from %s"
-                                   (weechat-strip-formatting sender)))
+                           (format "%s in %s: %S"
+                                   (weechat-strip-formatting sender)
+                                   (weechat-buffer-name buffer-ptr)
+                                   text))
                           (:disconnect
                            "Disconnected from WeeChat"))
                         (lambda ()
