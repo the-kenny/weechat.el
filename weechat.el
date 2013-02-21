@@ -557,7 +557,8 @@ PASSWORD is either a string, a function or nil."
              (when (bufferp (gethash :emacs/buffer v))
                (with-current-buffer (gethash :emacs/buffer v)
                  (weechat-print-line k "!!!" "Lost connection to relay server"))))
-           weechat--buffer-hashes))
+           weechat--buffer-hashes)
+  (weechat-notify "" "Lost connection to relay server" :disconnect (current-time)))
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
