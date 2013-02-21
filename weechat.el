@@ -487,6 +487,9 @@ It is called with narrowing in the correct buffer."
     ret))
 
 (defun weechat-channel-names (&optional arg)
+  "Return all available buffer names in WeeChat.
+
+If ARG is non-nil, only return monitored buffers."
   (let (ret)
     (maphash
      (lambda (k v)
@@ -1334,11 +1337,12 @@ Default is current buffer."
 
 (defun weechat-switch-buffer (buffer-ptr)
   "Like `switch-buffer' but limited to WeeChat buffers.
-Will only list active buffers if called with prefix.
+
+BUFFER-PTR is a string containing a pointer to the buffer to
+switch to.
 
 Will monitor channels if necessary.
-
-Argument BUFFER-PTR Buffer reference when used non-interactively."
+Will list locally availables buffers if called with prefix."
   (interactive (list
                 (weechat--find-buffer
                  (funcall (or (and (featurep 'ido)
