@@ -22,7 +22,7 @@
 
    To show a channel in Emacs, do:
 
-   : M-x weechat-monitor-buffer
+   : M-x weechat-switch-buffer
 
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
