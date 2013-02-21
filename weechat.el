@@ -229,6 +229,13 @@ It is called with narrowing in the correct buffer."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-password-callback 'weechat-password-auth-source-callback
+  "Function called to get the relay password. Set to nil if no
+  password is needed.
+
+Value must be a function with two arguments: Hostname and port.
+The return value must be either a string or nil.")
+
 (defvar weechat-debug-strip-formatting nil)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
@@ -326,7 +333,7 @@ It is called with narrowing in the correct buffer."
       (weechat-monitor-buffer
        buffer-ptr
        (not (eq weechat-auto-monitor-new-buffers 'silent))))
-    
+
     (run-hook-with-args 'weechat-buffer-opened-functions
                         buffer-ptr)))
 
@@ -336,7 +343,7 @@ It is called with narrowing in the correct buffer."
          (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
          (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
-      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr)) 
+      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (when (buffer-live-p emacs-buffer)
       ;; Add text about quitting etc. bla
       (weechat-print-line buffer-ptr "" "Buffer closed")
@@ -425,11 +432,40 @@ It is called with narrowing in the correct buffer."
 (weechat-relay-add-id-callback "_buffer_localvar_changed" #'weechat--handle-localvar-changed nil 'force)
 (weechat-relay-add-id-callback "_buffer_localvar_added" #'weechat--handle-localvar-changed nil 'force)
 
+(defun weechat-password-auth-source-callback (host port)
+  "Get password for HOST and PORT via `auth-source-search'
+
+See (info \"(auth) Top\") for details."
+  (when (featurep 'auth-source)
+    (let ((secret
+           (plist-get
+            (car (auth-source-search
+                  :max 1
+                  :host host
+                  :port port))
+            :secret)))
+      (if (functionp secret)
+          (funcall secret)
+        secret))))
+
+(defun weechat-get-password (host port)
+  "Get password for HOST and PORT.
+
+Returns either a string or nil."
+  (when (functionp weechat-password-callback)
+    (funcall weechat-password-callback host port)))
+
 ;;;###autoload
 (defun weechat-connect (host port password)
-  (interactive (list (read-string "Relay Host: ")
-                     (read-number "Port: ")
-                     (read-passwd "Password: ")))
+  "Connect to WeeChat. "
+  (interactive (let* ((host (read-string "Relay Host: "))
+                      (port (read-number "Port: ")))
+                 (list
+                  host port
+                  (or (progn
+                        (message "Trying to get password via `weechat-password-callback'...")
+                        (weechat-get-password host port))
+                      (read-passwd "Password: ")))))
   (when (weechat-relay-connected-p)
     (if (y-or-n-p "Already connected.  Disconnect other connection? ")
         (weechat-relay-disconnect)
@@ -769,7 +805,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                                           :warn)))
                    (setq i (if match-data
                                (cl-second match-data)
-                           (1+ i))))))
+                             (1+ i))))))
             ((= next ?b) 'b) ;; ignore for now
             ((= next ?\x1C)  ;; Clear color, leave attributes
              (setq face (weechat--color-keep-attributes old-face))))))
