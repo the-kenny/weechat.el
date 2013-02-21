@@ -1144,7 +1144,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
     (let ((sender (assoc-default "prefix" line-data))
-          (weechat-message (assoc-default "message" line-data))
+          (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
