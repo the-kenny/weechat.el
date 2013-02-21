@@ -77,6 +77,12 @@ defined in `weechat-button-list')"
   :group 'weechat-button
   :type 'boolean)
 
+(defcustom weechat-button-buttonize-man nil
+  "Buttonize manpage links?
+Format is man(1)."
+  :group 'weechat-button
+  :type 'boolen)
+
 (defcustom weechat-button-buttonize-info nil
   "Buttonize info links?
 Format is (info \"link\")."
@@ -96,6 +102,7 @@ Format is (info \"link\")."
     ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
      weechat-button--describe-symbol 1)
+    ("[[:alpha:][:alnum:]]+([1-9])" 0 weechat-button-buttonize-man nil "Manpage" man 0)
     ("(info \"\\(([[:alnum:]]+) .+?\\)\"" 1 weechat-button-buttonize-info nil "info"
      info 1))
   "List of potential buttons in WeeChat chat buffers.
