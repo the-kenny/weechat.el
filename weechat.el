@@ -486,11 +486,12 @@ It is called with narrowing in the correct buffer."
      weechat--buffer-hashes)
     ret))
 
-(defun weechat-channel-names ()
+(defun weechat-channel-names (&optional arg)
   (let (ret)
     (maphash
-     (lambda (k _)
-       (setq ret (cons (weechat-buffer-name k) ret)))
+     (lambda (k v)
+       (when (or (not arg) (buffer-live-p (gethash :emacs/buffer v)))
+         (setq ret (cons (weechat-buffer-name k) ret))))
      weechat--buffer-hashes)
     ret))
 
@@ -1332,15 +1333,18 @@ Default is current buffer."
           (switch-to-buffer (current-buffer)))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
-  "Like `switch-buffer' but limited to WeeChat buffers
+  "Like `switch-buffer' but limited to WeeChat buffers.
+Will only list active buffers if called with prefix.
 
-Will monitor channels if necessary."
+Will monitor channels if necessary.
+
+Argument BUFFER-PTR Buffer reference when used non-interactively."
   (interactive (list
                 (weechat--find-buffer
                  (funcall (or (and (featurep 'ido)
                                    (symbol-function 'ido-completing-read))
                               #'completing-read)
-                          "Channel Name: " (weechat-channel-names)))))
+                          "Channel Name: " (weechat-channel-names current-prefix-arg)))))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (if (buffer-live-p buffer)
         (switch-to-buffer buffer)
