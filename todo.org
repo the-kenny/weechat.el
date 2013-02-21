@@ -55,7 +55,7 @@
 
 ** TODO Module System
 
-* Nice to have [5/13]
+* Nice to have [5/14]
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
@@ -70,3 +70,4 @@
    - `message'
 ** DONE Buttons for nick names.
 ** TODO Marker for away state
+** TODO Opening buffers in Emacs should update activation state on weechat side
