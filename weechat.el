@@ -115,7 +115,7 @@ monitored on connect. A value of t will monitor all available
 buffers. Be warned, a too long list will use much bandwidth on
 connect."
   :type '(choice (const :tag "All" t)
-                 (repeat :tag "List" string ))
+                 (repeat :tag "List" string))
   :group 'weechat)
 
 (defcustom weechat-auto-monitor-new-buffers 'silent
@@ -197,8 +197,8 @@ text-column will be increased for that line."
   "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
-          (const :tag "Sauron" 'weechat-sauron-handler)
-          (const :tag "DBUS" 'weechat-notifications-handler)
+          (const :tag "Sauron"           'weechat-sauron-handler)
+          (const :tag "notifications.el" 'weechat-notifications-handler)
           (function :tag "Custom Function"))
   :group 'weechat)
 
@@ -210,7 +210,16 @@ buffers) and t (All buffers)."
   :type '(choice
           (const :tag "Never" nil)
           (const :tag "Monitored buffers" :monitored)
-          (const :tag "All Buffers" t)))
+          (const :tag "All Buffers" t))
+  :group 'weechat)
+
+(defcustom weechat-notification-types '(:highlight :disconnect)
+  "Events for which a notification should be shown."
+  :type '(repeat symbol)
+  :group 'weechat)
+
+(defvar weechat-inhibit-notifications nil
+  "Non-nil means don't display any weechat notifications.")
 
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
@@ -258,9 +267,6 @@ returns a string, or nil.")
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
-
-(defvar weechat-inhibit-notifications nil
-  "Non-nil means don't display any weechat notifications.")
 
 (defvar weechat-buffer-opened-functions nil
   "Hook ran when a WeeChat buffer opens.")
@@ -557,7 +563,9 @@ PASSWORD is either a string, a function or nil."
              (when (bufferp (gethash :emacs/buffer v))
                (with-current-buffer (gethash :emacs/buffer v)
                  (weechat-print-line k "!!!" "Lost connection to relay server"))))
-           weechat--buffer-hashes))
+           weechat--buffer-hashes)
+  (weechat-notify :disconnect
+                  :date (current-time)))
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
@@ -912,37 +920,50 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
 
-(defun weechat-notifications-handler (sender text &optional _date _buffer-name)
+(defun weechat-notifications-handler (type &optional sender text _date _buffer-ptr)
   (require 'notifications nil t)
   (when (and (featurep 'notifications) (fboundp 'notifications-notify))
     (setq weechat--last-notification-id
           (notifications-notify
-           :title (xml-escape-string (concat "Weechat.el: Message from <"
-                                             (weechat-strip-formatting sender)
-                                             ">"))
-           :body (xml-escape-string text)
+           :title (xml-escape-string
+                   (case type
+                     (:highlight
+                      (concat "Weechat.el: Message from <"
+                              (weechat-strip-formatting sender)
+                              ">"))
+                     (:disconnect "Disconnected")))
+           :body (when text (xml-escape-string text))
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
 
-(defun weechat-sauron-handler (sender _text &optional _date _buffer-name)
+(defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (lexical-let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
-                        (format "Message from %s"
-                                (weechat-strip-formatting sender))
+                        (case type
+                          (:highlight
+                           (format "%s in %s: %S"
+                                   (weechat-strip-formatting sender)
+                                   (weechat-buffer-name buffer-ptr)
+                                   text))
+                          (:disconnect
+                           "Disconnected from WeeChat"))
                         (lambda ()
                           (when (fboundp 'sauron-switch-to-marker-or-buffer)
                             (sauron-switch-to-marker-or-buffer jump-position)))
-                        '(:sender sender)))))
+                        ;; Flood protection based on sender
+                        (if sender
+                            (list :sender sender))))))
 
 
-(defun weechat-notify (sender text &optional date buffer-name)
-  (when (and (functionp weechat-notification-handler)
+(cl-defun weechat-notify (type &key sender text date buffer-ptr)
+  (when (and (memq type weechat-notification-types)
+             (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
-    (funcall weechat-notification-handler sender text date buffer-name)))
+    (funcall weechat-notification-handler type sender text date buffer-ptr)))
 
 (defun weechat-narrow-to-line ()
   (interactive)
@@ -1203,7 +1224,11 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                (get-buffer weechat-relay-log-buffer-name)
                                (current-buffer))
         (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify sender message date (buffer-name)))))))
+          (weechat-notify :highlight
+                          :sender sender
+                          :text message
+                          :date date
+                          :buffer-ptr buffer-ptr))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
