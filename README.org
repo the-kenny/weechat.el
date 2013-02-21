@@ -24,5 +24,28 @@
 
    : M-x weechat-switch-buffer
 
+** Color settings
+   Most colors in weechat.el come directly from WeeChat and are only
+   translated into Emacs faces.  There are a few notable exceptions
+   such as =weechat-highlight-face= or =weechat-nick-self-face=.
+
+   If you are unsatisfied with the colors that WeeChat send then
+   either change the corresponding color in WeeChat or customize
+   =weechat-color-list=.  Do *not* add or remove any values in the
+   list!  Simply change the value.  Using =rainbow-mode= (from GNU
+   ELPA) or =list-colors-display= can help finding good values.
+
+   The default configuration tries to match the WeeChat colors as
+   close as possible.  Example for colors that go better with the
+   Emacs' default theme are:
+
+#+BEGIN_SRC emacs-lisp
+  (setq weechat-color-list '(unspecified "black" "dim gray" "dark red" "red"
+                                         "dark green" "green" "brown"
+                                         "orange" "dark blue" "blue"
+                                         "dark magenta" "magenta" "dark cyan"
+                                         "royal blue" "dark gray" "gray"))
+#+END_SRC
+
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
