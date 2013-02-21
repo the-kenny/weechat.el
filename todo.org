@@ -55,13 +55,13 @@
 
 ** TODO Module System
 
-* Nice to have [4/13]
+* Nice to have [5/13]
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** TODO More Unit Tests (ert)
 ** TODO SSL Connections
 ** TODO Compression
-** TODO Read passwords from ~/.authinfo
+** DONE Read passwords from ~/.authinfo
 ** TODO Speedbar integration
 ** TODO Faces based on message type
 ** DONE URL Detection
