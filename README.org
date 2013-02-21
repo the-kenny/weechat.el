@@ -49,3 +49,4 @@
 
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
+  - [[https://github.com/aristidb][Aristid Breitkreuz]]
