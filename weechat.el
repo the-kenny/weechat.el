@@ -234,7 +234,8 @@ It is called with narrowing in the correct buffer."
   password is needed.
 
 Value must be a function with two arguments: Hostname and port.
-The return value must be either a string or nil.")
+The return value must be either a string, a function which
+returns a string, or nil.")
 
 (defvar weechat-debug-strip-formatting nil)
 
