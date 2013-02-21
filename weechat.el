@@ -450,6 +450,7 @@ Returns either a string or a function.
 
 See (info \"(auth) Top\") for details."
   (when (featurep 'auth-source)
+    (message "Using auth-source to retrieve weechat relay password")
     (plist-get
      (car (auth-source-search
            :max 1
@@ -483,17 +484,17 @@ PASSWORD is either a string, a function or nil."
          (read-number "Port: " weechat-port-default)))
      (list
       host port
-      ;; Use lexical-let to scramble password lambda in *Backtrace*
-      (lexical-let
-          ((pass
-            (or
-             (progn
-               (message "Trying to get password via `weechat-password-callback'...")
-               (weechat-get-password host port))
-             (read-passwd "Password: "))))
-        (lambda
-          ()
-          pass)))))
+      (or
+       (progn
+         (message "Trying to get password via `weechat-password-callback'...")
+         (weechat-get-password host port))
+       ;; Use lexical-let to scramble password lambda in *Backtrace*
+       (lexical-let
+           ((pass
+             (read-passwd "Password: ")))
+         (lambda
+           ()
+           pass))))))
   (let*
       ((host
         (or host weechat-host-default))
