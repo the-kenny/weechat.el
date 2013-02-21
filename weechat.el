@@ -456,7 +456,7 @@ Returns either a string or nil."
     (funcall weechat-password-callback host port)))
 
 ;;;###autoload
-(defun weechat-connect (host port password)
+(defun weechat-connect (host port &optional password)
   "Connect to WeeChat. 
 
 HOST is the relay host.
@@ -469,7 +469,9 @@ PASSWORD is either a string, a function or nil."
                   (or (progn
                         (message "Trying to get password via `weechat-password-callback'...")
                         (weechat-get-password host port))
-                      (read-passwd "Password: ")))))
+                      ;; Use lexical-let to scramble password lambda in *Backtrace*
+                      (lexical-let ((pass (read-passwd "Password: ")))
+                        (lambda () pass))))))
   (when (weechat-relay-connected-p)
     (if (y-or-n-p "Already connected.  Disconnect other connection? ")
         (weechat-relay-disconnect)
