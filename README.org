@@ -1,3 +1,4 @@
+# -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
 * weechat.el - Chat via Weechat in Emacs
   Please note: This README is just a placeholder.  A more detailed
   documentation will follow.
