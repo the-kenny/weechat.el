@@ -499,7 +499,11 @@ PASSWORD is either a string, a function or nil."
       ((host
         (or host weechat-host-default))
        (port
-        (or port weechat-port-default)))
+        (or port weechat-port-default))
+       (password
+        (or password
+            (weechat-get-password host port))))
+    (message (format "Weechat connecting to %s:%d" host port))
     (when
         (weechat-relay-connected-p)
       (if
