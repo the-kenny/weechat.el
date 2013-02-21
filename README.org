@@ -2,8 +2,8 @@
   Please note: This README is just a placeholder.  A more detailed
   documentation will follow.
 
-  weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions below
-  24.3 you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is
+  weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions
+  below 24.3 you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is
   recommended!
 
 ** Usage
