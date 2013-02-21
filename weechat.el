@@ -197,8 +197,8 @@ text-column will be increased for that line."
   "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
-          (const :tag "Sauron" 'weechat-sauron-handler)
-          (const :tag "DBUS" 'weechat-notifications-handler)
+          (const :tag "Sauron"           'weechat-sauron-handler)
+          (const :tag "notifications.el" 'weechat-notifications-handler)
           (function :tag "Custom Function"))
   :group 'weechat)
 
