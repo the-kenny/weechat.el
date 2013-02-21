@@ -127,12 +127,40 @@
                  "someone has joined #asdfasdfasdf"))
   (should (equal (weechat-strip-formatting "ddd") "ddd")))
 
+(defun weechat-test--property-list (str &optional prop pos)
+  "Return a list of property PROP in STR starting at POS.
+Default property is `face'.  The returned format is ((START END (PROP VALUE)))."
+  (setq pos (or pos 0))
+  (setq prop (or prop 'face))
+  (let ((next-pos pos)
+        result)
+    (while pos
+      (setq next-pos (next-single-property-change pos prop str))
+      (setq result (cons (list pos (or next-pos (length str))
+                               (list prop
+                                     (get-text-property pos prop str)))
+                         result))
+      (setq pos next-pos))
+    result))
+
 (ert-deftest weechat-color-handling ()
   "Test `weechat-handle-color-codes'."
   (should (string= (weechat-handle-color-codes "foo bar baz")
                    "foo bar baz"))
   (should (string= (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world")
                    "hi world"))
+  (should (equal (weechat-test--property-list
+                  (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world"))
+                 '((3 8
+                      (face
+                       ((:foreground "red")
+                        (:slant italic))))
+                   (2 3
+                      (face default))
+                   (0 2
+                      (face
+                       ((:foreground "dark gray")
+                        (:weight bold)))))))
   (should (string= (weechat-handle-color-codes "\x19\Fkaputt") "kaputt"))
   (should (string= (weechat-handle-color-codes "XY\x1A\Z") "XYZ"))
   (should (string= (weechat-handle-color-codes "\x1Bx") "x")))
