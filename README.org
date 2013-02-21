@@ -2,9 +2,14 @@
   Please note: This README is just a placeholder.  A more detailed
   documentation will follow.
 
-  weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions
-  below 24.3 you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is
-  recommended!
+  weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]]. For Emacs versions below 24.3
+  you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]]. WeeChat version 0.4.0 or newer is recommended!
+
+  You can install both s and cl-lib via package.el (marmelade
+  required):
+
+  : M-x package-install s RET
+  : M-x package-install cl-lib RET
 
 ** Usage
    First, setup the relay server in weechat.  Please refer to the
