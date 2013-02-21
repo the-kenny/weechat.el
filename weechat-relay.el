@@ -483,8 +483,6 @@ CALLBACK takes one argument (the response data) which is a list."
                                 weechat-relay-buffer-name host
                                 port
                                 :type 'plain
-                                ;; :filter #'weechat--relay-process-filter
-                                ;; :sentinel #'weechat--relay-process-sentinel
                                 :nowait nowait-supported
                                 :filter-multibyte nil
                                 :coding 'binary)))
