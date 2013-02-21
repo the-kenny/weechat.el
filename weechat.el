@@ -923,7 +923,8 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                                 (weechat-strip-formatting sender))
                         (lambda ()
                           (when (fboundp 'sauron-switch-to-marker-or-buffer)
-                            (sauron-switch-to-marker-or-buffer jump-position)))))))
+                            (sauron-switch-to-marker-or-buffer jump-position)))
+                        '(:sender sender)))))
 
 
 (defun weechat-notify (sender text &optional date buffer-name)
