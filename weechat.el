@@ -435,19 +435,17 @@ The return value must be either a string or nil.")
 (defun weechat-password-auth-source-callback (host port)
   "Get password for HOST and PORT via `auth-source-search'
 
+Returns either a string or a function.
+
 See (info \"(auth) Top\") for details."
   (when (featurep 'auth-source)
-    (let ((secret
-           (plist-get
-            (car (auth-source-search
-                  :max 1
-                  :host host
-                  :port port
-                  :require '(:secret)))
-            :secret)))
-      (if (functionp secret)
-          (funcall secret)
-        secret))))
+    (plist-get
+     (car (auth-source-search
+           :max 1
+           :host host
+           :port port
+           :require '(:secret)))
+     :secret)))
 
 (defun weechat-get-password (host port)
   "Get password for HOST and PORT.
@@ -458,7 +456,11 @@ Returns either a string or nil."
 
 ;;;###autoload
 (defun weechat-connect (host port password)
-  "Connect to WeeChat. "
+  "Connect to WeeChat. 
+
+HOST is the relay host.
+PORT is the port where the relay listens.
+PASSWORD is either a string, a function or nil."
   (interactive (let* ((host (read-string "Relay Host: "))
                       (port (read-number "Port: ")))
                  (list

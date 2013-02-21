@@ -91,8 +91,14 @@ Trim TEXT prior to sending it."
                  msg)))
 
 (defun weechat-relay-authenticate (password)
-  "Authenticate to weechat with PASSWORD."
-  (weechat--relay-send-message (format "init password=%s,compression=off\n" password)))
+  "Authenticate to weechat with PASSWORD.
+
+PASSWORD can be a string, a function or nil."
+  (let ((pass (if (functionp password)
+                  (funcall password)
+                password)))
+    (when (and pass (stringp pass) (not (s-blank? pass)))
+      (weechat--relay-send-message (format "init password=%s,compression=off\n" pass)))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int NUM to signed int.
