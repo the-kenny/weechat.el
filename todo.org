@@ -1,7 +1,7 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
-* Short-Term [12/21]
+* Short-Term [13/21]
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** TODO Handle 'sync' events [7/15]
@@ -53,7 +53,7 @@
 ** DONE Colors
    Thanks, Rüdiger
 
-** TODO Module System
+** DONE Module System
 
 * Nice to have [5/14]
 ** DONE Sauron Integration
