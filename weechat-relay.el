@@ -477,22 +477,28 @@ CALLBACK takes one argument (the response data) which is a list."
 (defun weechat-relay-connect (host port &optional callback)
   "Open a new weechat relay connection to HOST at PORT."
   (setq weechat--relay-connected-callback callback)
-  (make-network-process :name "weechat-relay"
-                        :buffer weechat-relay-buffer-name
-                        :host host
-                        :service port
-                        :filter #'weechat--relay-process-filter
-                        :sentinel #'weechat--relay-process-sentinel
-                        :nowait t
-                        :filter-multibyte nil
-                        :coding 'binary)
-  (with-current-buffer (get-buffer-create
-                        weechat-relay-log-buffer-name)
-    (buffer-disable-undo))
-  (with-current-buffer (get-buffer weechat-relay-buffer-name)
-    (setq buffer-read-only t)
-    (set-buffer-multibyte nil)
-    (buffer-disable-undo)))
+  (let ((nowait-supported (featurep 'make-network-process '(:nowait t))))
+    (make-network-process :name "weechat-relay"
+                          :buffer weechat-relay-buffer-name
+                          :host host
+                          :service port
+                          :filter #'weechat--relay-process-filter
+                          :sentinel #'weechat--relay-process-sentinel
+                          :nowait nowait-supported
+                          :filter-multibyte nil
+                          :coding 'binary)
+    (with-current-buffer (get-buffer-create
+                          weechat-relay-log-buffer-name)
+      (buffer-disable-undo))
+    (with-current-buffer (get-buffer weechat-relay-buffer-name)
+      (setq buffer-read-only t)
+      (set-buffer-multibyte nil)
+      (buffer-disable-undo))
+    (unless nowait-supported
+      (when (functionp weechat--relay-connected-callback)
+       (funcall weechat--relay-connected-callback))
+      (setq weechat--relay-connected-callback nil)
+      (run-hooks 'weechat-relay-connect-hook))))
 
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)
