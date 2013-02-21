@@ -1333,10 +1333,12 @@ Default is current buffer."
           (switch-to-buffer (current-buffer)))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
-  "Like `switch-buffer' but limited to WeeChat buffers. Will only list
-active buffers if called with prefix.
+  "Like `switch-buffer' but limited to WeeChat buffers.
+Will only list active buffers if called with prefix.
 
-Will monitor channels if necessary."
+Will monitor channels if necessary.
+
+Argument BUFFER-PTR Buffer reference when used non-interactively."
   (interactive (list
                 (weechat--find-buffer
                  (funcall (or (and (featurep 'ido)
