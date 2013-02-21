@@ -40,6 +40,16 @@
   :prefix "weechat-"
   :group 'applications)
 
+(defcustom weechat-host-default "localhost"
+  "Default host for `weechat-connect'."
+  :type 'string
+  :group 'weechat)
+
+(defcustom weechat-port-default 9000
+  "Default port for `weechat-connect'."
+  :type 'string
+  :group 'weechat)
+
 (defcustom weechat-modules '(weechat-button weechat-complete)
   "Modules that should always be loaded together with weechat.el
 
@@ -440,6 +450,7 @@ Returns either a string or a function.
 
 See (info \"(auth) Top\") for details."
   (when (featurep 'auth-source)
+    (message "Using auth-source to retrieve weechat relay password")
     (plist-get
      (car (auth-source-search
            :max 1
@@ -456,42 +467,70 @@ Returns either a string, a function returning a string, or nil."
     (funcall weechat-password-callback host port)))
 
 ;;;###autoload
-(defun weechat-connect (host port &optional password)
+(defun weechat-connect
+  (&optional host port password)
   "Connect to WeeChat. 
 
-HOST is the relay host.
-PORT is the port where the relay listens.
+HOST is the relay host, `weechat-host-default' by default.
+PORT is the port where the relay listens, `weechat-port-default' by default.
 PASSWORD is either a string, a function or nil."
-  (interactive (let* ((host (read-string "Relay Host: "))
-                      (port (read-number "Port: ")))
-                 (list
-                  host port
-                  (or (progn
-                        (message "Trying to get password via `weechat-password-callback'...")
-                        (weechat-get-password host port))
-                      ;; Use lexical-let to scramble password lambda in *Backtrace*
-                      (lexical-let ((pass (read-passwd "Password: ")))
-                        (lambda () pass))))))
-  (when (weechat-relay-connected-p)
-    (if (y-or-n-p "Already connected.  Disconnect other connection? ")
-        (weechat-relay-disconnect)
-      (error "Can't open two connections")))
-
-  (when (and (stringp host)
-             (integerp port))
-    (weechat-relay-connect
-     host port
-     (lambda ()
-       (weechat-relay-authenticate password)
-       (weechat-relay-send-command
-        "info version"
-        (lambda (data)
-          (message "Connected to '%s', version %s" host (cdar data))
-          (weechat-update-buffer-list
-           (lambda ()
-             (weechat-relay-send-command "sync")
-             (setq weechat--connected t)
-             (run-hooks 'weechat-connect-hook)))))))))
+  (interactive
+   (let*
+       ((host
+         (read-string
+          (format "Relay host (default '%s'): " weechat-host-default)
+          nil 'weechat-host-hist weechat-host-default))
+        (port
+         (read-number "Port: " weechat-port-default)))
+     (list
+      host port
+      (or
+       (progn
+         (message "Trying to get password via `weechat-password-callback'...")
+         (weechat-get-password host port))
+       ;; Use lexical-let to scramble password lambda in *Backtrace*
+       (lexical-let
+           ((pass
+             (read-passwd "Password: ")))
+         (lambda
+           ()
+           pass))))))
+  (let*
+      ((host
+        (or host weechat-host-default))
+       (port
+        (or port weechat-port-default))
+       (password
+        (or password
+            (weechat-get-password host port))))
+    (message (format "Weechat connecting to %s:%d" host port))
+    (when
+        (weechat-relay-connected-p)
+      (if
+          (y-or-n-p "Already connected.  Disconnect other connection? ")
+          (weechat-relay-disconnect)
+        (error "Can't open two connections")))
+    (when
+        (and
+         (stringp host)
+         (integerp port))
+      (weechat-relay-connect
+       host port
+       (lambda
+         ()
+         (weechat-relay-authenticate password)
+         (weechat-relay-send-command
+          "info version"
+          (lambda
+            (data)
+            (message "Connected to '%s', version %s" host
+                     (cdar data))
+            (weechat-update-buffer-list
+             (lambda
+               ()
+               (weechat-relay-send-command "sync")
+               (setq weechat--connected t)
+               (run-hooks 'weechat-connect-hook))))))))))
 
 (defun weechat-disconnect ()
   (interactive)
