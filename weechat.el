@@ -115,7 +115,7 @@ monitored on connect. A value of t will monitor all available
 buffers. Be warned, a too long list will use much bandwidth on
 connect."
   :type '(choice (const :tag "All" t)
-                 (repeat :tag "List" string ))
+                 (repeat :tag "List" string))
   :group 'weechat)
 
 (defcustom weechat-auto-monitor-new-buffers 'silent
@@ -210,7 +210,13 @@ buffers) and t (All buffers)."
   :type '(choice
           (const :tag "Never" nil)
           (const :tag "Monitored buffers" :monitored)
-          (const :tag "All Buffers" t)))
+          (const :tag "All Buffers" t))
+  :group 'weechat)
+
+(defcustom weechat-notification-types '(:highlight :disconnect)
+  "Events for which a notification should be shown."
+  :type '(repeat symbol)
+  :group 'weechat)
 
 (defvar weechat-inhibit-notifications nil
   "Non-nil means don't display any weechat notifications.")
@@ -927,8 +933,9 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                         '(:sender sender)))))
 
 
-(defun weechat-notify (sender text &optional date buffer-name)
-  (when (and (functionp weechat-notification-handler)
+(defun weechat-notify (sender text type &optional date buffer-name)
+  (when (and (memq type weechat-notification-types)
+             (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
@@ -1194,7 +1201,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                (get-buffer weechat-relay-log-buffer-name)
                                (current-buffer))
         (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify sender message date (buffer-name)))))))
+          (weechat-notify sender message :highlight date (buffer-name)))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
