@@ -466,7 +466,6 @@ CALLBACK takes one argument (the response data) which is a list."
     (weechat-relay-log (format "Received event: %s\n" event))
     (cl-case event
       ('closed (run-hooks 'weechat-relay-disconnect-hook))
-      ('open (run-hooks 'weechat-relay-connect-hook))
       ('failed (progn (error "Failed to connect to weechat relay")
                       (weechat-relay-disconnect))))))
 
@@ -487,12 +486,13 @@ CALLBACK takes one argument (the response data) which is a list."
     (with-current-buffer (get-buffer weechat-relay-buffer-name)
       (setq buffer-read-only t)
       (set-buffer-multibyte nil)
-      (buffer-disable-undo))
-    (when (functionp callback)
-      (funcall callback)))
+      (buffer-disable-undo)))
   (with-current-buffer (get-buffer-create
                         weechat-relay-log-buffer-name)
-    (buffer-disable-undo)))
+    (buffer-disable-undo))
+  (when (functionp callback)
+    (funcall callback))
+  (run-hooks 'weechat-relay-connect-hook))
  
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)
