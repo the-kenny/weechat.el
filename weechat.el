@@ -688,6 +688,8 @@ Used to identify it on the relay server.")
                                             "dark magenta" "magenta" "dark cyan"
                                             "light cyan" "gray" "white")
   "Mapping of Weechat colors.
+
+Do NOT remove or add new elements to the list.  Only change the values.
 See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
   :type '(repeat (choice (const :tag "Unspecified" unspecified)
                          (const :tag "Color" color)))
