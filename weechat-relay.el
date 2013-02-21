@@ -478,15 +478,20 @@ CALLBACK takes one argument (the response data) which is a list."
   "Open a new weechat relay connection to HOST at PORT."
   (setq weechat--relay-connected-callback callback)
   (let ((nowait-supported (featurep 'make-network-process '(:nowait t))))
-    (make-network-process :name "weechat-relay"
-                          :buffer weechat-relay-buffer-name
-                          :host host
-                          :service port
-                          :filter #'weechat--relay-process-filter
-                          :sentinel #'weechat--relay-process-sentinel
-                          :nowait nowait-supported
-                          :filter-multibyte nil
-                          :coding 'binary)
+    (let ((process
+           (open-network-stream "weechat-relay"
+                                weechat-relay-buffer-name host
+                                port
+                                :type 'plain
+                                ;; :filter #'weechat--relay-process-filter
+                                ;; :sentinel #'weechat--relay-process-sentinel
+                                :nowait nowait-supported
+                                :filter-multibyte nil
+                                :coding 'binary)))
+      (set-process-coding-system process 'binary)
+      (set-process-filter-multibyte process nil)
+      (set-process-filter process #'weechat--relay-process-filter)
+      (set-process-sentinel process #'weechat--relay-process-sentinel))
     (with-current-buffer (get-buffer-create
                           weechat-relay-log-buffer-name)
       (buffer-disable-undo))
@@ -496,10 +501,10 @@ CALLBACK takes one argument (the response data) which is a list."
       (buffer-disable-undo))
     (unless nowait-supported
       (when (functionp weechat--relay-connected-callback)
-       (funcall weechat--relay-connected-callback))
+        (funcall weechat--relay-connected-callback))
       (setq weechat--relay-connected-callback nil)
       (run-hooks 'weechat-relay-connect-hook))))
-
+ 
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)
        (get-buffer-process weechat-relay-buffer-name)
