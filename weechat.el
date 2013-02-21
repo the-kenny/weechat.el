@@ -212,6 +212,9 @@ buffers) and t (All buffers)."
           (const :tag "Monitored buffers" :monitored)
           (const :tag "All Buffers" t)))
 
+(defvar weechat-inhibit-notifications nil
+  "Non-nil means don't display any weechat notifications.")
+
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
 Set to nil to disable header line.  Currently only supported format option is %t for the title."
@@ -252,9 +255,6 @@ returns a string, or nil.")
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
-
-(defvar weechat-inhibit-notifications nil
-  "Non-nil means don't display any weechat notifications.")
 
 (defvar weechat-buffer-opened-functions nil
   "Hook ran when a WeeChat buffer opens.")
