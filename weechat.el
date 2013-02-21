@@ -901,7 +901,7 @@ Must be called with `weechat-narrow-to-line' active."
         (with-selected-window window
           (when (eq major-mode 'weechat-mode)
             (when (or force
-                      (<= (- (window-height)
+                      (<= (- (window-body-height)
                              (count-screen-lines (window-point)
                                                  (window-start))
                              2)         ;2, not 1 (like in rcirc)
@@ -1285,6 +1285,8 @@ Default is current buffer."
   (use-local-map weechat-mode-map)
   (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
   (setq major-mode 'weechat-mode)
+
+  (setq scroll-conservatively 1000)
 
   (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
   (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
