@@ -1464,13 +1464,14 @@ BUFFER-PTR is a string containing a pointer to the buffer to
 switch to.
 
 Will monitor channels if necessary.
-Will list locally availables buffers if called with prefix."
+Will list remotely available buffers if called with prefix, otherwise
+only monitored buffers."
   (interactive (list
                 (weechat--find-buffer
                  (funcall (or (and (featurep 'ido)
                                    (symbol-function 'ido-completing-read))
                               #'completing-read)
-                          "Channel Name: " (weechat-channel-names current-prefix-arg)))))
+                          "Channel Name: " (weechat-channel-names (not current-prefix-arg))))))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (if (buffer-live-p buffer)
         (switch-to-buffer buffer)
