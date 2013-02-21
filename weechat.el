@@ -905,6 +905,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
   "Last notification id parameter for :replaces-id.")
 
 (defun weechat-notifications-handler (sender text &optional _date _buffer-name)
+  (require 'notifications nil t)
   (when (and (featurep 'notifications) (fboundp 'notifications-notify))
     (setq weechat--last-notification-id
           (notifications-notify
