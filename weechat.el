@@ -523,11 +523,15 @@ Returns either a string or nil."
      weechat--buffer-hashes)
     ret))
 
-(defun weechat-channel-names ()
+(defun weechat-channel-names (&optional arg)
+  "Return all available buffer names in WeeChat.
+
+If ARG is non-nil, only return monitored buffers."
   (let (ret)
     (maphash
-     (lambda (k _)
-       (setq ret (cons (weechat-buffer-name k) ret)))
+     (lambda (k v)
+       (when (or (not arg) (buffer-live-p (gethash :emacs/buffer v)))
+         (setq ret (cons (weechat-buffer-name k) ret))))
      weechat--buffer-hashes)
     ret))
 
@@ -1369,15 +1373,19 @@ Default is current buffer."
           (switch-to-buffer (current-buffer)))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
-  "Like `switch-buffer' but limited to WeeChat buffers
+  "Like `switch-buffer' but limited to WeeChat buffers.
 
-Will monitor channels if necessary."
+BUFFER-PTR is a string containing a pointer to the buffer to
+switch to.
+
+Will monitor channels if necessary.
+Will list locally availables buffers if called with prefix."
   (interactive (list
                 (weechat--find-buffer
                  (funcall (or (and (featurep 'ido)
                                    (symbol-function 'ido-completing-read))
                               #'completing-read)
-                          "Channel Name: " (weechat-channel-names)))))
+                          "Channel Name: " (weechat-channel-names current-prefix-arg)))))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (if (buffer-live-p buffer)
         (switch-to-buffer buffer)
