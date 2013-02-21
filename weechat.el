@@ -265,9 +265,15 @@ returns a string, or nil.")
 (defun weechat-warn (message &rest args)
   "Displays MESSAGE with `warn' and logs it to
   `weechat-relay-log-buffer-name'"
-  (let ((str (format message args)))
+  (let ((str (apply 'format message args)))
     (weechat-relay-log str :warn)
     (display-warning 'weechat str)))
+
+(defun weechat-message (format-string &rest args)
+  "Logs MESSAGE with log-level :info and calls `message'"
+  (let ((text (apply 'format format-string args)))
+    (weechat-relay-log text :info)
+    (message text)))
 
 (defun weechat-load-modules-maybe ()
   "Load all modules listed in `weechat-modules'"
@@ -450,7 +456,7 @@ Returns either a string or a function.
 
 See (info \"(auth) Top\") for details."
   (when (featurep 'auth-source)
-    (message "Using auth-source to retrieve weechat relay password")
+    (weechat-message "Using auth-source to retrieve weechat relay password")
     (plist-get
      (car (auth-source-search
            :max 1
@@ -486,7 +492,7 @@ PASSWORD is either a string, a function or nil."
       host port
       (or
        (progn
-         (message "Trying to get password via `weechat-password-callback'...")
+         (weechat-message "Trying to get password via `weechat-password-callback'...")
          (weechat-get-password host port))
        ;; Use lexical-let to scramble password lambda in *Backtrace*
        (lexical-let
@@ -503,7 +509,7 @@ PASSWORD is either a string, a function or nil."
        (password
         (or password
             (weechat-get-password host port))))
-    (message (format "Weechat connecting to %s:%d" host port))
+    (weechat-message "Weechat connecting to %s:%d" host port)
     (when
         (weechat-relay-connected-p)
       (if
@@ -523,8 +529,8 @@ PASSWORD is either a string, a function or nil."
           "info version"
           (lambda
             (data)
-            (message "Connected to '%s', version %s" host
-                     (cdar data))
+            (weechat-message "Connected to '%s', version %s" host
+                             (cdar data))
             (weechat-update-buffer-list
              (lambda
                ()
@@ -1138,7 +1144,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
     (let ((sender (assoc-default "prefix" line-data))
-          (message (assoc-default "message" line-data))
+          (weechat-message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
@@ -1461,7 +1467,7 @@ Will list locally availables buffers if called with prefix."
     (dolist (channel (if (listp weechat-auto-monitor-buffers)
                          weechat-auto-monitor-buffers
                        (progn
-                         (message "Monitoring all available WeeChat buffers. Be patient...")
+                         (weechat-message "Monitoring all available WeeChat buffers. Be patient...")
                          available-channels)))
       ;; Check if one of the available channels partially matches the
       ;; channel we want to monitor
