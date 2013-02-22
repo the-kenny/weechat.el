@@ -1,7 +1,7 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
-* Short-Term [13/21]
+* Short-Term [13/23]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -37,6 +37,8 @@
    - [ ] CTCP
    - [ ] WHOIS
 ** TODO Hooks for everything!
+** TODO :query notification type
+** TODO Request all highlighted lines when coming online again
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** DONE Print 'connection lost' message to all buffers
@@ -71,3 +73,4 @@
 ** DONE Read passwords from ~/.authinfo
 ** DONE URL Detection
 ** DONE Buttons for nick names.
+
