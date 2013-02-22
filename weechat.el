@@ -915,7 +915,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                       (concat "Weechat.el: Message from <"
                               (weechat-strip-formatting sender)
                               ">"))
-                     (:disconnect "Disconnected")))
+                     (:disconnect "Disconnected from WeeChat")))
            :body (when text (xml-escape-string text))
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
