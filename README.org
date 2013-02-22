@@ -48,6 +48,8 @@
                                          "royal blue" "dark gray" "gray"))
 #+END_SRC
 
+** SSL
+   See the guide at [[file:SSL.org][SSL.org]]
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
   - [[https://github.com/aristidb][Aristid Breitkreuz]]
