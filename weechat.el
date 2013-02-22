@@ -1232,19 +1232,21 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
-         (buf-ptr (weechat->
-                   lines-hdata
-                   (weechat--hdata-values)
-                   (car)
-                   (weechat--hdata-value-pointer-path)
-                   (car))))
-    ;; Need to get buffer-ptr from hdata pointer list
-    (with-current-buffer (weechat--emacs-buffer buf-ptr)
-      (save-excursion
-        (let ((weechat-inhibit-notifications t))
-          (dolist (line-hdata (weechat--hdata-values lines-hdata))
-            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
-        (weechat-recenter-bottom-maybe nil 'force)))))
+         (hdata-values
+          (weechat--hdata-values lines-hdata)))
+    (when hdata-values
+      (let (buf-ptr (weechat->
+                     hdata-values
+                     (car)
+                     (weechat--hdata-value-pointer-path)
+                     (car)))
+        ;; Need to get buffer-ptr from hdata pointer list
+        (with-current-buffer (weechat--emacs-buffer buf-ptr)
+          (save-excursion
+            (let ((weechat-inhibit-notifications t))
+              (dolist (line-hdata (weechat--hdata-values lines-hdata))
+                (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
+            (weechat-recenter-bottom-maybe nil 'force)))))))
 
 (defvar weechat-initial-lines-buffer-properties
   '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
