@@ -494,9 +494,9 @@ CALLBACK takes one argument (the response data) which is a list."
   "Open a new weechat relay connection to HOST at PORT."
   (get-buffer-create weechat-relay-buffer-name)
   ;; replace `open-gnutls-stream' to add signature verifyication
-  (flet ((open-gnutls-stream
-          (&rest args)
-          (apply 'weechat-open-gnutls-stream args)))
+  (cl-flet ((open-gnutls-stream
+             (&rest args)
+             (apply 'weechat-open-gnutls-stream args)))
     (let ((process
            (open-network-stream "weechat-relay"
                                 weechat-relay-buffer-name
