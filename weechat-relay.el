@@ -512,7 +512,6 @@ CALLBACK takes one argument (the response data) which is a list."
                               :coding 'binary)))
     (set-process-sentinel process #'weechat--relay-process-sentinel)
     (set-process-coding-system process 'binary)
-    (set-process-filter-multibyte process nil)
     (set-process-filter process #'weechat--relay-process-filter)
     (with-current-buffer (get-buffer weechat-relay-buffer-name)
       (setq buffer-read-only t)
