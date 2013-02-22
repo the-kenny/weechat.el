@@ -165,6 +165,10 @@ See `format-time-string' for format description."
   "Weechat face for highlighted lines."
   :group 'weechat)
 
+(defface weechat-error-face '((t :inherit error))
+  "Weechat face used to display errors."
+  :group 'weechat)
+
 (defcustom weechat-text-column 22
   "Column after which text will be inserted.
 If `(length (concat nick timestamp))' is longer than this value,
@@ -562,7 +566,8 @@ PASSWORD is either a string, a function or nil."
   (maphash (lambda (k v)
              (when (bufferp (gethash :emacs/buffer v))
                (with-current-buffer (gethash :emacs/buffer v)
-                 (weechat-print-line k "!!!" "Lost connection to relay server"))))
+                 (weechat-print-line k "!!!" "Lost connection to relay server"
+                                     (current-time) :irc/x-error))))
            weechat--buffer-hashes)
   (weechat-notify :disconnect
                   :date (current-time)))
@@ -1079,11 +1084,12 @@ Must be called with `weechat-narrow-to-line' active."
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
               ;; trim & handle color codes
-              (let ((text (weechat-handle-color-codes
-                           (s-trim text))))
+              (let ((text (weechat-handle-color-codes (s-trim text))))
                 (insert (if highlight
                             (propertize text 'face 'weechat-highlight-face)
-                          text)
+                          (if (eq line-type :irc/x-error)
+                              (propertize text 'face 'weechat-error-face)
+                            text))
                         "\n"))
 
               (when weechat-fill-text
