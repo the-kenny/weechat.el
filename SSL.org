@@ -1,7 +1,8 @@
+# -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
 * How to setup SSL
 ** Important Notes
    SSL support hasn't been verified by someone who has much experience
-   with encryption. There's absolutely NO guarantee that the
+   with encryption.  There's absolutely NO guarantee that the
    connection is secure.
    
 ** Generating the SSL Certificate for WeeChat
@@ -36,11 +37,12 @@
      machine where you run Emacs.
    - Tell Emacs where =relay.cert= is located:
      #+BEGIN_SRC elisp
-       ;;; Replace /home/you/.emacs.d/relay.cert with the location of your 'relay.cert' file
-       (add-to-list 'gnutls-trustfiles (expand-filename "/home/you/.emacs.d/relay.cert"))
+       (require 'gnutls)
+       ;;; Replace ~/.emacs.d/relay.cert with the location of your 'relay.cert' file
+       (add-to-list 'gnutls-trustfiles (expand-file-name "~/.emacs.d/relay.cert"))
      #+END_SRC
     
 ** Connect via SSL
    Now you should be able to connect via SSL on the port configured
-   earlier. If you get any errors, re-check the location of your
+   earlier.  If you get any errors, re-check the location of your
    =relay.cert= file.
