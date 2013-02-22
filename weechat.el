@@ -504,7 +504,8 @@ PASSWORD is either a string, a function or nil."
             (format "Relay host (default '%s'): " weechat-host-default)
             nil 'weechat-host-hist weechat-host-default))
           (port
-           (read-number "Port: " weechat-port-default)))
+           (read-number "Port: " weechat-port-default))
+          (ssl (y-or-n-p "SSL? ")))
      (list
       host port
       (or
@@ -514,7 +515,7 @@ PASSWORD is either a string, a function or nil."
        ;; Use lexical-let to scramble password lambda in *Backtrace*
        (lexical-let ((pass (read-passwd "Password: ")))
          (lambda () pass)))
-      (y-or-n-p "SSL? "))))
+      ssl)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
          (password (or password
