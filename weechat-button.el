@@ -97,7 +97,7 @@ Format is (info \"link\")."
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
                                browse-url 0)
-    ("#[-#+_[:alnum:]]+" 0 weechat-button-buttonize-channels nil "Join Channel"
+    ("#[-#+_.[:alnum:]]+" 0 weechat-button-buttonize-channels nil "Join Channel"
      weechat-join 0)
     ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
