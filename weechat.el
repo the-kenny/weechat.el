@@ -297,7 +297,7 @@ returns a string, or nil.")
   "Load all modules listed in `weechat-modules'"
   ;; Inspired by `org-load-modules-maybe'
   (dolist (module weechat-modules)
-    (condition-case nil (load-library module)
+    (condition-case nil (load-library (symbol-name module))
       (error (weechat-warn "Problems while trying to load feature `%s'" module)))))
 
 ;;; This is a hack to load modules after weechat.el is loaded
