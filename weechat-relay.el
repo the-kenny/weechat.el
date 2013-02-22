@@ -52,6 +52,12 @@ Might be one of :debug, :info, :warn, :error or nil")
 Note: This DOESN'T mean the client can is already authenticated
 to the relay server.")
 
+(defvar weechat-relay-ssl-check-signatures t
+  "Wether weechat-relay should check ssl certificate signatures.
+
+A value of nil will have strong security implications and enables
+man-in-the-middle attacks on your connection.")
+
 ;;; Code:
 
 (defvar weechat--relay-id-callback-hash (make-hash-table :test 'equal)
@@ -472,39 +478,53 @@ CALLBACK takes one argument (the response data) which is a list."
     (weechat-relay-log (format "Received event: %s\n" event))
     (cl-case event
       ('closed (run-hooks 'weechat-relay-disconnect-hook))
-      ('open (progn
-               (when (functionp weechat--relay-connected-callback)
-                 (funcall weechat--relay-connected-callback)
-                 (setq weechat--relay-connected-callback nil))
-               (run-hooks 'weechat-relay-connect-hook)))
       ('failed (progn (error "Failed to connect to weechat relay")
                       (weechat-relay-disconnect))))))
 
-(defun weechat-relay-connect (host port &optional callback)
+(defun weechat-open-gnutls-stream (name buffer host service)
+  "Just like `open-gnutls-stream' with added validation."
+  (gnutls-negotiate
+   :process (open-network-stream name buffer host service)
+   :type 'gnutls-x509pki
+   :hostname host
+   :verify-error weechat-relay-ssl-check-signatures
+   :verify-hostname-error weechat-relay-ssl-check-signatures))
+
+(defadvice open-gnutls-stream (around weechat-verifying
+                                      (name buffer host service))
+  (setq ad-return-value
+        (weechat-open-gnutls-stream name buffer host service)))
+
+(defun weechat-relay-connect (host port ssl &optional callback)
   "Open a new weechat relay connection to HOST at PORT."
-  (setq weechat--relay-connected-callback callback)
-  (let ((nowait-supported (featurep 'make-network-process '(:nowait t))))
-    (make-network-process :name "weechat-relay"
-                          :buffer weechat-relay-buffer-name
-                          :host host
-                          :service port
-                          :filter #'weechat--relay-process-filter
-                          :sentinel #'weechat--relay-process-sentinel
-                          :nowait nowait-supported
-                          :filter-multibyte nil
-                          :coding 'binary)
-    (with-current-buffer (get-buffer-create
-                          weechat-relay-log-buffer-name)
-      (buffer-disable-undo))
+  (get-buffer-create weechat-relay-buffer-name)
+  (when ssl
+    (require 'gnutls))
+  ;; Advice `open-gnutls-stream' to verify signatures
+  (ad-activate 'open-gnutls-stream)
+  (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  (let ((process
+         (open-network-stream "weechat-relay"
+                              weechat-relay-buffer-name
+                              host
+                              port
+                              :type (if ssl 'tls 'plain)
+                              :coding 'binary)))
+    (set-process-sentinel process #'weechat--relay-process-sentinel)
+    (set-process-coding-system process 'binary)
+    (set-process-filter process #'weechat--relay-process-filter)
     (with-current-buffer (get-buffer weechat-relay-buffer-name)
       (setq buffer-read-only t)
       (set-buffer-multibyte nil)
-      (buffer-disable-undo))
-    (unless nowait-supported
-      (when (functionp weechat--relay-connected-callback)
-        (funcall weechat--relay-connected-callback))
-      (setq weechat--relay-connected-callback nil)
-      (run-hooks 'weechat-relay-connect-hook))))
+      (buffer-disable-undo)))
+  (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  (ad-deactivate 'open-gnutls-stream)
+  (with-current-buffer (get-buffer-create
+                        weechat-relay-log-buffer-name)
+    (buffer-disable-undo))
+  (when (functionp callback)
+    (funcall callback))
+  (run-hooks 'weechat-relay-connect-hook))
 
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)
@@ -541,6 +561,9 @@ CALLBACK takes one argument (the response data) which is a list."
 
 (defun weechat--hdata-value-alist (value)
   (cdr value))
+
+(defun weechat-unload-function ()
+  (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying))
 
 (provide 'weechat-relay)
 

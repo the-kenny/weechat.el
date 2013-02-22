@@ -50,6 +50,11 @@
   :type 'string
   :group 'weechat)
 
+(defcustom weechat-ssl-default nil
+  "Wether to connect via SSL by default."
+  :type 'boolean
+  :group 'weechat)
+
 (defcustom weechat-modules '(weechat-button weechat-complete)
   "Modules that should always be loaded together with weechat.el
 
@@ -487,8 +492,8 @@ Return either a string, a function returning a string, or nil."
     (funcall weechat-password-callback host port)))
 
 ;;;###autoload
-(defun weechat-connect (&optional host port password)
-  "Connect to WeeChat. 
+(defun weechat-connect (&optional host port password ssl)
+  "Connect to WeeChat.
 
 HOST is the relay host, `weechat-host-default' by default.
 PORT is the port where the relay listens, `weechat-port-default' by default.
@@ -499,7 +504,8 @@ PASSWORD is either a string, a function or nil."
             (format "Relay host (default '%s'): " weechat-host-default)
             nil 'weechat-host-hist weechat-host-default))
           (port
-           (read-number "Port: " weechat-port-default)))
+           (read-number "Port: " weechat-port-default))
+          (ssl (y-or-n-p "SSL? ")))
      (list
       host port
       (or
@@ -508,11 +514,13 @@ PASSWORD is either a string, a function or nil."
          (weechat-get-password host port))
        ;; Use lexical-let to scramble password lambda in *Backtrace*
        (lexical-let ((pass (read-passwd "Password: ")))
-         (lambda () pass))))))
+         (lambda () pass)))
+      ssl)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
          (password (or password
-                       (weechat-get-password host port))))
+                       (weechat-get-password host port)))
+         (ssl (or ssl weechat-ssl-default)))
     (weechat-message "Weechat connecting to %s:%d" host port)
     (when (weechat-relay-connected-p)
       (if (y-or-n-p "Already connected.  Disconnect other connection? ")
@@ -521,7 +529,9 @@ PASSWORD is either a string, a function or nil."
     (when (and (stringp host)
                (integerp port))
       (weechat-relay-connect
-       host port
+       host
+       port
+       ssl
        (lambda ()
          (weechat-relay-authenticate password)
          (weechat-relay-send-command
@@ -1536,4 +1546,3 @@ only monitored buffers."
 (provide 'weechat)
 
 ;;; weechat.el ends here
-
