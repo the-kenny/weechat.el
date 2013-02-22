@@ -481,48 +481,45 @@ CALLBACK takes one argument (the response data) which is a list."
       ('failed (progn (error "Failed to connect to weechat relay")
                       (weechat-relay-disconnect))))))
 
-(defvar weechat--relay-gnutls-advice-verify-hack nil)
 (defun weechat-open-gnutls-stream (name buffer host service)
   "Just like `open-gnutls-stream' with added validation."
-  (let ((ssl (and weechat--relay-gnutls-advice-verify-hack
-                  weechat-relay-ssl-check-signatures)))
-    (gnutls-negotiate
-     :process (open-network-stream name buffer host service)
-     :type 'gnutls-x509pki
-     :hostname host
-     :verify-error ssl
-     :verify-hostname-error ssl)))
+  (gnutls-negotiate
+   :process (open-network-stream name buffer host service)
+   :type 'gnutls-x509pki
+   :hostname host
+   :verify-error weechat-relay-ssl-check-signatures
+   :verify-hostname-error weechat-relay-ssl-check-signatures))
 
 (defadvice open-gnutls-stream (around weechat-verifying
                                       (name buffer host service))
   (setq ad-return-value
         (weechat-open-gnutls-stream name buffer host service)))
 
-(ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-(ad-activate 'open-gnutls-stream)
-
 (defun weechat-relay-connect (host port ssl &optional callback)
   "Open a new weechat relay connection to HOST at PORT."
   (get-buffer-create weechat-relay-buffer-name)
-  ;; replace `open-gnutls-stream' to add signature verification
   (when ssl
     (require 'gnutls))
-  (lexical-let ((weechat--relay-gnutls-advice-verify-hack t))
-   (let ((process
-          (open-network-stream "weechat-relay"
-                               weechat-relay-buffer-name
-                               host
-                               port
-                               :type (if ssl 'tls 'plain)
-                               :coding 'binary)))
-     (set-process-sentinel process #'weechat--relay-process-sentinel)
-     (set-process-coding-system process 'binary)
-     (set-process-filter-multibyte process nil)
-     (set-process-filter process #'weechat--relay-process-filter)
-     (with-current-buffer (get-buffer weechat-relay-buffer-name)
-       (setq buffer-read-only t)
-       (set-buffer-multibyte nil)
-       (buffer-disable-undo))))
+  ;; Advice `open-gnutls-stream' to verify signatures
+  (ad-activate 'open-gnutls-stream)
+  (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  (let ((process
+         (open-network-stream "weechat-relay"
+                              weechat-relay-buffer-name
+                              host
+                              port
+                              :type (if ssl 'tls 'plain)
+                              :coding 'binary)))
+    (set-process-sentinel process #'weechat--relay-process-sentinel)
+    (set-process-coding-system process 'binary)
+    (set-process-filter-multibyte process nil)
+    (set-process-filter process #'weechat--relay-process-filter)
+    (with-current-buffer (get-buffer weechat-relay-buffer-name)
+      (setq buffer-read-only t)
+      (set-buffer-multibyte nil)
+      (buffer-disable-undo)))
+  (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  (ad-deactivate 'open-gnutls-stream)
   (with-current-buffer (get-buffer-create
                         weechat-relay-log-buffer-name)
     (buffer-disable-undo))
