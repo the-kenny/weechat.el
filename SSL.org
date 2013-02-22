@@ -1,12 +1,32 @@
 * How to setup SSL
 ** Important Notes
-   Limited by Emacs, the current implementation of weechat.el will NOT
-   CHECK the validity of the certificate.
-
-   This has HUGE security implications and makes your connection
-   vulnerable to man-in-the-middle attacks.
-
-   Keep this in mind when using SSL connections.
-
-** TODO Generating the SSL Certificate for WeeChat
+   SSL support hasn't been verified by someone who has much experience
+   with encryption. There's absolutely NO guarantee that the
+   connection is secure.
+   
+** Generating the SSL Certificate for WeeChat
+   Note: This guide is loosely based on http://frankkoehl.com/2012/02/create-self-signed-wildcard-ssl-certificate/
+   
+*** Generate the self-signed SSL Certificate:
+    #+BEGIN_SRC sh
+      mkdir -p ~/.weechat/ssl
+      cd ~/.weechat/ssl
+      
+      # Generate the secret key
+      openssl genrsa 2048 > relay.key
+      
+      # Generate the public certificate
+      # Enter your (sub)domain name for 'Common Name'. All other options are optional
+      openssl req -new -x509 -nodes -days 365 -key relay.key > relay.cert
+      
+      # Generate combined key/certificate file (this is the file weechat needs)
+      cat relay.cert relay.key > relay.pem
+    #+END_SRC
+    
+*** Reload the certificate in Weechat
+    #+BEGIN_EXAMPLE
+    /relay sslcertkey
+    #+END_EXAMPLE
+    
+** TODO Open an SSL Connection
 
