@@ -910,7 +910,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
     (setq weechat--last-notification-id
           (notifications-notify
            :title (xml-escape-string
-                   (case type
+                   (cl-case type
                      (:highlight
                       (concat "Weechat.el: Message from <"
                               (weechat-strip-formatting sender)
@@ -924,7 +924,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
     (lexical-let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
-                        (case type
+                        (cl-case type
                           (:highlight
                            (format "%s in %s: %S"
                                    (weechat-strip-formatting sender)
