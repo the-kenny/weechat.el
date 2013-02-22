@@ -507,21 +507,22 @@ CALLBACK takes one argument (the response data) which is a list."
   ;; replace `open-gnutls-stream' to add signature verification
   (when ssl
     (require 'gnutls))
-  (let ((process
-         (open-network-stream "weechat-relay"
-                              weechat-relay-buffer-name
-                              host
-                              port
-                              :type (if ssl 'tls 'plain)
-                              :coding 'binary)))
-    (set-process-sentinel process #'weechat--relay-process-sentinel)
-    (set-process-coding-system process 'binary)
-    (set-process-filter-multibyte process nil)
-    (set-process-filter process #'weechat--relay-process-filter)
-    (with-current-buffer (get-buffer weechat-relay-buffer-name)
-      (setq buffer-read-only t)
-      (set-buffer-multibyte nil)
-      (buffer-disable-undo)))
+  (lexical-let ((weechat--relay-gnutls-advice-verify-hack t))
+   (let ((process
+          (open-network-stream "weechat-relay"
+                               weechat-relay-buffer-name
+                               host
+                               port
+                               :type (if ssl 'tls 'plain)
+                               :coding 'binary)))
+     (set-process-sentinel process #'weechat--relay-process-sentinel)
+     (set-process-coding-system process 'binary)
+     (set-process-filter-multibyte process nil)
+     (set-process-filter process #'weechat--relay-process-filter)
+     (with-current-buffer (get-buffer weechat-relay-buffer-name)
+       (setq buffer-read-only t)
+       (set-buffer-multibyte nil)
+       (buffer-disable-undo))))
   (with-current-buffer (get-buffer-create
                         weechat-relay-log-buffer-name)
     (buffer-disable-undo))
