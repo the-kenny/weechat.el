@@ -1428,8 +1428,20 @@ Default is current buffer."
   ;; Hooks
   (run-mode-hooks 'weechat-mode-hook))
 
+(defun weechat--read-channel-name (&optional only-monitored)
+  "Read channel name from minibuffer in combination with `interactive'."
+  (list
+   (weechat--find-buffer
+    (funcall (or (and (featurep 'ido)
+                      (symbol-function 'ido-completing-read))
+                 #'completing-read)
+             "Channel Name: "
+             (weechat-channel-names only-monitored)))))
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
+  "Start monitoring BUFFER-PTR.
+If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
+  (interactive (weechat--read-channel-name))
   (save-excursion
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
            (name (weechat-buffer-name buffer-ptr)))
@@ -1455,12 +1467,7 @@ switch to.
 Will monitor channels if necessary.
 Will list remotely available buffers if called with prefix, otherwise
 only monitored buffers."
-  (interactive (list
-                (weechat--find-buffer
-                 (funcall (or (and (featurep 'ido)
-                                   (symbol-function 'ido-completing-read))
-                              #'completing-read)
-                          "Channel Name: " (weechat-channel-names (not current-prefix-arg))))))
+  (interactive (weechat--read-channel-name (not current-prefix-arg)))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (if (buffer-live-p buffer)
         (switch-to-buffer buffer)

@@ -23,7 +23,7 @@
 
    To show a channel in Emacs, do:
 
-   : C-u M-x weechat-switch-buffer
+   : M-x weechat-monitor-buffer
 
 ** Color settings
    Most colors in weechat.el come directly from WeeChat and are only
