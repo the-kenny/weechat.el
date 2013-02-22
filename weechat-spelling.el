@@ -77,6 +77,10 @@ See `ispell-valid-dictionary-list' for a list of valid dictionaries."
 (weechat-do-buffers (weechat-spelling-init))
 (add-hook 'weechat-mode-hook #'weechat-spelling-init)
 
+(defun weechat-spelling-unload-function ()
+  (weechat-do-buffers (flyspell-mode -1))
+  nil)
+
 (provide 'weechat-spelling)
 
 ;;; weechat-spelling.el ends here
