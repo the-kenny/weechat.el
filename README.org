@@ -49,7 +49,7 @@
 #+END_SRC
 
 ** SSL
-   See the guide at [[file:SSL.org][SSL.org]]
+   See documentation in =SSL.org=.
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
   - [[https://github.com/aristidb][Aristid Breitkreuz]]
