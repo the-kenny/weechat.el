@@ -23,10 +23,24 @@
       cat relay.cert relay.key > relay.pem
     #+END_SRC
     
-*** Reload the certificate in Weechat
+** Configure WeeChat
+    The following will load the SSL certificate in WeeChat and open a
+    ssl-enabled relay on port 9001:
     #+BEGIN_EXAMPLE
     /relay sslcertkey
+    /relay add ssl.weechat 9001
     #+END_EXAMPLE
-    
-** TODO Open an SSL Connection
 
+** Configure weechat.el
+   - Copy =relay.cert= from your machine running WeeChat to the
+     machine where you run Emacs.
+   - Tell Emacs where =relay.cert= is located:
+     #+BEGIN_SRC elisp
+       ;;; Replace /home/you/.emacs.d/relay.cert with the location of your 'relay.cert' file
+       (add-to-list 'gnutls-trustfiles (expand-filename "/home/you/.emacs.d/relay.cert"))
+     #+END_SRC
+    
+** Connect via SSL
+   Now you should be able to connect via SSL on the port configured
+   earlier. If you get any errors, re-check the location of your
+   =relay.cert= file.
