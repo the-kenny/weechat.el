@@ -1,6 +1,9 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
+Note: This list is broken on Github (they should really update
+org-ruby). Please use the 'Raw' link on the right.
+
 * Short-Term [13/23]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
