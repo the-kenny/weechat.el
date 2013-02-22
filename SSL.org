@@ -1,0 +1,12 @@
+* How to setup SSL
+** Important Notes
+   Limited by Emacs, the current implementation of weechat.el will NOT
+   CHECK the validity of the certificate.
+
+   This has HUGE security implications and makes your connection
+   vulnerable to man-in-the-middle attacks.
+
+   Keep this in mind when using SSL connections.
+
+** TODO Generating the SSL Certificate for WeeChat
+
