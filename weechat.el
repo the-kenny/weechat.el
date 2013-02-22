@@ -466,11 +466,11 @@ returns a string, or nil.")
 (weechat-relay-add-id-callback "_buffer_localvar_added" #'weechat--handle-localvar-changed nil 'force)
 
 (defun weechat-password-auth-source-callback (host port)
-  "Get password for HOST and PORT via `auth-source-search'
+  "Get password for HOST and PORT via `auth-source-search'.
 
 Returns either a string or a function.
 
-See (info \"(auth) Top\") for details."
+See Info node `(auth) Top' for details."
   (when (featurep 'auth-source)
     (weechat-message "Using auth-source to retrieve weechat relay password")
     (plist-get
