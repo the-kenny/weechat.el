@@ -188,7 +188,9 @@ text-column will be increased for that line."
           (integer :tag "Number")
           (const :tag "Default" t)))
 
-(defcustom weechat-notification-icon nil
+(defcustom weechat-notification-icon
+  (when (boundp 'notifications-application-icon)
+    notifications-application-icon)
   "Icon used in notifications."
   :type '(choice (const :tag "No icon" nil)
                  (file :tag "Icon file"))
