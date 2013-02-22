@@ -467,10 +467,7 @@ returns a string, or nil.")
 
 (defun weechat-password-auth-source-callback (host port)
   "Get password for HOST and PORT via `auth-source-search'.
-
-Returns either a string or a function.
-
-See Info node `(auth) Top' for details."
+Returns either a string or a function.  See Info node `(auth) Top' for details."
   (when (featurep 'auth-source)
     (weechat-message "Using auth-source to retrieve weechat relay password")
     (plist-get
@@ -483,27 +480,24 @@ See Info node `(auth) Top' for details."
 
 (defun weechat-get-password (host port)
   "Get password for HOST and PORT.
-
-Returns either a string, a function returning a string, or nil."
+Return either a string, a function returning a string, or nil."
   (when (functionp weechat-password-callback)
     (funcall weechat-password-callback host port)))
 
 ;;;###autoload
-(defun weechat-connect
-  (&optional host port password)
+(defun weechat-connect (&optional host port password)
   "Connect to WeeChat. 
 
 HOST is the relay host, `weechat-host-default' by default.
 PORT is the port where the relay listens, `weechat-port-default' by default.
 PASSWORD is either a string, a function or nil."
   (interactive
-   (let*
-       ((host
-         (read-string
-          (format "Relay host (default '%s'): " weechat-host-default)
-          nil 'weechat-host-hist weechat-host-default))
-        (port
-         (read-number "Port: " weechat-port-default)))
+   (let* ((host
+           (read-string
+            (format "Relay host (default '%s'): " weechat-host-default)
+            nil 'weechat-host-hist weechat-host-default))
+          (port
+           (read-number "Port: " weechat-port-default)))
      (list
       host port
       (or
@@ -511,45 +505,30 @@ PASSWORD is either a string, a function or nil."
          (weechat-message "Trying to get password via `weechat-password-callback'...")
          (weechat-get-password host port))
        ;; Use lexical-let to scramble password lambda in *Backtrace*
-       (lexical-let
-           ((pass
-             (read-passwd "Password: ")))
-         (lambda
-           ()
-           pass))))))
-  (let*
-      ((host
-        (or host weechat-host-default))
-       (port
-        (or port weechat-port-default))
-       (password
-        (or password
-            (weechat-get-password host port))))
+       (lexical-let ((pass (read-passwd "Password: ")))
+         (lambda () pass))))))
+  (let* ((host (or host weechat-host-default))
+         (port (or port weechat-port-default))
+         (password (or password
+                       (weechat-get-password host port))))
     (weechat-message "Weechat connecting to %s:%d" host port)
-    (when
-        (weechat-relay-connected-p)
-      (if
-          (y-or-n-p "Already connected.  Disconnect other connection? ")
+    (when (weechat-relay-connected-p)
+      (if (y-or-n-p "Already connected.  Disconnect other connection? ")
           (weechat-relay-disconnect)
         (error "Can't open two connections")))
-    (when
-        (and
-         (stringp host)
-         (integerp port))
+    (when (and (stringp host)
+               (integerp port))
       (weechat-relay-connect
        host port
-       (lambda
-         ()
+       (lambda ()
          (weechat-relay-authenticate password)
          (weechat-relay-send-command
           "info version"
-          (lambda
-            (data)
+          (lambda (data)
             (weechat-message "Connected to '%s', version %s" host
                              (cdar data))
             (weechat-update-buffer-list
-             (lambda
-               ()
+             (lambda ()
                (weechat-relay-send-command "sync")
                (setq weechat--connected t)
                (run-hooks 'weechat-connect-hook))))))))))
