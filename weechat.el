@@ -514,7 +514,9 @@ a string denotes a command to run."
             nil 'weechat-host-hist weechat-host-default))
           (port
            (read-number "Port: " weechat-port-default))
-          (mode (y-or-n-p "SSL? ")))
+          (mode (if (y-or-n-p "SSL? ")
+                    'ssl
+                  'plain)))
      (list
       host port
       (or
