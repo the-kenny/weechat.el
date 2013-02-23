@@ -495,21 +495,49 @@ CALLBACK takes one argument (the response data) which is a list."
   (setq ad-return-value
         (weechat-open-gnutls-stream name buffer host service)))
 
-(defun weechat-relay-connect (host port ssl &optional callback)
-  "Open a new weechat relay connection to HOST at PORT."
+(defun weechat-relay-plain-socket (bname host port)
+  (weechat-relay-log (format "PLAIN %s:%d" host port) :info)
+  (open-network-stream "weechat-relay"
+                       bname
+                       host
+                       port
+                       :type 'plain
+                       :coding 'binary))
+
+(defun weechat-relay-tls-socket (bname host port)
+  (weechat-relay-log (format "TLS %s:%d" host port) :info)
+  (open-network-stream "weechat-relay-tls"
+                       bname
+                       host
+                       port
+                       :type 'tls
+                       :coding 'binary))
+
+(defun weechat-relay-from-command (cmd)
+  (lambda (bname host port)
+    (weechat-relay-log (format "COMMAND %s:%s: `%s'" host port cmd))
+    (let ((process-connection-type nil))  ; Use a pipe.
+      (start-process-shell-command "weechat-relay-cmd" bname cmd))))
+
+(defun weechat-relay-connect (host port mode &optional callback)
+  "Open a new weechat relay connection to HOST at PORT.
+
+Argument MODE Null or 'plain for a plain socket, t or 'ssl for a TLS socket;
+a string denotes a command to run.
+
+Optional argument CALLBACK Called after initialization is finished."
   (get-buffer-create weechat-relay-buffer-name)
-  (when ssl
+  (when (eq mode 'ssl)
     (require 'gnutls))
   ;; Advice `open-gnutls-stream' to verify signatures
   (ad-activate 'open-gnutls-stream)
   (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-  (let ((process
-         (open-network-stream "weechat-relay"
-                              weechat-relay-buffer-name
-                              host
-                              port
-                              :type (if ssl 'tls 'plain)
-                              :coding 'binary)))
+  (let* ((pfun (cond
+                ((or (null mode) (eq mode 'plain)) #'weechat-relay-plain-socket)
+                ((or (eq mode t) (eq mode 'ssl)) #'weechat-relay-tls-socket)
+                ((stringp mode) (weechat-relay-from-command mode))))
+        (process
+         (funcall pfun weechat-relay-buffer-name host port)))
     (set-process-sentinel process #'weechat--relay-process-sentinel)
     (set-process-coding-system process 'binary)
     (set-process-filter process #'weechat--relay-process-filter)

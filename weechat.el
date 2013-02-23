@@ -50,8 +50,12 @@
   :type 'string
   :group 'weechat)
 
-(defcustom weechat-ssl-default nil
-  "Wether to connect via SSL by default."
+(defcustom weechat-mode-default 'plain
+  "Wether to connect via SSL by default.
+
+Null or 'plain: Plain socket.
+t or 'ssl: TLS socket.
+String: comand to run."
   :type 'boolean
   :group 'weechat)
 
@@ -492,12 +496,14 @@ Return either a string, a function returning a string, or nil."
     (funcall weechat-password-callback host port)))
 
 ;;;###autoload
-(defun weechat-connect (&optional host port password ssl)
+(defun weechat-connect (&optional host port password mode)
   "Connect to WeeChat.
 
 HOST is the relay host, `weechat-host-default' by default.
 PORT is the port where the relay listens, `weechat-port-default' by default.
-PASSWORD is either a string, a function or nil."
+PASSWORD is either a string, a function or nil.
+MODE is null or 'plain for a plain socket, t or 'ssl for a TLS socket;
+a string denotes a command to run."
   (interactive
    (let* ((host
            (read-string
@@ -505,7 +511,7 @@ PASSWORD is either a string, a function or nil."
             nil 'weechat-host-hist weechat-host-default))
           (port
            (read-number "Port: " weechat-port-default))
-          (ssl (y-or-n-p "SSL? ")))
+          (mode (y-or-n-p "SSL? ")))
      (list
       host port
       (or
@@ -515,12 +521,12 @@ PASSWORD is either a string, a function or nil."
        ;; Use lexical-let to scramble password lambda in *Backtrace*
        (lexical-let ((pass (read-passwd "Password: ")))
          (lambda () pass)))
-      ssl)))
+      mode)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
          (password (or password
                        (weechat-get-password host port)))
-         (ssl (or ssl weechat-ssl-default)))
+         (mode (or mode weechat-mode-default)))
     (weechat-message "Weechat connecting to %s:%d" host port)
     (when (weechat-relay-connected-p)
       (if (y-or-n-p "Already connected.  Disconnect other connection? ")
@@ -531,7 +537,7 @@ PASSWORD is either a string, a function or nil."
       (weechat-relay-connect
        host
        port
-       ssl
+       mode
        (lambda ()
          (weechat-relay-authenticate password)
          (weechat-relay-send-command
