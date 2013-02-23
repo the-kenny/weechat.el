@@ -498,6 +498,14 @@ Return either a string, a function returning a string, or nil."
   (when (functionp weechat-password-callback)
     (funcall weechat-password-callback host port)))
 
+(defvar weechat-mode-completion-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map minibuffer-local-map)
+    (define-key map "\t" 'minibuffer-complete)
+    (define-key map "?" 'minibuffer-completion-help)
+    map)
+  "Weechat mode selection: Local keymap for minibuffer input with completion.")
+
 ;;;###autoload
 (defun weechat-connect (&optional host port password mode)
   "Connect to WeeChat.
@@ -515,9 +523,17 @@ and port number respectively."
             nil 'weechat-host-hist weechat-host-default))
           (port
            (read-number "Port: " weechat-port-default))
-          (mode (if (y-or-n-p "SSL? ")
-                    'ssl
-                  'plain)))
+          (mode (let*
+                    ((minibuffer-local-completion-map weechat-mode-completion-map)
+                     (modestr (completing-read
+                               (format "Mode (`plain', `ssl' or command, default `%s'): "
+                                       weechat-mode-default)
+                               '("plain" "ssl") nil nil nil 'weechat-mode-history)))
+                  (cond
+                   ((string-equal modestr "") nil)
+                   ((string-equal modestr "plain") 'plain)
+                   ((string-equal modestr "ssl") 'ssl)
+                   (t modestr)))))
      (list
       host port
       (or
