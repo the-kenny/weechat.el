@@ -1490,7 +1490,7 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
       (with-current-buffer (get-buffer-create name)
         (fundamental-mode)
         (let ((inhibit-read-only t))
-          (kill-region (point-min) (point-max)))
+          (delete-region (point-min) (point-max)))
         (weechat-mode (get-buffer-process weechat-relay-buffer-name)
                       buffer-ptr
                       buffer-hash)
