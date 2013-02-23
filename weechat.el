@@ -528,7 +528,8 @@ and port number respectively."
                      (modestr (completing-read
                                (format "Mode (`plain', `ssl' or command, default `%s'): "
                                        weechat-mode-default)
-                               '("plain" "ssl") nil nil nil 'weechat-mode-history)))
+                               '("plain" "ssl" "ssh -W localhost:%p %h")
+                               nil nil nil 'weechat-mode-history)))
                   (cond
                    ((string-equal modestr "") nil)
                    ((string-equal modestr "plain") 'plain)
