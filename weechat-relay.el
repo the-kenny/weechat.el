@@ -540,8 +540,8 @@ Optional argument CALLBACK Called after initialization is finished."
                 ((or (null mode) (eq mode 'plain)) #'weechat-relay-plain-socket)
                 ((or (eq mode t) (eq mode 'ssl)) #'weechat-relay-tls-socket)
                 ((stringp mode) (weechat-relay-from-command mode))))
-        (process
-         (funcall pfun weechat-relay-buffer-name host port)))
+         (process
+          (funcall pfun weechat-relay-buffer-name host port)))
     (set-process-sentinel process #'weechat--relay-process-sentinel)
     (set-process-coding-system process 'binary)
     (set-process-filter process #'weechat--relay-process-filter)
