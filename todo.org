@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* Short-Term [13/22]
+* Short-Term [14/22]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -26,7 +26,6 @@ org-ruby). Please use the 'Raw' link on the right.
    send command: "input 0x10f29d0 /input set_unread_current_buffer"
 *** This is currently broken on weechat's side. Waiting for FlashCode.
 ** TODO Get (max 100 (count unread)) lines
-** TODO Limit buffer size
 ** TODO Handle different types of messages [1/8]
    Incomplete List
    (Some of them can be ignored as they print fine with defaults)
@@ -41,6 +40,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Hooks for everything!
 ** TODO :query notification type
 ** TODO Request all highlighted lines when coming back online
+** DONE Limit buffer size
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
 ** DONE Print 'connection lost' message to all buffers
@@ -62,7 +62,6 @@ org-ruby). Please use the 'Raw' link on the right.
 
 * Nice to have [6/15]
 ** TODO More Unit Tests (ert)
-** DONE SSL Connections
 ** TODO Compression
 ** TODO Speedbar integration
 ** TODO Faces based on message type
@@ -72,6 +71,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Marker for away state
 ** TODO Opening buffers in Emacs should update activation state on weechat side
 ** TODO Buffer-local URL ring for easy access
+** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
 ** DONE Read passwords from ~/.authinfo
