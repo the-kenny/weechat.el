@@ -506,12 +506,21 @@ CALLBACK takes one argument (the response data) which is a list."
 
 (defun weechat-relay-tls-socket (bname host port)
   (weechat-relay-log (format "TLS %s:%d" host port) :info)
-  (open-network-stream "weechat-relay-tls"
-                       bname
-                       host
-                       port
-                       :type 'tls
-                       :coding 'binary))
+  (when (eq mode 'ssl)
+    (require 'gnutls))
+  ;; Advice `open-gnutls-stream' to verify signatures
+  (ad-activate 'open-gnutls-stream)
+  (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  (let ((process
+         (open-network-stream "weechat-relay-tls"
+                              bname
+                              host
+                              port
+                              :type 'tls
+                              :coding 'binary)))
+    (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+    (ad-deactivate 'open-gnutls-stream)
+    process))
 
 (defun weechat-relay-from-command (cmdspec)
   (lambda (bname host port)
@@ -530,12 +539,9 @@ a string denotes a command to run. You can use %h and %p to interpolate host
 and port number respectively.
 
 Optional argument CALLBACK Called after initialization is finished."
-  (get-buffer-create weechat-relay-buffer-name)
-  (when (eq mode 'ssl)
-    (require 'gnutls))
-  ;; Advice `open-gnutls-stream' to verify signatures
-  (ad-activate 'open-gnutls-stream)
-  (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  ;; Clean relay buffer to start with clean state
+  (with-current-buffer (get-buffer-create weechat-relay-buffer-name)
+    (delete-region (point-min) (point-max)))
   (let* ((pfun (cond
                 ((or (null mode) (eq mode 'plain)) #'weechat-relay-plain-socket)
                 ((or (eq mode t) (eq mode 'ssl)) #'weechat-relay-tls-socket)
@@ -549,8 +555,7 @@ Optional argument CALLBACK Called after initialization is finished."
       (setq buffer-read-only t)
       (set-buffer-multibyte nil)
       (buffer-disable-undo)))
-  (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-  (ad-deactivate 'open-gnutls-stream)
+
   (with-current-buffer (get-buffer-create
                         weechat-relay-log-buffer-name)
     (buffer-disable-undo))
