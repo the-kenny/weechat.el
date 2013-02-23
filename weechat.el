@@ -56,7 +56,10 @@
 Null or 'plain: Plain socket.
 t or 'ssl: TLS socket.
 String: comand to run."
-  :type 'boolean
+  :type '(choice
+          (const :tag "Plain" 'plain)
+          (const :tag "SSL/TLS" 'ssl)
+          (string :tag "Command to run"))
   :group 'weechat)
 
 (defcustom weechat-modules '(weechat-button weechat-complete)
