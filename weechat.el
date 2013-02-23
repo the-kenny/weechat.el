@@ -506,7 +506,8 @@ HOST is the relay host, `weechat-host-default' by default.
 PORT is the port where the relay listens, `weechat-port-default' by default.
 PASSWORD is either a string, a function or nil.
 MODE is null or 'plain for a plain socket, t or 'ssl for a TLS socket;
-a string denotes a command to run."
+a string denotes a command to run.  You can use %h and %p to interpolate host
+and port number respectively."
   (interactive
    (let* ((host
            (read-string

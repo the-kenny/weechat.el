@@ -513,17 +513,21 @@ CALLBACK takes one argument (the response data) which is a list."
                        :type 'tls
                        :coding 'binary))
 
-(defun weechat-relay-from-command (cmd)
+(defun weechat-relay-from-command (cmdspec)
   (lambda (bname host port)
-    (weechat-relay-log (format "COMMAND %s:%s: `%s'" host port cmd))
-    (let ((process-connection-type nil))  ; Use a pipe.
-      (start-process-shell-command "weechat-relay-cmd" bname cmd))))
+    (let ((cmd (format-spec cmdspec (format-spec-make
+                                     ?h host
+                                     ?p port))))
+      (weechat-relay-log (format "COMMAND %s:%s: `%s'" host port cmd))
+      (let ((process-connection-type nil))  ; Use a pipe.
+        (start-process-shell-command "weechat-relay-cmd" bname cmd)))))
 
 (defun weechat-relay-connect (host port mode &optional callback)
   "Open a new weechat relay connection to HOST at PORT.
 
 Argument MODE Null or 'plain for a plain socket, t or 'ssl for a TLS socket;
-a string denotes a command to run.
+a string denotes a command to run. You can use %h and %p to interpolate host
+and port number respectively.
 
 Optional argument CALLBACK Called after initialization is finished."
   (get-buffer-create weechat-relay-buffer-name)
