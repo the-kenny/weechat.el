@@ -80,6 +80,12 @@ To unload modules, use (unload-feature FEATURE)."
   :type 'string
   :group 'weechat)
 
+(defcustom weechat-buffer-line-limit 1000
+  "Number of max. lines per buffer."
+  :type '(choice integer
+                 (const :tag "Unlimited" nil))
+  :group 'weechat)
+
 (defcustom weechat-return-always-replace-input t
   "Always replace current input with line on return.
 
@@ -970,6 +976,19 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
   (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
                                         (point-at-eol))))
 
+(defun weechat-truncate-buffer ()
+  (when (integerp weechat-buffer-line-limit)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (let ((lines-to-delete (- (- weechat-buffer-line-limit
+                                     (count-lines (point-min) (point-max)))))
+              (inhibit-read-only t))
+          (when (> lines-to-delete 0)
+            (goto-char (point-min))
+            (forward-line lines-to-delete)
+            (delete-region (point-min) (point))))))))
+
 (defun weechat-line-add-properties (date highlight invisible)
   "Adds various text properties (read-only, etc.) to a line.
 
@@ -1113,6 +1132,9 @@ Must be called with `weechat-narrow-to-line' active."
 
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil))
+
+      ;; Truncate
+      (weechat-truncate-buffer)
 
       ;; Drop undo information (borrowed from weechat)
       (buffer-disable-undo)
