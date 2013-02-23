@@ -506,8 +506,7 @@ CALLBACK takes one argument (the response data) which is a list."
 
 (defun weechat-relay-tls-socket (bname host port)
   (weechat-relay-log (format "TLS %s:%d" host port) :info)
-  (when (eq mode 'ssl)
-    (require 'gnutls))
+  (require 'gnutls)
   ;; Advice `open-gnutls-stream' to verify signatures
   (ad-activate 'open-gnutls-stream)
   (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
