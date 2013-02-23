@@ -89,7 +89,8 @@ Format is (info \"link\")."
   :group 'weechat-button
   :type 'boolean)
 
-(defcustom weechat-button-buttonize-nicks t
+; temporarily disabled due to performance problems
+(defcustom weechat-button-buttonize-nicks nil
   "Buttonize nicknames?"
   :group 'weechat-button
   :type 'boolean)
