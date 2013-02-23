@@ -1440,33 +1440,35 @@ Default is current buffer."
 
 (defun weechat--read-channel-name (&optional only-monitored)
   "Read channel name from minibuffer in combination with `interactive'."
-  (list
-   (weechat--find-buffer
-    (funcall (or (and (featurep 'ido)
-                      (symbol-function 'ido-completing-read))
-                 #'completing-read)
-             "Channel Name: "
-             (weechat-channel-names only-monitored)))))
+  (weechat--find-buffer
+   (funcall (or (and (featurep 'ido)
+                     (symbol-function 'ido-completing-read))
+                #'completing-read)
+            "Channel Name: "
+            (weechat-channel-names only-monitored))))
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   "Start monitoring BUFFER-PTR.
 If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
-  (interactive (weechat--read-channel-name))
-  (save-excursion
-    (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
-           (name (weechat-buffer-name buffer-ptr)))
-      (unless (hash-table-p buffer-hash)
-        (error "Couldn't find buffer %s on relay server" buffer-ptr))
+  (interactive (list (weechat--read-channel-name) t))
+  (let ((buffer (weechat--emacs-buffer buffer-ptr)))
+    (if (buffer-live-p buffer)
+        (switch-to-buffer buffer)
+      (save-excursion
+        (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
+               (name (weechat-buffer-name buffer-ptr)))
+          (unless (hash-table-p buffer-hash)
+            (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
-      (with-current-buffer (get-buffer-create name)
-        (fundamental-mode)
-        (let ((inhibit-read-only t))
-          (delete-region (point-min) (point-max)))
-        (weechat-mode (get-buffer-process weechat-relay-buffer-name)
-                      buffer-ptr
-                      buffer-hash)
-        (when show-buffer
-          (switch-to-buffer (current-buffer)))))))
+          (with-current-buffer (get-buffer-create name)
+            (fundamental-mode)
+            (let ((inhibit-read-only t))
+              (delete-region (point-min) (point-max)))
+            (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                          buffer-ptr
+                          buffer-hash)
+            (when show-buffer
+              (switch-to-buffer (current-buffer)))))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
   "Like `switch-buffer' but limited to WeeChat buffers.
@@ -1477,11 +1479,8 @@ switch to.
 Will monitor channels if necessary.
 Will list remotely available buffers if called with prefix, otherwise
 only monitored buffers."
-  (interactive (weechat--read-channel-name (not current-prefix-arg)))
-  (let ((buffer (weechat--emacs-buffer buffer-ptr)))
-    (if (buffer-live-p buffer)
-        (switch-to-buffer buffer)
-      (weechat-monitor-buffer buffer-ptr 'show))))
+  (interactive (list (weechat--read-channel-name (not current-prefix-arg))))
+  (weechat-monitor-buffer buffer-ptr 'show))
 
 (defun weechat-reload-buffer (&optional buffer)
   (interactive)
