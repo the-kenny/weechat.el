@@ -1,7 +1,7 @@
 # -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
 * weechat.el - Chat via Weechat in Emacs
-  Please note: This README is just a placeholder.  A more detailed
-  documentation will follow.
+  Please note: This README is work in progress.  A more detailed documentation
+  will follow.
 
   weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions below 24.3
   you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is recommended!
@@ -24,7 +24,6 @@
    To show a channel in Emacs, do:
 
    : M-x weechat-monitor-buffer
-
 ** Color settings
    Most colors in weechat.el come directly from WeeChat and are only
    translated into Emacs faces.  There are a few notable exceptions
@@ -48,8 +47,37 @@
                                          "royal blue" "dark gray" "gray"))
 #+END_SRC
 
+   If you do not want any color then set =weechat-debug-strip-formatting= to
+   =t=.
 ** SSL
-   See documentation in =SSL.org=.
+   See documentation in [[file:SSL.org][SSL.org]].
+** Modules
+   Weechat.el comes with module support.  Modules can be loaded by simply
+   calling =load-library= and removed by using =unload-feature=.  The variable
+   =weechat-modules= can be customized to set default loaded modules.
+
+   Available modules are:
+*** Button
+    This module provides support for buttons in chat windows.  E.g., it turns
+    URLs into clickable buttons.  The module is default loaded.  See =weechat-modules=.
+
+    It supports several types of buttons such as URLs, Channels, Emacs' symbols,
+    E-Mails, Manpages, Info links, and Nick names.  However not all buttons are
+    activated as default.  See customization group =weechat-button= to enable
+    and disable specific buttons.
+
+    You can use =weechat-button-list= to simply add your own button types.
+*** Complete
+    This module provides support for nickname and command completion.  It uses
+    Emacs' =pcomplete= framework and is default loaded.
+*** Spelling
+    This module provides spelling support by using Emacs' =flyspell=.  You can
+    customize the dictionary on a per channel/server basis by customizing
+    =weechat-spelling-dictionaries=.
+*** Smiley
+    This module uses Gnus' =smiley-region= support to convert text smileys,
+    such as :-), into a graphical representation.  See the documentation of
+    =smiley.el= on how to customize it.
 * Contributors
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
   - [[https://github.com/aristidb][Aristid Breitkreuz]]
