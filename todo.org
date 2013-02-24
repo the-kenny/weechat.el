@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* Short-Term [14/20]
+* Short-Term [14/21]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -38,6 +38,7 @@ org-ruby). Please use the 'Raw' link on the right.
    - [ ] WHOIS
 ** TODO :query notification type
 ** TODO Check performance with >1000 lines and nick-buttons enabled
+** TODO Don't delete prompt contents on re-monitor
 ** DONE Limit buffer size
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
