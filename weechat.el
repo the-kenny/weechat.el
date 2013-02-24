@@ -969,7 +969,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 
 (defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
-    (lexical-let ((jump-position (point-max-marker)))
+    (let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
                         (cl-case type
                           (:highlight
