@@ -1532,12 +1532,10 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
 (defun weechat-switch-buffer (buffer-ptr)
   "Like `switch-buffer' but limited to WeeChat buffers.
 
-BUFFER-PTR is a string containing a pointer to the buffer to
-switch to.
+BUFFER-PTR is a string containing a pointer to the buffer to switch to.
 
-Will monitor channels if necessary.
-Will list remotely available buffers if called with prefix, otherwise
-only monitored buffers."
+Will monitor channels if necessary.  Will list remotely available buffers if
+called with prefix (\\[universal-argument]), otherwise only monitored buffers."
   (interactive (list (weechat--read-channel-name (not current-prefix-arg))))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (if (buffer-live-p buffer)
