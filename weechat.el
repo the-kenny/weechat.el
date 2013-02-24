@@ -1516,7 +1516,7 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
                       buffer-ptr
                       buffer-hash)
         (when show-buffer
-          (switch-to-buffer (currxent-buffer)))))))
+          (switch-to-buffer (current-buffer)))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
   "Like `switch-buffer' but limited to WeeChat buffers.
