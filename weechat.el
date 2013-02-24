@@ -50,9 +50,16 @@
   :type 'string
   :group 'weechat)
 
-(defcustom weechat-ssl-default nil
-  "Wether to connect via SSL by default."
-  :type 'boolean
+(defcustom weechat-mode-default 'plain
+  "Wether to connect via SSL by default.
+
+Null or 'plain: Plain socket.
+t or 'ssl: TLS socket.
+String: comand to run."
+  :type '(choice
+          (const :tag "Plain" 'plain)
+          (const :tag "SSL/TLS" 'ssl)
+          (string :tag "Command to run"))
   :group 'weechat)
 
 (defcustom weechat-modules '(weechat-button weechat-complete)
@@ -491,13 +498,24 @@ Return either a string, a function returning a string, or nil."
   (when (functionp weechat-password-callback)
     (funcall weechat-password-callback host port)))
 
+(defvar weechat-mode-completion-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map minibuffer-local-map)
+    (define-key map "\t" 'minibuffer-complete)
+    (define-key map "?" 'minibuffer-completion-help)
+    map)
+  "Weechat mode selection: Local keymap for minibuffer input with completion.")
+
 ;;;###autoload
-(defun weechat-connect (&optional host port password ssl)
+(defun weechat-connect (&optional host port password mode)
   "Connect to WeeChat.
 
 HOST is the relay host, `weechat-host-default' by default.
 PORT is the port where the relay listens, `weechat-port-default' by default.
-PASSWORD is either a string, a function or nil."
+PASSWORD is either a string, a function or nil.
+MODE is null or 'plain for a plain socket, t or 'ssl for a TLS socket;
+a string denotes a command to run.  You can use %h and %p to interpolate host
+and port number respectively."
   (interactive
    (let* ((host
            (read-string
@@ -505,7 +523,18 @@ PASSWORD is either a string, a function or nil."
             nil 'weechat-host-hist weechat-host-default))
           (port
            (read-number "Port: " weechat-port-default))
-          (ssl (y-or-n-p "SSL? ")))
+          (mode (let*
+                    ((minibuffer-local-completion-map weechat-mode-completion-map)
+                     (modestr (completing-read
+                               (format "Mode (`plain', `ssl' or command, default `%s'): "
+                                       weechat-mode-default)
+                               '("plain" "ssl" "ssh -W localhost:%p %h")
+                               nil nil nil 'weechat-mode-history)))
+                  (cond
+                   ((string-equal modestr "") nil)
+                   ((string-equal modestr "plain") 'plain)
+                   ((string-equal modestr "ssl") 'ssl)
+                   (t modestr)))))
      (list
       host port
       (or
@@ -515,12 +544,12 @@ PASSWORD is either a string, a function or nil."
        ;; Use lexical-let to scramble password lambda in *Backtrace*
        (lexical-let ((pass (read-passwd "Password: ")))
          (lambda () pass)))
-      ssl)))
+      mode)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
          (password (or password
                        (weechat-get-password host port)))
-         (ssl (or ssl weechat-ssl-default)))
+         (mode (or mode weechat-mode-default)))
     (weechat-message "Weechat connecting to %s:%d" host port)
     (when (weechat-relay-connected-p)
       (if (y-or-n-p "Already connected.  Disconnect other connection? ")
@@ -531,7 +560,7 @@ PASSWORD is either a string, a function or nil."
       (weechat-relay-connect
        host
        port
-       ssl
+       mode
        (lambda ()
          (weechat-relay-authenticate password)
          (weechat-relay-send-command

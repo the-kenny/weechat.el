@@ -495,21 +495,58 @@ CALLBACK takes one argument (the response data) which is a list."
   (setq ad-return-value
         (weechat-open-gnutls-stream name buffer host service)))
 
-(defun weechat-relay-connect (host port ssl &optional callback)
-  "Open a new weechat relay connection to HOST at PORT."
-  (get-buffer-create weechat-relay-buffer-name)
-  (when ssl
-    (require 'gnutls))
+(defun weechat-relay-plain-socket (bname host port)
+  (weechat-relay-log (format "PLAIN %s:%d" host port) :info)
+  (open-network-stream "weechat-relay"
+                       bname
+                       host
+                       port
+                       :type 'plain
+                       :coding 'binary))
+
+(defun weechat-relay-tls-socket (bname host port)
+  (weechat-relay-log (format "TLS %s:%d" host port) :info)
+  (require 'gnutls)
   ;; Advice `open-gnutls-stream' to verify signatures
   (ad-activate 'open-gnutls-stream)
   (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
   (let ((process
-         (open-network-stream "weechat-relay"
-                              weechat-relay-buffer-name
+         (open-network-stream "weechat-relay-tls"
+                              bname
                               host
                               port
-                              :type (if ssl 'tls 'plain)
+                              :type 'tls
                               :coding 'binary)))
+    (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+    (ad-deactivate 'open-gnutls-stream)
+    process))
+
+(defun weechat-relay-from-command (cmdspec)
+  (lambda (bname host port)
+    (let ((cmd (format-spec cmdspec (format-spec-make
+                                     ?h host
+                                     ?p port))))
+      (weechat-relay-log (format "COMMAND %s:%s: `%s'" host port cmd))
+      (let ((process-connection-type nil))  ; Use a pipe.
+        (start-process-shell-command "weechat-relay-cmd" bname cmd)))))
+
+(defun weechat-relay-connect (host port mode &optional callback)
+  "Open a new weechat relay connection to HOST at PORT.
+
+Argument MODE Null or 'plain for a plain socket, t or 'ssl for a TLS socket;
+a string denotes a command to run. You can use %h and %p to interpolate host
+and port number respectively.
+
+Optional argument CALLBACK Called after initialization is finished."
+  ;; Clean relay buffer to start with clean state
+  (with-current-buffer (get-buffer-create weechat-relay-buffer-name)
+    (delete-region (point-min) (point-max)))
+  (let* ((pfun (cond
+                ((or (null mode) (eq mode 'plain)) #'weechat-relay-plain-socket)
+                ((or (eq mode t) (eq mode 'ssl)) #'weechat-relay-tls-socket)
+                ((stringp mode) (weechat-relay-from-command mode))))
+         (process
+          (funcall pfun weechat-relay-buffer-name host port)))
     (set-process-sentinel process #'weechat--relay-process-sentinel)
     (set-process-coding-system process 'binary)
     (set-process-filter process #'weechat--relay-process-filter)
@@ -517,8 +554,7 @@ CALLBACK takes one argument (the response data) which is a list."
       (setq buffer-read-only t)
       (set-buffer-multibyte nil)
       (buffer-disable-undo)))
-  (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-  (ad-deactivate 'open-gnutls-stream)
+
   (with-current-buffer (get-buffer-create
                         weechat-relay-log-buffer-name)
     (buffer-disable-undo))
