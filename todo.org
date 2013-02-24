@@ -58,7 +58,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [6/18]
+* Nice to have [6/19]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** TODO Speedbar integration
@@ -72,6 +72,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Request all highlighted lines when coming back online
 ** TODO Get (max 100 (count unread)) lines
 ** TODO Hooks for everything!
+** TODO Module for applying s/foo/bar/ message corrections
 ** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
