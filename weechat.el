@@ -547,9 +547,9 @@ and port number respectively."
        (progn
          (weechat-message "Trying to get password via `weechat-password-callback'...")
          (weechat-get-password host port))
-       ;; Use lexical-let to scramble password lambda in *Backtrace*
-       (lexical-let ((pass (read-passwd "Password: ")))
-         (lambda () pass)))
+       ;; Use cl-lexical-let to scramble password lambda in *Backtrace*
+       (cl-lexical-let ((pass (read-passwd "Password: ")))
+                       (lambda () pass)))
       mode)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
@@ -969,22 +969,22 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 
 (defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
-    (lexical-let ((jump-position (point-max-marker)))
-      (sauron-add-event 'weechat 3
-                        (cl-case type
-                          (:highlight
-                           (format "%s in %s: %S"
-                                   (weechat-strip-formatting sender)
-                                   (weechat-buffer-name buffer-ptr)
-                                   text))
-                          (:disconnect
-                           "Disconnected from WeeChat"))
-                        (lambda ()
-                          (when (fboundp 'sauron-switch-to-marker-or-buffer)
-                            (sauron-switch-to-marker-or-buffer jump-position)))
-                        ;; Flood protection based on sender
-                        (if sender
-                            (list :sender sender))))))
+    (sauron-add-event 'weechat 3
+                      (cl-case type
+                        (:highlight
+                         (format "%s in %s: %S"
+                                 (weechat-strip-formatting sender)
+                                 (weechat-buffer-name buffer-ptr)
+                                 text))
+                        (:disconnect
+                         "Disconnected from WeeChat"))
+                      (cl-lexical-let ((jump-position (point-max-marker)))
+                                      (lambda ()
+                                        (when (fboundp 'sauron-switch-to-marker-or-buffer)
+                                          (sauron-switch-to-marker-or-buffer jump-position))))
+                      ;; Flood protection based on sender
+                      (if sender
+                          (list :sender sender)))))
 
 
 (cl-defun weechat-notify (type &key sender text date buffer-ptr)
