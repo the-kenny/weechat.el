@@ -548,8 +548,7 @@ and port number respectively."
          (weechat-message "Trying to get password via `weechat-password-callback'...")
          (weechat-get-password host port))
        ;; Use lexical-let to scramble password lambda in *Backtrace*
-       (lexical-let ((pass (read-passwd "Password: ")))
-         (lambda () pass)))
+       (read-passwd "Password: "))
       mode)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))

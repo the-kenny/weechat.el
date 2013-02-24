@@ -59,7 +59,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [6/19]
+* Nice to have [6/20]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** TODO Speedbar integration
@@ -74,6 +74,9 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Get (max 100 (count unread)) lines
 ** TODO Hooks for everything!
 ** TODO Module for applying s/foo/bar/ message corrections
+** TODO Re-Implement scrambling of passwords in lambdas
+   Without lexical-let:
+   - Pass symbols around: `make-symbol', `symbol-value'
 ** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
