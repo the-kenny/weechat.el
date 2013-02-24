@@ -540,7 +540,8 @@ and port number respectively.
 Optional argument CALLBACK Called after initialization is finished."
   ;; Clean relay buffer to start with clean state
   (with-current-buffer (get-buffer-create weechat-relay-buffer-name)
-    (delete-region (point-min) (point-max)))
+    (let ((inhibit-read-only t))
+      (delete-region (point-min) (point-max))))
   (let* ((pfun (cond
                 ((or (null mode) (eq mode 'plain)) #'weechat-relay-plain-socket)
                 ((or (eq mode t) (eq mode 'ssl)) #'weechat-relay-tls-socket)
