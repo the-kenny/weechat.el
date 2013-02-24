@@ -1393,6 +1393,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
     (define-key map (kbd "C-c C-t") 'weechat-toggle-hidden)
     (define-key map (kbd "C-c C-b") 'weechat-switch-buffer)
+    (define-key map (kbd "C-c C-m") 'weechat-monitor-buffer)
     map)
   "Keymap for weechat mode.")
 
@@ -1409,6 +1410,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     ["Reload Buffer" weechat-reload-buffer t]
     ["Close Buffer" kill-buffer t]
     ["Switch Buffer" weechat-switch-buffer t]
+    ["Monitor Buffer" weechat-monitor-buffer t]
     ["Disconnect" weechat-disconnect t]))
 
 (defun weechat-get-local-var (var &optional buffer-ptr)
