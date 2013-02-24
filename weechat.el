@@ -1383,6 +1383,15 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
         (point-at-bol) (point-at-eol))))
     (goto-char (point-max)))))
 
+(defun weechat-bol (&optional arg)
+  "Go to the beginning of line, then skip past the prompt, if any.
+If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
+  ;; basically copied from `comint-bol'.
+  (interactive "P")
+  (if arg
+      (forward-line 0)
+    (goto-char weechat-prompt-end-marker)))
+
 (defvar weechat-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-return)
@@ -1390,6 +1399,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
     (define-key map (kbd "TAB") 'completion-at-point)
+    (define-key map (kbd "C-a") 'weechat-bol)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
     (define-key map (kbd "C-c C-t") 'weechat-toggle-hidden)
     (define-key map (kbd "C-c C-b") 'weechat-switch-buffer)
