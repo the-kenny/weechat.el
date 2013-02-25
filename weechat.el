@@ -1492,48 +1492,58 @@ Default is current buffer."
 
 \\{weechat-mode-map}"
 
-  (kill-all-local-variables)
+  ;; Hack to restore prompt location
+  (let ((prompt-start (when (boundp 'weechat-prompt-start-marker)
+                        weechat-prompt-start-marker))
+        (prompt-end (when (boundp 'weechat-prompt-end-marker)
+                      weechat-prompt-end-marker)))
 
-  (puthash :emacs/buffer (current-buffer) buffer-hash)
-  (add-hook 'kill-buffer-hook
-            (lambda ()
-              (when (hash-table-p weechat--buffer-hashes)
-                (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
-                  (when (hash-table-p hash)
-                    (remhash :emacs/buffer hash)))))
-            nil
-            'local-hook)
+    (kill-all-local-variables)
 
-  (use-local-map weechat-mode-map)
-  (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
-  (setq major-mode 'weechat-mode)
+    (puthash :emacs/buffer (current-buffer) buffer-hash)
+    (add-hook 'kill-buffer-hook
+              (lambda ()
+                (when (hash-table-p weechat--buffer-hashes)
+                  (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+                    (when (hash-table-p hash)
+                      (remhash :emacs/buffer hash)))))
+              nil
+              'local-hook)
 
-  (setq scroll-conservatively 1000)
+    (use-local-map weechat-mode-map)
+    (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
+    (setq major-mode 'weechat-mode)
 
-  (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
-  (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
-  (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
-  (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+    (setq scroll-conservatively 1000)
 
-  (set (make-local-variable 'weechat-user-list) nil)
-  (make-local-variable 'weechat-local-prompt)
-  (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
-  (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
-  (weechat-update-prompt)
+    (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
+    (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
+    (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
+    (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
 
-  (set (make-local-variable 'weechat-input-ring) (make-ring weechat-input-ring-size))
+    (set (make-local-variable 'weechat-user-list) nil)
 
-  ;; Don't auto-add newlines on next-line
-  (set (make-local-variable 'next-line-add-newlines) nil)
+    ;; Setup prompt
+    (make-local-variable 'weechat-local-prompt)
+    (set (make-local-variable 'weechat-prompt-start-marker)
+         (or prompt-start(point-max-marker)))
+    (set (make-local-variable 'weechat-prompt-end-marker)
+         (or prompt-end(point-max-marker)))
+    (weechat-update-prompt)
 
-  ;; Initialize buffer
-  (weechat-request-initial-lines buffer-ptr)
+    (set (make-local-variable 'weechat-input-ring) (make-ring weechat-input-ring-size))
 
-  ;; Set Header
-  (weechat-update-header-line-buffer (current-buffer))
+    ;; Don't auto-add newlines on next-line
+    (set (make-local-variable 'next-line-add-newlines) nil)
 
-  ;; Hooks
-  (run-mode-hooks 'weechat-mode-hook))
+    ;; Initialize buffer
+    (weechat-request-initial-lines buffer-ptr)
+
+    ;; Set Header
+    (weechat-update-header-line-buffer (current-buffer))
+
+    ;; Hooks
+    (run-mode-hooks 'weechat-mode-hook)))
 
 (defun weechat--read-channel-name (&optional only-monitored)
   "Read channel name from minibuffer in combination with `interactive'."
@@ -1555,9 +1565,10 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
         (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
       (with-current-buffer (get-buffer-create name)
-        (fundamental-mode)
+        ;; (fundamental-mode)
         (let ((inhibit-read-only t))
-          (delete-region (point-min) (point-max)))
+          (when (eq major-mode 'weechat-mode)
+            (delete-region (point-min) weechat-prompt-start-marker)))
         (weechat-mode (get-buffer-process weechat-relay-buffer-name)
                       buffer-ptr
                       buffer-hash)
