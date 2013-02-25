@@ -976,6 +976,10 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                                    (weechat-strip-formatting sender)
                                    (weechat-buffer-name buffer-ptr)
                                    text))
+                          (:query
+                           (format "Query from %s: %S"
+                                   (weechat-strip-formatting sender)
+                                   text))
                           (:disconnect
                            "Disconnected from WeeChat"))
                         (lambda ()
@@ -1282,12 +1286,12 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                (current-buffer))
         (let* ((buftype (weechat-buffer-type buffer-ptr))
                (highlight (cl-case buftype
-                            (:query t)    ;always highlight queries
+                            (:private t) ;always highlight queries
                             (:server nil) ;never highlight server buffers
                             (t highlight))))
           (when (and (not weechat-inhibit-notifications) highlight)
             (let ((type (cl-case buftype
-                          (:query :query)
+                          (:private :query)
                           (:channel :highlight))))
               (weechat-notify type
                               :sender sender
