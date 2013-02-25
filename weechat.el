@@ -1184,6 +1184,7 @@ Must be called with `weechat-narrow-to-line' active."
      ((member "irc_nick" tags) :irc/nick)
      ((member "irc_topic" tags) :irc/topic)
      ((member "irc_numeric" tags) :irc/numeric)
+     ((member "irc_notice" tags) :irc/notice)
      (:irc/unknown))))                     ;fallback
 
 (defun weechat-buffer-type (&optional buffer-ptr)
