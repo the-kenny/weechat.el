@@ -1294,7 +1294,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                           (:private :query)
                           (:channel :highlight))))
               (weechat-notify type
-                              :sender sender
+                              :sender (weechat--get-nick-from-line-data line-data)
                               :text message
                               :date date
                               :buffer-ptr buffer-ptr))))))))
