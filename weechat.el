@@ -1387,6 +1387,10 @@ the end of line."
         (weechat-replace-input (ring-previous weechat-input-ring input)))))))
 
 (defun weechat-return ()
+  "Return key action.
+If point is in input field send message. If the point is in a chat line
+copy the message.  Only the message text is copied unless the prefix argument
+is given (\\[universal-argument])."
   (interactive)
   (cond
    ((>= (point) weechat-prompt-end-marker)
@@ -1403,7 +1407,10 @@ the end of line."
       ;; Copy current line to input line
       (weechat-replace-input
        (buffer-substring-no-properties
-        (point-at-bol) (point-at-eol))))
+        (if current-prefix-arg
+            (point-at-bol)
+          (+ (point-at-bol) weechat-text-column))
+        (point-at-eol))))
     (goto-char (point-max)))))
 
 (defun weechat-bol (&optional arg)
