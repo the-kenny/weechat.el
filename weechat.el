@@ -237,7 +237,7 @@ buffers) and t (All buffers)."
           (const :tag "All Buffers" t))
   :group 'weechat)
 
-(defcustom weechat-notification-types '(:highlight :disconnect)
+(defcustom weechat-notification-types '(:highlight :disconnect :query)
   "Events for which a notification should be shown."
   :type '(repeat symbol)
   :group 'weechat)
@@ -982,8 +982,8 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                           (when (fboundp 'sauron-switch-to-marker-or-buffer)
                             (sauron-switch-to-marker-or-buffer jump-position)))
                         ;; Flood protection based on sender
-                        (if sender
-                            (list :sender sender))))))
+                        (when sender
+                          (list :sender sender))))))
 
 
 (cl-defun weechat-notify (type &key sender text date buffer-ptr)
@@ -1280,12 +1280,20 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
       (with-current-buffer (or (and (buffer-live-p buffer) buffer)
                                (get-buffer weechat-relay-log-buffer-name)
                                (current-buffer))
-        (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify :highlight
-                          :sender sender
-                          :text message
-                          :date date
-                          :buffer-ptr buffer-ptr))))))
+        (let* ((buftype (weechat-buffer-type buffer-ptr))
+               (highlight (cl-case buftype
+                            (:query t)    ;always highlight queries
+                            (:server nil) ;never highlight server buffers
+                            (t highlight))))
+          (when (and (not weechat-inhibit-notifications) highlight)
+            (let ((type (cl-case buftype
+                          (:query :query)
+                          (:channel :highlight))))
+              (weechat-notify type
+                              :sender sender
+                              :text message
+                              :date date
+                              :buffer-ptr buffer-ptr))))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
