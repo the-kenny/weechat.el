@@ -1270,14 +1270,13 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                      date
                                      highlight))
           (t
-           (progn
-             (weechat-print-line buffer-ptr
-                                 sender
-                                 message
-                                 date
-                                 line-type
-                                 highlight
-                                 invisible)))))
+           (weechat-print-line buffer-ptr
+                               sender
+                               message
+                               date
+                               line-type
+                               highlight
+                               invisible))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
