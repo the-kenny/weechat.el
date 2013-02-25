@@ -1589,10 +1589,10 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
       (weechat-monitor-buffer buffer-ptr 'show))))
 
 (defun weechat-reload-buffer (&optional buffer)
-  (interactive)
+  (interactive (list (current-buffer)))
   (with-current-buffer (or buffer (current-buffer))
     (weechat-relay-log
-     (format "Re-monitoring buffer %S" buffer))
+     (format "Re-monitoring buffer %s" (buffer-name buffer)))
     (weechat-monitor-buffer weechat-buffer-ptr)))
 
 (defun weechat-re-monitor-buffers ()
