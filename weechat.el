@@ -968,17 +968,19 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 
 (defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
+    (setq text (weechat-strip-formatting text))
+    (setq sender (weechat-strip-formatting sender))
     (let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
                         (cl-case type
                           (:highlight
                            (format "%s in %s: %S"
-                                   (weechat-strip-formatting sender)
+                                   sender
                                    (weechat-buffer-name buffer-ptr)
                                    text))
                           (:query
                            (format "Query from %s: %S"
-                                   (weechat-strip-formatting sender)
+                                   sender
                                    text))
                           (:disconnect
                            "Disconnected from WeeChat"))
