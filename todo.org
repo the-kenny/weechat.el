@@ -36,9 +36,13 @@ org-ruby). Please use the 'Raw' link on the right.
    - [ ] Netsplit
    - [ ] CTCP
    - [ ] WHOIS
-** TODO :query notification type
 ** TODO Check performance with >1000 lines and nick-buttons enabled
 ** TODO Don't delete prompt contents on re-monitor
+** TODO package.el package [1/2]
+*** DONE Auto-Upload to melpa
+*** TODO marmalade
+    Wait for more stable release.
+** DONE :query notification type
 ** DONE Limit buffer size
 ** DONE Handle network errors (disconnect)
 ** DONE Handle opening/closing of buffers (after 'sync')
@@ -51,10 +55,6 @@ org-ruby). Please use the 'Raw' link on the right.
 ** DONE Nicklist handling
    Waiting for delta updates (WeeChat 4.1?)
 ** DONE Buttons for URLs and other stuff
-** DONE package.el package [1/2]
-*** DONE Auto-Upload to melpa
-*** TODO marmalade
-    Wait for more stable release.
 ** DONE Colors
    Thanks, Rüdiger
 ** DONE Module System
