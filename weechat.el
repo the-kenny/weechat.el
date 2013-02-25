@@ -1182,6 +1182,16 @@ Must be called with `weechat-narrow-to-line' active."
      ((member "irc_numeric" tags) :irc/numeric)
      (:irc/unknown))))                     ;fallback
 
+(defun weechat-buffer-type (&optional buffer-ptr)
+  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
+         (type (weechat->> buffer-ptr
+                           (weechat-buffer-hash)
+                           (gethash "local_variables")
+                           (assoc-string "type")
+                           (cdr)) ))
+    (when (stringp type)
+      (intern (format ":%s" type)))))
+
 (defun weechat-print-irc-action (buffer-ptr sender message date highlight)
   (let ((weechat-text-column 0))
     (weechat-print-line buffer-ptr
