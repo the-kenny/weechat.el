@@ -1334,11 +1334,16 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     weechat-prompt-end-marker
     (point-max))))
 
-(defun weechat-replace-input (replacement)
+(defun weechat-replace-input (replacement &optional not-move-eol)
+  "Replace input line with REPLACEMENT.
+If NOT-MOVE-EOL is non-nil the point is not changed else it is moved to
+the end of line."
   (save-excursion
     (delete-region weechat-prompt-end-marker (point-max))
     (goto-char weechat-prompt-end-marker)
-    (insert (or replacement ""))))
+    (insert (or replacement "")))
+  (unless not-move-eol
+    (move-end-of-line 1)))
 
 (defvar weechat-input-ring)
 
