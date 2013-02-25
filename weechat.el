@@ -1422,9 +1422,10 @@ is given (\\[universal-argument])."
 If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
   ;; basically copied from `comint-bol'.
   (interactive "P")
-  (if arg
-      (forward-line 0)
-    (goto-char weechat-prompt-end-marker)))
+  (cond
+   (arg (forward-line 0))
+   ((> (point) weechat-prompt-start-marker) (goto-char weechat-prompt-end-marker))
+   (t (beginning-of-line))))
 
 (defvar weechat-mode-map
   (let ((map (make-sparse-keymap)))
