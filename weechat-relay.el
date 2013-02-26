@@ -485,6 +485,7 @@ CALLBACK takes one argument (the response data) which is a list."
 
 (defun weechat-open-gnutls-stream (name buffer host service)
   "Just like `open-gnutls-stream' with added validation."
+  (require 'gnutls)
   (gnutls-negotiate
    :process (open-network-stream name buffer host service)
    :type 'gnutls-x509pki

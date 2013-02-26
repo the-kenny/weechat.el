@@ -53,6 +53,8 @@
 
 ;;; Code:
 
+(require 'smiley)
+
 (defun weechat-smiley-buffer ()
   "Smiley the region."
   (let ((inhibit-read-only t))
