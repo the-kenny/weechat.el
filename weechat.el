@@ -1290,16 +1290,21 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                (highlight (cl-case buftype
                             (:private t) ;always highlight queries
                             (:server nil) ;never highlight server buffers
-                            (t highlight))))
-          (when (and (not weechat-inhibit-notifications) highlight)
-            (let ((type (cl-case buftype
-                          (:private :query)
-                          (:channel :highlight))))
-              (weechat-notify type
-                              :sender (weechat--get-nick-from-line-data line-data)
-                              :text message
-                              :date date
-                              :buffer-ptr buffer-ptr))))))))
+                            (t highlight)))
+               (sender (weechat--get-nick-from-line-data line-data))
+               (type (cl-case buftype
+                       (:private (unless (string-equal (weechat-get-local-var "nick")
+                                                       sender)
+                                   :query))
+                       (:channel :highlight))))
+          (when (and (not weechat-inhibit-notifications)
+                     highlight
+                     type)
+            (weechat-notify type
+                            :sender sender
+                            :text message
+                            :date date
+                            :buffer-ptr buffer-ptr)))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
