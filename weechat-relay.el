@@ -510,16 +510,15 @@ CALLBACK takes one argument (the response data) which is a list."
   ;; Advice `open-gnutls-stream' to verify signatures
   (ad-activate 'open-gnutls-stream)
   (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-  (let ((process
-         (open-network-stream "weechat-relay-tls"
-                              bname
-                              host
-                              port
-                              :type 'tls
-                              :coding 'binary)))
+  (unwind-protect
+      (open-network-stream "weechat-relay-tls"
+                           bname
+                           host
+                           port
+                           :type 'tls
+                           :coding 'binary)
     (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-    (ad-deactivate 'open-gnutls-stream)
-    process))
+    (ad-deactivate 'open-gnutls-stream)))
 
 (defun weechat-relay-from-command (cmdspec)
   (lambda (bname host port)
