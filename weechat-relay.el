@@ -4,7 +4,7 @@
 
 ;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
 ;;         Rüdiger Sonderfeld <ruediger@c-plusplus.de>
-;;         Aristid Breitkreuz
+;;         Aristid Breitkreuz <aristidb@gmail.com>
 ;; Keywords: irc chat network weechat
 
 ;; This program is free software; you can redistribute it and/or modify
