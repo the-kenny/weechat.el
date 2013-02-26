@@ -955,6 +955,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 (defun weechat-notifications-handler (type &optional sender text _date _buffer-ptr)
   (require 'notifications nil t)
   (when (and (featurep 'notifications) (fboundp 'notifications-notify))
+    (require 'xml)
     (setq weechat--last-notification-id
           (notifications-notify
            :title (xml-escape-string
