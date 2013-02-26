@@ -79,5 +79,8 @@
     such as :-), into a graphical representation.  See the documentation of
     =smiley.el= on how to customize it.
 * Contributors
+  Please add yourself to this list when you contribute code!
+  
+  - [[https://github.com/the-kenny][Moritz Ulrich]] (Maintainer)
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
   - [[https://github.com/aristidb][Aristid Breitkreuz]]

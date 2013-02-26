@@ -2,7 +2,9 @@
 
 ;; Copyright (C) 2013 Moritz Ulrich
 
-;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
+;; Author: Moritz Ulrich <moritz@tarn-vedra.de>
+;;         Rüdiger Sonderfeld <ruediger@c-plusplus.de>
+;;         Aristid Breitkreuz
 ;; Keywords: irc chat network weechat
 ;; URL: https://github.com/the-kenny/weechat.el
 

@@ -3,6 +3,8 @@
 ;; Copyright (C) 2013 Moritz Ulrich
 
 ;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
+;;         Rüdiger Sonderfeld <ruediger@c-plusplus.de>
+;;         Aristid Breitkreuz
 ;; Keywords: irc chat network weechat
 
 ;; This program is free software; you can redistribute it and/or modify
