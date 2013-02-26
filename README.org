@@ -78,6 +78,9 @@
     This module uses Gnus' =smiley-region= support to convert text smileys,
     such as :-), into a graphical representation.  See the documentation of
     =smiley.el= on how to customize it.
+* Contact
+  Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
+
 * Contributors
   Please add yourself to this list when you contribute code!
   
