@@ -78,6 +78,11 @@
     This module uses Gnus' =smiley-region= support to convert text smileys,
     such as :-), into a graphical representation.  See the documentation of
     =smiley.el= on how to customize it.
+*** LaTeX
+    The =weechat-latex= module provides a simple preview function for embedded
+    LaTeX.  It is based Org's LaTeX preview functionality and many of Org's
+    LaTex customizations apply to it as well.  Use =weechat-latex-preview= to
+    generate previews and =weechat-latex-remove= to remove them.
 * Contact
   Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
 
