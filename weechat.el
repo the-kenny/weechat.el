@@ -1028,13 +1028,14 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
             (forward-line lines-to-delete)
             (delete-region (point-min) (point))))))))
 
-(defun weechat-line-add-properties (date highlight invisible)
+(defun weechat-line-add-properties (nick date highlight invisible)
   "Adds various text properties (read-only, etc.) to a line.
 
 Must be called with `weechat-narrow-to-line' active."
   ;; Add `date' and `highlighted' to the whole line
   (add-text-properties (point-min) (point-max)
-                       (list 'weechat-date date
+                       (list 'weechat-nick nick
+                             'weechat-date date
                              'weechat-highlighted highlight))
 
   ;; Make line read-only if `weechat-read-only' is t
@@ -1089,7 +1090,11 @@ Must be called with `weechat-narrow-to-line' active."
   "Return the date of the line under point."
   (get-text-property (point) 'weechat-date))
 
-(cl-defun weechat-print-line (buffer-ptr &key prefix text date line-type highlight invisible)
+(defun weechat-line-nick ()
+  "Return the nickname of the line under point."
+  (get-text-property (point) 'weechat-nick))
+
+(cl-defun weechat-print-line (buffer-ptr &key prefix text date line-type highlight invisible nick)
   (setq text   (or text ""))
   (setq prefix (or prefix ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -1148,7 +1153,7 @@ Must be called with `weechat-narrow-to-line' active."
                   (overlay-put overlay 'wrap-prefix prefix-string))))
 
             ;; Add general properties
-            (weechat-line-add-properties date highlight invisible)
+            (weechat-line-add-properties nick date highlight invisible)
 
             ;; Important: Run the hook after everything else
             (run-hooks 'weechat-insert-modify-hook)))
@@ -1269,6 +1274,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
            (let ((weechat-text-column 0))
              (weechat-print-line buffer-ptr
                                  :text (concat prefix message)
+                                 :nick nick
                                  :line-type line-type
                                  :date date
                                  :highlight highlight)))
@@ -1276,6 +1282,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
            (weechat-print-line buffer-ptr
                                :prefix prefix
                                :text message
+                               :nick nick
                                :date date
                                :line-type line-type
                                :highlight highlight
