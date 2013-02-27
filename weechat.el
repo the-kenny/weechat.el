@@ -723,7 +723,9 @@ Used to identify it on the relay server.")
 
 (defun weechat-strip-formatting (string)
   "Strip weechat color codes from STRING."
-  (replace-regexp-in-string weechat-formatting-regex "" string))
+  (if (stringp string)
+      (replace-regexp-in-string weechat-formatting-regex "" string)
+    string))
 
 (defcustom weechat-color-list '(unspecified "black" "dark gray" "dark red" "red"
                                             "dark green" "light green" "brown"
@@ -974,8 +976,8 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
 
 (defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
-    (setq text (weechat-strip-formatting text))
-    (setq sender (weechat-strip-formatting sender))
+    (setq text (if text (weechat-strip-formatting text)))
+    (setq sender (if sender (weechat-strip-formatting sender)))
     (let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
                         (cl-case type
@@ -1013,8 +1015,8 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
     (error "No weechat-mode buffer"))
   (when (> (point) weechat-prompt-start-marker)
     (error "Only narrowing to lines is supported"))
-  (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
-                                        (point-at-eol))))
+  (narrow-to-region (point-at-bol) (min (point-at-eol)
+                                        weechat-prompt-start-marker)))
 
 (defun weechat-truncate-buffer ()
   (when (integerp weechat-buffer-line-limit)
@@ -1152,6 +1154,10 @@ Must be called with `weechat-narrow-to-line' active."
                 ;; awesome text property called `wrap-prefix'.
                 (let ((overlay (make-overlay text-start (point-max))))
                   (overlay-put overlay 'wrap-prefix prefix-string))))
+
+            ;; Go to start of inserted line
+            (goto-char (1- (point)))    ;skip newline
+            (goto-char (point-at-bol))
 
             ;; Add general properties
             (weechat-line-add-properties nick date highlight invisible)
