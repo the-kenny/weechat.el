@@ -1249,6 +1249,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
             (setq sender (weechat-strip-formatting sender))
             (setq message (weechat-strip-formatting message)))
 
+          ;; Nicklist handling. To be replaced with real nicklist
+          ;; updates when WeeChat starts sending nicklist deltas
           (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
                   (eq line-type :irc/join))
               (weechat--user-list-add nick)
