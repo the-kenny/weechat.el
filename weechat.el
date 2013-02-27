@@ -1084,7 +1084,7 @@ Must be called with `weechat-narrow-to-line' active."
               (recenter -1))))))))
 
 (defun weechat-line-date ()
-  "Returns the date of the line under point resides in."
+  "Return the date of the line under point."
   (get-text-property (point) 'weechat-date))
 
 (defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight invisible)
