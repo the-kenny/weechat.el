@@ -1087,9 +1087,9 @@ Must be called with `weechat-narrow-to-line' active."
   "Return the date of the line under point."
   (get-text-property (point) 'weechat-date))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight invisible)
+(defun weechat-print-line (buffer-ptr prefix text &optional date line-type highlight invisible)
   (setq text   (or text ""))
-  (setq sender (or sender ""))
+  (setq prefix (or prefix ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (bufferp buffer)
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
@@ -1114,8 +1114,8 @@ Must be called with `weechat-narrow-to-line' active."
                        'face 'weechat-time-face)
                       " "))
 
-            (unless (s-blank? (weechat-handle-color-codes sender))
-              (insert (weechat-handle-color-codes sender))
+            (unless (s-blank? (weechat-handle-color-codes prefix))
+              (insert (weechat-handle-color-codes prefix))
               (when (or (eq line-type :irc/privmsg)
                         (not line-type))
                 (insert ":")))
