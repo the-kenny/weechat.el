@@ -1235,7 +1235,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
          (buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
-    (let ((sender (assoc-default "prefix" line-data))
+    (let ((prefix (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
@@ -1246,7 +1246,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
       (when (bufferp (weechat--emacs-buffer buffer-ptr))
         (with-current-buffer buffer
           (when weechat-debug-strip-formatting
-            (setq sender (weechat-strip-formatting sender))
+            (setq prefix (weechat-strip-formatting prefix))
             (setq message (weechat-strip-formatting message)))
 
           ;; Nicklist handling. To be replaced with real nicklist
@@ -1268,13 +1268,13 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (:irc/action
            (let ((weechat-text-column 0))
              (weechat-print-line buffer-ptr
-                                 :text (concat sender message)
+                                 :text (concat prefix message)
                                  :line-type line-type
                                  :date date
                                  :highlight highlight)))
           (t
            (weechat-print-line buffer-ptr
-                               :prefix sender
+                               :prefix prefix
                                :text message
                                :date date
                                :line-type line-type
@@ -1291,17 +1291,16 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                             (:private t) ;always highlight queries
                             (:server nil) ;never highlight server buffers
                             (t highlight)))
-               (sender (weechat--get-nick-from-line-data line-data))
                (type (cl-case buftype
                        (:private (unless (string-equal (weechat-get-local-var "nick")
-                                                       sender)
+                                                       nick)
                                    :query))
                        (:channel :highlight))))
           (when (and (not weechat-inhibit-notifications)
                      highlight
                      type)
             (weechat-notify type
-                            :sender sender
+                            :sender nick
                             :text message
                             :date date
                             :buffer-ptr buffer-ptr)))))))
