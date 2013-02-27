@@ -89,6 +89,7 @@ See `org-latex-create-formula-image-program'"
 
 (defun weechat-latex-unload-function ()
   "Cleanup WeeChat LaTex module."
+  (weechat-latex-remove)
   (easy-menu-remove-item weechat-mode-menu nil "Remove LaTeX")
   (easy-menu-remove-item weechat-mode-menu nil "Preview LaTeX"))
 
