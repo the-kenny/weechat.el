@@ -60,17 +60,18 @@ See `org-latex-create-formula-image-program'"
 (defun weechat-latex-preview ()
   "Preview LaTeX fragments."
   (interactive)
-  (let ((inhibit-read-only t))
-    (unless weechat-latex-temp-dir
-      (setq weechat-latex-temp-dir (make-temp-file weechat-latex-temp-directory-prefix
-                                                   'directory)))
-    (org-remove-latex-fragment-image-overlays)
-    (org-format-latex weechat-latex-temp-file-prefix
-                      weechat-latex-temp-dir
-                      'overlays
-                      "Creating images...%s"
-                      nil 'forbuffer
-                      weechat-latex-image-program)))
+  (save-excursion
+    (let ((inhibit-read-only t))
+      (unless weechat-latex-temp-dir
+        (setq weechat-latex-temp-dir (make-temp-file weechat-latex-temp-directory-prefix
+                                                     'directory)))
+      (org-remove-latex-fragment-image-overlays)
+      (org-format-latex weechat-latex-temp-file-prefix
+                        weechat-latex-temp-dir
+                        'overlays
+                        "Creating images...%s"
+                        nil 'forbuffer
+                        weechat-latex-image-program))))
 
 (defun weechat-latex-remove ()
   "Remove LaTeX preview images."
