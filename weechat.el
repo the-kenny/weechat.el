@@ -594,7 +594,8 @@ and port number respectively."
              (when (bufferp (gethash :emacs/buffer v))
                (with-current-buffer (gethash :emacs/buffer v)
                  (weechat-print-line k
-                                     :prefix "!!!" "Lost connection to relay server"
+                                     :prefix "!!!"
+                                     :text "Lost connection to relay server"
                                      :date (current-time)
                                      :line-type :irc/x-error))))
            weechat--buffer-hashes)
