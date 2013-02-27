@@ -401,7 +401,7 @@ returns a string, or nil.")
       (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (when (buffer-live-p emacs-buffer)
       ;; Add text about quitting etc. bla
-      (weechat-print-line buffer-ptr "" "Buffer closed")
+      (weechat-print-line buffer-ptr :prefix "Buffer closed")
       ;; Close buffer if user wants this
       (when weechat-auto-close-buffers
         (kill-buffer emacs-buffer)))
@@ -593,8 +593,10 @@ and port number respectively."
   (maphash (lambda (k v)
              (when (bufferp (gethash :emacs/buffer v))
                (with-current-buffer (gethash :emacs/buffer v)
-                 (weechat-print-line k "!!!" "Lost connection to relay server"
-                                     (current-time) :irc/x-error))))
+                 (weechat-print-line k
+                                     :prefix "!!!" "Lost connection to relay server"
+                                     :date (current-time)
+                                     :line-type :irc/x-error))))
            weechat--buffer-hashes)
   (weechat-notify :disconnect
                   :date (current-time)))
@@ -1087,7 +1089,7 @@ Must be called with `weechat-narrow-to-line' active."
   "Return the date of the line under point."
   (get-text-property (point) 'weechat-date))
 
-(defun weechat-print-line (buffer-ptr prefix text &optional date line-type highlight invisible)
+(cl-defun weechat-print-line (buffer-ptr &key prefix text date line-type highlight invisible)
   (setq text   (or text ""))
   (setq prefix (or prefix ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -1180,7 +1182,6 @@ Must be called with `weechat-narrow-to-line' active."
 (defun weechat-line-type (line-hdata)
   (let ((tags (cdr (assoc-string "tags_array" line-hdata))))
     (cond
-     ((member "irc_privmsg" tags) :irc/privmsg)
      ((member "irc_join" tags) :irc/join)
      ((member "irc_action" tags) :irc/action)
      ((member "irc_part" tags) :irc/part)
@@ -1190,6 +1191,7 @@ Must be called with `weechat-narrow-to-line' active."
      ((member "irc_topic" tags) :irc/topic)
      ((member "irc_numeric" tags) :irc/numeric)
      ((member "irc_notice" tags) :irc/notice)
+     ((member "irc_privmsg" tags) :irc/privmsg)
      (:irc/unknown))))                     ;fallback
 
 (defun weechat-buffer-type (&optional buffer-ptr)
@@ -1201,14 +1203,6 @@ Must be called with `weechat-narrow-to-line' active."
                            (cdr)) ))
     (when (stringp type)
       (intern (format ":%s" type)))))
-
-(defun weechat-print-irc-action (buffer-ptr sender message date highlight)
-  (let ((weechat-text-column 0))
-    (weechat-print-line buffer-ptr
-                        nil
-                        (concat sender message)
-                        date
-                        highlight)))
 
 (defvar weechat-user-list)
 (defun weechat--user-list-add (nick)
@@ -1270,19 +1264,20 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
         ;; Print the line
         (cl-case line-type
           (:irc/action
-           (weechat-print-irc-action buffer-ptr
-                                     nil
-                                     (concat sender message)
-                                     date
-                                     highlight))
+           (let ((weechat-text-column 0))
+             (weechat-print-line buffer-ptr
+                                 :text (concat sender message)
+                                 :line-type line-type
+                                 :date date
+                                 :highlight highlight)))
           (t
            (weechat-print-line buffer-ptr
-                               sender
-                               message
-                               date
-                               line-type
-                               highlight
-                               invisible))))
+                               :prefix sender
+                               :text message
+                               :date date
+                               :line-type line-type
+                               :highlight highlight
+                               :invisible invisible))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
