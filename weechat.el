@@ -1306,8 +1306,11 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                             (:server nil) ;never highlight server buffers
                             (t highlight)))
                (type (cl-case buftype
-                       (:private (unless (string-equal (weechat-get-local-var "nick")
-                                                       nick)
+                       (:private (unless (string-equal
+                                          (weechat-get-local-var
+                                           "nick"
+                                           buffer-ptr)
+                                          nick)
                                    :query))
                        (:channel :highlight))))
           (when (and (not weechat-inhibit-notifications)
