@@ -28,6 +28,7 @@
 
 ;;; Code:
 
+(require 'weechat)
 (require 'org)
 
 (defgroup weechat-latex nil
@@ -78,6 +79,18 @@ See `org-latex-create-formula-image-program'"
   (interactive)
   (let ((inhibit-read-only t))
     (org-remove-latex-fragment-image-overlays)))
+
+(easy-menu-add-item weechat-mode-menu nil
+                    ["Remove LaTeX" weechat-latex-remove t]
+                    "Toggle Hidden Lines")
+(easy-menu-add-item weechat-mode-menu nil
+                    ["Preview LaTeX" weechat-latex-preview t]
+                    "Toggle Hidden Lines")
+
+(defun weechat-latex-unload-function ()
+  "Cleanup WeeChat LaTex module."
+  (easy-menu-remove-item weechat-mode-menu nil "Remove LaTeX")
+  (easy-menu-remove-item weechat-mode-menu nil "Preview LaTeX"))
 
 (provide 'weechat-latex)
 
