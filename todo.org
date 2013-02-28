@@ -79,9 +79,8 @@ org-ruby). Please use the 'Raw' link on the right.
    Without lexical-let:
    - Pass symbols around: `make-symbol', `symbol-value'
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
-** TODO Insert result of S-Expression like erc-show
-   See http://www.emacswiki.org/emacs/ErcShow
 ** TODO Imenu support
+   See http://www.emacswiki.org/emacs/ErcImenu
 ** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
