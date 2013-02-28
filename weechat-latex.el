@@ -108,21 +108,58 @@ POINT to replace.  If AT is nil replace statements everywhere."
   (let ((inhibit-read-only t))
     (org-remove-latex-fragment-image-overlays)))
 
+(defun weechat-latex-is-active? ()
+  "Are LaTeX Previews currently displayed?"
+  org-latex-fragment-image-overlays)
+
 (defun weechat-latex-toggle ()
   "Toggle display of LaTeX preview."
   (interactive)
-  (if org-latex-fragment-image-overlays
+  (if (weechat-latex-is-active?)
       (weechat-latex-remove)
     (weechat-latex-preview)))
 
+;;; auto mode
+
+(defun weechat-latex--auto-hook ()
+  "Hook for auto LaTeX preview."
+  (message "It's on!")
+  (weechat-latex-preview-region (point-min) (point-max)))
+
+(defun weechat-latex-is-auto-active? ()
+  "Is auto LaTeX preview active?"
+  (memq #'weechat-latex--auto-hook weechat-insert-modify-hook))
+
+(define-minor-mode weechat-latex-auto
+  "Automatically display LaTeX preview."
+  :lighter "LaTeXPreview"
+  :group 'weechat-latex
+  (if weechat-latex-auto
+      (add-hook 'weechat-insert-modify-hook #'weechat-latex--auto-hook)
+     (remove-hook 'weechat-insert-modify-hook #'weechat-latex--auto-hook)))
+
+;;; module
+
 (easy-menu-add-item weechat-mode-menu nil
-                    ["Toggle LaTeX Preview" weechat-latex-toggle t]
+                    ["LaTeX Preview" weechat-latex-toggle
+                     :style toggle
+                     :selected (weechat-latex-is-active?)
+                     :help "If selected show LaTeX preview for existing buffer."]
+                    "Toggle Hidden Lines")
+
+(easy-menu-add-item weechat-mode-menu nil
+                    ["LaTeX Auto Preview" weechat-latex-auto
+                     :style toggle
+                     :selected (weechat-latex-is-auto-active?)
+                     :help "If selected automatically show LaTeX preview for new messages."]
                     "Toggle Hidden Lines")
 
 (defun weechat-latex-unload-function ()
   "Cleanup WeeChat LaTex module."
+  (weechat-latex-auto -1)
   (weechat-latex-remove)
-  (easy-menu-remove-item weechat-mode-menu nil "Toggle LaTeX Preview"))
+  (easy-menu-remove-item weechat-mode-menu nil "LaTeX Preview")
+  (easy-menu-remove-item weechat-mode-menu nil "LaTeX Auto Preview"))
 
 (provide 'weechat-latex)
 
