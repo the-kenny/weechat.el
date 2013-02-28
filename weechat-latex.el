@@ -58,21 +58,49 @@ See `org-latex-create-formula-image-program'"
 (defvar weechat-latex-temp-dir nil
   "The temporary directory used for preview images.")
 
+(defun weechat-latex--create-preview (at)
+  "Wrapper for `org-format-latex'.
+The parameter AT should be nil or in (TYPE . POINT) format.  With TYPE being a
+string showing the matched LaTeX statement (e.g., ``$'') and POINT being the
+POINT to replace.  If AT is nil replace statements everywhere."
+  (org-format-latex weechat-latex-temp-file-prefix
+                    weechat-latex-temp-dir
+                    'overlays
+                    "Creating images...%s"
+                    at 'forbuffer
+                    weechat-latex-image-program))
+
+(defun weechat-latex--set-temp-dir ()
+  "Set `weechat-latex-temp-dir' unless it is already set."
+  (unless weechat-latex-temp-dir
+    (setq weechat-latex-temp-dir
+          (make-temp-file weechat-latex-temp-directory-prefix
+                          'directory))))
+
 (defun weechat-latex-preview ()
   "Preview LaTeX fragments."
   (interactive)
   (save-excursion
     (let ((inhibit-read-only t))
-      (unless weechat-latex-temp-dir
-        (setq weechat-latex-temp-dir (make-temp-file weechat-latex-temp-directory-prefix
-                                                     'directory)))
+      (weechat-latex--set-temp-dir)
       (org-remove-latex-fragment-image-overlays)
-      (org-format-latex weechat-latex-temp-file-prefix
-                        weechat-latex-temp-dir
-                        'overlays
-                        "Creating images...%s"
-                        nil 'forbuffer
-                        weechat-latex-image-program))))
+      (weechat-latex--create-preview nil))))
+
+(defun weechat-latex-preview-region (beg end)
+  "Preview LaTeX fragments in region."
+  (interactive "r")
+  (let* ((math-regex (assoc "$" org-latex-regexps))
+         (regex (nth 1 math-regex))
+         (n (nth 2 math-regex))
+         matches)
+    (save-excursion
+      (goto-char beg)
+      (while (re-search-forward regex end t)
+        (setq matches (cons (cons "$" (match-beginning n)) matches)))
+      (let ((inhibit-read-only t))
+        (weechat-latex--set-temp-dir)
+        (dolist (i matches)
+          (weechat-latex--create-preview i))))))
 
 (defun weechat-latex-remove ()
   "Remove LaTeX preview images."
