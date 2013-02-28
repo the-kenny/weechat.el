@@ -81,6 +81,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Insert result of S-Expression like erc-show
    See http://www.emacswiki.org/emacs/ErcShow
+** TODO Imenu support
 ** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
