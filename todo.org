@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* Short-Term [16/21]
+* Short-Term [16/22]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -37,6 +37,7 @@ org-ruby). Please use the 'Raw' link on the right.
    - [ ] CTCP
    - [ ] WHOIS
 ** TODO Check performance with >1000 lines and nick-buttons enabled
+** TODO Request more backlog when scrolling / via shortcut
 ** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
 *** DONE marmalade
@@ -59,7 +60,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [6/20]
+* Nice to have [6/22]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** TODO Speedbar integration
@@ -77,6 +78,9 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Re-Implement scrambling of passwords in lambdas
    Without lexical-let:
    - Pass symbols around: `make-symbol', `symbol-value'
+** TODO Custom commands (defun weechat-cmd-NAME ...)
+** TODO Insert result of S-Expression like erc-show
+   See http://www.emacswiki.org/emacs/ErcShow
 ** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
