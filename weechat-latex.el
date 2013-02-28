@@ -80,18 +80,21 @@ See `org-latex-create-formula-image-program'"
   (let ((inhibit-read-only t))
     (org-remove-latex-fragment-image-overlays)))
 
+(defun weechat-latex-toggle ()
+  "Toggle display of LaTeX preview."
+  (interactive)
+  (if org-latex-fragment-image-overlays
+      (weechat-latex-remove)
+    (weechat-latex-preview)))
+
 (easy-menu-add-item weechat-mode-menu nil
-                    ["Remove LaTeX" weechat-latex-remove t]
-                    "Toggle Hidden Lines")
-(easy-menu-add-item weechat-mode-menu nil
-                    ["Preview LaTeX" weechat-latex-preview t]
+                    ["Toggle LaTeX Preview" weechat-latex-toggle t]
                     "Toggle Hidden Lines")
 
 (defun weechat-latex-unload-function ()
   "Cleanup WeeChat LaTex module."
   (weechat-latex-remove)
-  (easy-menu-remove-item weechat-mode-menu nil "Remove LaTeX")
-  (easy-menu-remove-item weechat-mode-menu nil "Preview LaTeX"))
+  (easy-menu-remove-item weechat-mode-menu nil "Toggle LaTeX Preview"))
 
 (provide 'weechat-latex)
 
