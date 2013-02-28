@@ -142,12 +142,20 @@ POINT to replace.  If AT is nil replace statements everywhere."
   :type 'string
   :group 'weechat-latex)
 
+(defcustom weechat-latex-auto-mode-preview-all t
+  "Show preview for existing LaTeX fragmetns if auto mode is activated?"
+  :type 'boolean
+  :group 'weechat-latex)
+
 (define-minor-mode weechat-latex-auto-mode
   "Automatically display LaTeX preview."
   :lighter weechat-latex-auto-mode-line-string
   :group 'weechat-latex
   (if weechat-latex-auto-mode
-      (add-hook 'weechat-insert-modify-hook #'weechat-latex--do-auto-mode)
+      (progn
+        (when weechat-latex-auto-mode-preview-all
+          (weechat-latex-preview))
+        (add-hook 'weechat-insert-modify-hook #'weechat-latex--do-auto-mode))
     (remove-hook 'weechat-insert-modify-hook #'weechat-latex--do-auto-mode)))
 
 ;;; module
