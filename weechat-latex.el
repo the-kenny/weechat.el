@@ -130,7 +130,6 @@ POINT to replace.  If AT is nil replace statements everywhere."
 
 (defun weechat-latex--auto-hook ()
   "Hook for auto LaTeX preview."
-  (message "It's on!")
   (weechat-latex-preview-region (point-min) (point-max)))
 
 (defun weechat-latex-is-auto-active? ()
