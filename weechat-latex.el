@@ -102,6 +102,13 @@ POINT to replace.  If AT is nil replace statements everywhere."
         (dolist (i matches)
           (weechat-latex--create-preview i))))))
 
+(defun weechat-latex-preview-line ()
+  "Preview LaTeX fragments in line."
+  (interactive)
+  (weechat-latex-preview-region (point-at-bol)
+                                (min (point-at-eol)
+                                     weechat-prompt-start-marker)))
+
 (defun weechat-latex-remove ()
   "Remove LaTeX preview images."
   (interactive)
