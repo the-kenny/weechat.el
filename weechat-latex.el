@@ -102,6 +102,7 @@ POINT to replace.  If AT is nil replace statements everywhere."
         (dolist (i matches)
           (weechat-latex--create-preview i))))))
 
+(defvar weechat-prompt-start-marker) ;; See weechat.el
 (defun weechat-latex-preview-line ()
   "Preview LaTeX fragments in line."
   (interactive)
@@ -128,21 +129,26 @@ POINT to replace.  If AT is nil replace statements everywhere."
 
 ;;; auto mode
 
-(defun weechat-latex--auto-hook ()
+(defun weechat-latex--do-auto-mode ()
   "Hook for auto LaTeX preview."
   (weechat-latex-preview-region (point-min) (point-max)))
 
-(defun weechat-latex-is-auto-active? ()
+(defun weechat-latex-is-auto-mode-active? ()
   "Is auto LaTeX preview active?"
-  (memq #'weechat-latex--auto-hook weechat-insert-modify-hook))
+  (memq #'weechat-latex--do-auto-mode weechat-insert-modify-hook))
 
-(define-minor-mode weechat-latex-auto
+(defcustom weechat-latex-auto-mode-line-string " LaTeX-Preview"
+  "String displayed in mode line when `weechat-latex-auto-mode' is active."
+  :type 'string
+  :group 'weechat-latex)
+
+(define-minor-mode weechat-latex-auto-mode
   "Automatically display LaTeX preview."
-  :lighter "LaTeXPreview"
+  :lighter weechat-latex-auto-mode-line-string
   :group 'weechat-latex
-  (if weechat-latex-auto
-      (add-hook 'weechat-insert-modify-hook #'weechat-latex--auto-hook)
-     (remove-hook 'weechat-insert-modify-hook #'weechat-latex--auto-hook)))
+  (if weechat-latex-auto-mode
+      (add-hook 'weechat-insert-modify-hook #'weechat-latex--do-auto-mode)
+    (remove-hook 'weechat-insert-modify-hook #'weechat-latex--do-auto-mode)))
 
 ;;; module
 
@@ -154,15 +160,15 @@ POINT to replace.  If AT is nil replace statements everywhere."
                     "Toggle Hidden Lines")
 
 (easy-menu-add-item weechat-mode-menu nil
-                    ["LaTeX Auto Preview" weechat-latex-auto
+                    ["LaTeX Auto Preview" weechat-latex-auto-mode
                      :style toggle
-                     :selected (weechat-latex-is-auto-active?)
+                     :selected (weechat-latex-is-auto-mode-active?)
                      :help "If selected automatically show LaTeX preview for new messages."]
                     "Toggle Hidden Lines")
 
 (defun weechat-latex-unload-function ()
   "Cleanup WeeChat LaTex module."
-  (weechat-latex-auto -1)
+  (weechat-latex-auto-mode -1)
   (weechat-latex-remove)
   (easy-menu-remove-item weechat-mode-menu nil "LaTeX Preview")
   (easy-menu-remove-item weechat-mode-menu nil "LaTeX Auto Preview"))
