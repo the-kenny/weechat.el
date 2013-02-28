@@ -622,17 +622,30 @@ and port number respectively."
      weechat--buffer-hashes)
     ret))
 
-(defun weechat-channel-names (&optional arg)
+(defun weechat--channel-names-pred (l r)
+  "Compare channel name L and R.
+Return non-nil if L < R.  Names of actual channels should come first."
+  (let ((l?  (s-contains? "#" l))
+        (r?  (s-contains? "#" r))
+        (l<r? (string< l r)))
+    (or (and l? l<r?)
+        (and l? (not r?))
+        (and (not r?) l<r?))))
+
+(defun weechat-channel-names (&optional arg sort)
   "Return all available buffer names in WeeChat.
 
-If ARG is non-nil, only return monitored buffers."
+If ARG is non-nil, only return monitored buffers.  If SORT is non-nil then sort
+the channel list with actual channels coming first."
   (let (ret)
     (maphash
      (lambda (k v)
        (when (or (not arg) (buffer-live-p (gethash :emacs/buffer v)))
          (setq ret (cons (weechat-buffer-name k) ret))))
      weechat--buffer-hashes)
-    ret))
+    (if sort
+        (sort ret #'weechat--channel-names-pred)
+      ret)))
 
 (defun weechat-buffer-list ()
   "List all Weechat buffers."
@@ -1575,7 +1588,7 @@ Default is current buffer."
                      (symbol-function 'ido-completing-read))
                 #'completing-read)
             "Channel Name: "
-            (weechat-channel-names only-monitored))))
+            (weechat-channel-names only-monitored 'sort))))
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   "Start monitoring BUFFER-PTR.
