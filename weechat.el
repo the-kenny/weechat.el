@@ -1423,13 +1423,13 @@ is given (\\[universal-argument])."
    ((>= (point) weechat-prompt-end-marker)
     ;; Submit
     (let ((input (weechat-get-input)))
-      (unless (string= "" input)
+      (unless (s-blank? input)
         (dolist (l (split-string input "\n"))
           (weechat-send-input weechat-buffer-ptr l))
         (weechat-input-ring-insert input)
         (weechat-replace-input ""))))
    ((< (point) weechat-prompt-start-marker)
-    (when (or (string-equal "" (weechat-get-input))
+    (when (or (s-blank? (weechat-get-input))
               weechat-return-always-replace-input)
       ;; Copy current line to input line
       (weechat-replace-input
