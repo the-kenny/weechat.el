@@ -808,13 +808,19 @@ Must be called with `weechat-narrow-to-line' active."
   "Return the nickname of the line under point."
   (get-text-property (point) 'weechat-nick))
 
+(defun weechat-line-text-start ()
+  "Return position where line text (message etc.) starts.
+
+Might return the value of (point-at-eol) when there's no
+text (technically, this shouldn't happen)."
+  (next-single-property-change (point-at-bol)
+                               'weechat-text
+                               nil
+                               (point-at-eol)))
+
 (defun weechat-line-text ()
   (save-excursion
-    (let ((start (next-single-property-change
-                  (point-at-bol)
-                  'weechat-text
-                  nil
-                  (point-at-eol))))
+    (let ((start (weechat-line-text-start)))
       (when (< start (point-at-eol))
         (buffer-substring start (point-at-eol))))))
 
