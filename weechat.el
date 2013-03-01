@@ -852,7 +852,10 @@ Must be called with `weechat-narrow-to-line' active."
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
               ;; trim & handle color codes
-              (let ((text (weechat-handle-color-codes (s-trim text))))
+              (let* ((text (weechat-> text
+                                      (s-trim)
+                                      (weechat-handle-color-codes)
+                                      (propertize 'weechat-text t))))
                 (insert (cond
                          (highlight
                           (propertize text 'face 'weechat-highlight-face))
