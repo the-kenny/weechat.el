@@ -808,6 +808,16 @@ Must be called with `weechat-narrow-to-line' active."
   "Return the nickname of the line under point."
   (get-text-property (point) 'weechat-nick))
 
+(defun weechat-line-text ()
+  (save-excursion
+    (let ((start (next-single-property-change
+                  (point-at-bol)
+                  'weechat-text
+                  nil
+                  (point-at-eol))))
+      (when (< start (point-at-eol))
+        (buffer-substring start (point-at-eol))))))
+
 (cl-defun weechat-print-line (buffer-ptr &key prefix text date line-type highlight invisible nick)
   (setq text   (or text ""))
   (setq prefix (or prefix ""))
