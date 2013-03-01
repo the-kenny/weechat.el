@@ -31,16 +31,11 @@
 
 ;;; Code:
 
+(require 'weechat-core)
 (require 'weechat-relay)
+(require 'weechat-color)
 (require 'cl-lib)
-(require 'rx)
 (require 'format-spec)
-
-(defgroup weechat nil
-  "Weechat based IRC client for Emacs."
-  :link '(url-link "https://github.com/the-kenny/weechat.el")
-  :prefix "weechat-"
-  :group 'applications)
 
 (defcustom weechat-host-default "localhost"
   "Default host for `weechat-connect'."
@@ -161,34 +156,6 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
-(defface weechat-nick-self-face '((t :weight bold :foreground "brown"))
-  "Face for your own nick."
-  :group 'weechat)
-
-(defface weechat-time-face '((t :inherit default))
-  "Weechat face used for timestamps."
-  :group 'weechat)
-
-(defface weechat-prompt-face '((t :inherit minibuffer-prompt))
-  "Weechat face used for the prompt."
-  :group 'weechat)
-
-(defface weechat-highlight-face
-  '((((class grayscale) (background light)) :foreground "LightGray" :weight bold)
-    (((class grayscale) (background dark)) :foreground "DimGray" :weight bold)
-    (((class color) (min-colors 88) (background light)) :foreground "Purple")
-    (((class color) (min-colors 88) (background dark))  :foreground "Cyan1")
-    (((class color) (min-colors 16) (background light)) :foreground "Purple")
-    (((class color) (min-colors 16) (background dark))  :foreground "Cyan")
-    (((class color) (min-colors 8)) :foreground "cyan" :weight bold)
-    (t :weight bold)) ;; Stolen from rcirc.el!
-  "Weechat face for highlighted lines."
-  :group 'weechat)
-
-(defface weechat-error-face '((t :inherit error))
-  "Weechat face used to display errors."
-  :group 'weechat)
-
 (defcustom weechat-text-column 22
   "Column after which text will be inserted.
 If `(length (concat nick timestamp))' is longer than this value,
@@ -206,7 +173,8 @@ text-column will be increased for that line."
   :type '(choice
           (const :tag "Frame width" 'frame-width)
           (integer :tag "Number")
-          (const :tag "Default" t)))
+          (const :tag "Default" t))
+  :group 'weechat)
 
 (defcustom weechat-notification-icon
   (when (boundp 'notifications-application-icon)
@@ -286,9 +254,9 @@ It is called with narrowing in the correct buffer."
 
 Value must be a function with two arguments: Hostname and port.
 The return value must be either a string, a function which
-returns a string, or nil.")
-
-(defvar weechat-debug-strip-formatting nil)
+returns a string, or nil."
+  :type 'function
+  :group 'weechat)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
@@ -299,19 +267,6 @@ returns a string, or nil.")
 
 (defvar weechat-buffer-closed-functions nil
   "Hook ran when a WeeChat buffer closes.")
-
-(defun weechat-warn (message &rest args)
-  "Displays MESSAGE with `warn' and logs it to
-  `weechat-relay-log-buffer-name'"
-  (let ((str (apply 'format message args)))
-    (weechat-relay-log str :warn)
-    (display-warning 'weechat str)))
-
-(defun weechat-message (format-string &rest args)
-  "Logs MESSAGE with log-level :info and calls `message'"
-  (let ((text (apply 'format format-string args)))
-    (weechat-relay-log text :info)
-    (message text)))
 
 (defun weechat-load-modules-maybe ()
   "Load all modules listed in `weechat-modules'"
@@ -490,7 +445,7 @@ returns a string, or nil.")
 (defun weechat-password-auth-source-callback (host port)
   "Get password for HOST and PORT via `auth-source-search'.
 Returns either a string or a function.  See Info node `(auth) Top' for details."
-  (when (featurep 'auth-source)
+  (when (fboundp 'auth-source-search)
     (weechat-message "Using auth-source to retrieve weechat relay password")
     (plist-get
      (car (auth-source-search
@@ -709,264 +664,6 @@ Used to identify it on the relay server.")
                                    'rear-nonsticky t
                                    'front-sticky t))))))
 
-(defvar weechat-formatting-regex
-  (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
-         (std  `(= 2 digit))
-         (astd `(seq ,attr (= 2 digit)))
-         (ext  `(seq "@" (= 5 digit)))
-         (aext `(seq "@" ,attr (= 5 digit))))
-    (rx-form
-     `(or (seq ""
-               (or ,std
-                   ,ext
-                   (seq "F" (or ,std ,astd ,ext ,aext))
-                   (seq "B" (or ,std ,ext))
-                   (seq "*" (or ,std
-                                ,astd
-                                ,ext
-                                ,aext
-                                (seq (or ,std ,astd ,ext ,aext)
-                                     ","
-                                     (or ,std ,astd ,ext ,aext))))
-                   (seq "b" (in "FDB_-#il"))
-                   ""))
-          (seq "" ,attr)
-          (seq "" ,attr)
-          ""))))
-
-(defun weechat-strip-formatting (string)
-  "Strip weechat color codes from STRING."
-  (if (stringp string)
-      (replace-regexp-in-string weechat-formatting-regex "" string)
-    string))
-
-(defcustom weechat-color-list '(unspecified "black" "dark gray" "dark red" "red"
-                                            "dark green" "light green" "brown"
-                                            "yellow" "dark blue" "light blue"
-                                            "dark magenta" "magenta" "dark cyan"
-                                            "light cyan" "gray" "white")
-  "Mapping of Weechat colors.
-
-Do NOT remove or add new elements to the list.  Only change the values.
-See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
-  :type '(repeat (choice (const :tag "Unspecified" unspecified)
-                         (const :tag "Color" color)))
-  :group 'weechat)
-
-(defvar weechat-color-attributes-alist '((?* . (:weight  bold))    ; bold
-                                         (?! . (:inverse-video t)) ; reverse??
-                                         (?/ . (:slant  italic))   ; italic
-                                         (?_ . (:underline t))     ; underline
-                                         (?| . keep))              ; keep
-  "Map color attribute specifiers to Emacs face property.")
-
-(defun weechat--match-color-code (what str i)
-  "Match std, ext, attr WHAT on STR at position I.
-This is internal and used by `weechat-handle-color-codes'."
-  (when (symbolp what)
-    (cl-case what
-      ((std)
-       (let ((std (substring str i (+ i 2))))
-         (when (s-matches? "^[0-9]+$" std)
-           (list 'std (+ i 2) (string-to-number std)))))
-      ((ext)
-       (when (= (aref str i) ?@)
-         (let ((std (substring str (1+ i) (+ i 6))))
-           (when (s-matches? "^[0-9]+$" std)
-             (list 'ext (+ i 6) (string-to-number std))))))
-      ((attr)
-       (let* ((a (aref str i))
-              (x (cdr (assq a weechat-color-attributes-alist))))
-         (when x
-           (list 'attr (1+ i) x))))
-      (t (error "Unknown parameter %s" what)))))
-
-(defun weechat--color-keep-attributes (old-face)
-  "Remove color settings from OLD-FACE but keep the attributes."
-  (cl-delete-if (lambda (x)
-                  (memq (car x) '(:foreground :background)))
-                old-face))
-
-(defun weechat--color-handle-F (str i old-face)
-  "Handle ?F (A)STD|(A)EXT color code in STR at I with OLD-FACE.
-This is an internal function of `weechat-handle-color-codes'."
-  (let (match-data
-        face
-        (j (1+ i)))
-    (while (setq match-data (weechat--match-color-code 'attr str j)) ;; (A)
-      (if (eq (cl-third match-data) 'keep)
-          (setq face (weechat--color-keep-attributes old-face))
-        (setq face (append (list (cl-third match-data)) face)))
-      (setq j (cl-second match-data)))
-    (setq match-data (weechat--match-color-code 'std str j))
-    (if match-data
-        (setq face (append (list (list :foreground (nth (cl-third match-data)
-                                                        weechat-color-list)))
-                           face)) ;; TODO set attribute instead of simply append
-      (setq match-data (weechat--match-color-code 'ext str j))
-      (if match-data
-          t ;; TODO ext
-        (weechat-relay-log (format "Broken color code (in ?F '%s' %s)" str i)
-                           :warn)))
-    (if match-data
-        (cl-values (cl-second match-data)
-                   face)
-      (cl-values j face))))
-
-(defvar weechat-color-options-list
-  '(("weechat.color.separator" . "blue") ;; KEEP THE ORDER!
-    ("weechat.color.chat" . default)
-    ("weechat.color.chat_time" . weechat-time-face)
-    ("weechat.color.chat_time_delimiters" . weechat-time-face)
-    ("weechat.color.chat_prefix_error" . "yellow")
-    ("weechat.color.chat_prefix_network" . "magenta")
-    ("weechat.color.chat_prefix_action" . "white")
-    ("weechat.color.chat_prefix_join" . "light green")
-    ("weechat.color.chat_prefix_quit" . "light red")
-    ("weechat.color.chat_prefix_more" . "light magenta")
-    ("weechat.color.chat_prefix_suffix" . "green")
-    ("weechat.color.chat_buffer" . "white")
-    ("weechat.color.chat_server" . "brown")
-    ("weechat.color.chat_channel" . "white")
-    ("weechat.color.chat_nick" . "light cyan")
-    ("weechat.color.chat_nick_self" . weechat-nick-self-face)
-    ("weechat.color.chat_nick_other" . "cyan")
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    ("weechat.color.chat_host" . "cyan")
-    ("weechat.color.chat_delimiters" . "green")
-    ("weechat.color.chat_highlight" . weechat-highlight-face)
-    ("weechat.color.chat_read_marker" . "magenta")
-    ("weechat.color.chat_text_found" . "yellow")
-    ("weechat.color.chat_value" . "cyan")
-    ("weechat.color.chat_prefix_buffer")
-    ("weechat.color.chat_tags" . "red")
-    ("weechat.color.chat_inactive_window" . "dark grey")
-    ("weechat.color.chat_inactive_buffer" . "dark grey")
-    ("weechat.color.chat_prefix_buffer_inactive_buffer" . "dark grey")
-    ("weechat.color.chat_nick_offline" . "dark grey")
-    ("weechat.color.chat_nick_offline_highlight" . default))
-  "List of color options for \x19XX.")
-;; TODO every option here should probably be a face!
-
-(defun weechat--color-std-to-theme (num)
-  "Turn color code in NUM using option into face."
-  (if (or (not (integerp num))
-          (> num (length weechat-color-options-list)))
-      'default
-    (let ((face (cdr (nth num weechat-color-options-list))))
-      (if (stringp face) ;; color value
-          (list (list :foreground face ))
-        face))))
-
-(defun weechat-handle-color-codes (str)
-  "Convert the Weechat color codes in STR to properties.
-EXT colors are currently not supported.  Any color codes left are stripped.
-
-Be aware that Weechat does not use mIRC color codes.
-See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
-  (let ((i 0)
-        face
-        (ret "")
-        (len (length str)))
-    (while (< i len)
-      (cl-case (aref str i)
-        ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
-         (let ((old-face face)
-               (next (aref str (1+ i))))
-           (setq face nil)
-           (setq i (1+ i))
-           (cond
-            ((and (<= ?0 next) (<= next ?9)) ;; STD
-             (let ((match-data (weechat--match-color-code 'std str i)))
-               (when match-data
-                 (setq face (weechat--color-std-to-theme (cl-third match-data)))
-                 (setq i (cl-second match-data)))))
-            ((= next ?@) ;; EXT
-             (let ((match-data (weechat--match-color-code 'ext str i)))
-               (when match-data
-                 ;; TODO
-                 (setq i (cl-second match-data)))))
-            ((= next ?F) ;; ?F(A)STD|?F(A)EXT
-             (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face)))
-            ((= next ?B) ;; ?BSTD|?BEXT
-             (let ((match-data (weechat--match-color-code 'std str i)))
-               (if match-data
-                   (setq face (list (list :background (nth (cl-third match-data)
-                                                           weechat-color-list))))
-                 (setq match-data (weechat--match-color-code 'ext str i))
-                 (if match-data
-                     t ;; TODO ext
-                   (weechat-relay-log (format "Broken color code (in ?B '%s' %s)" str i)
-                                      :warn)))
-               (setq i (if match-data
-                           (cl-second match-data)
-                         (1+ i)))))
-            ((= next ?*) ;; (A)STD | (A)EXT | (A)STD ?, (A)STD | ...
-             (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face))
-             (if (= (aref str i) ?,)
-                 (let* ((i (1+ i))
-                        (match-data (weechat--match-color-code 'std str i)))
-                   (if match-data
-                       (setq face (append (list (list :background (nth (cl-third match-data)
-                                                                       weechat-color-list)))
-                                          face))
-                     (setq match-data (weechat--match-color-code 'ext str i))
-                     (if match-data
-                         t ;; TODO ext
-                       (weechat-relay-log (format "Broken color code (in ?* '%s' %s)" str i)
-                                          :warn)))
-                   (setq i (if match-data
-                               (cl-second match-data)
-                             (1+ i))))))
-            ((= next ?b) 'b) ;; ignore for now
-            ((= next ?\x1C)  ;; Clear color, leave attributes
-             (setq face (weechat--color-keep-attributes old-face))))))
-
-        ((?\x1A) ;; Set ATTR
-         (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
-           (if (not match-data)
-               (progn
-                 (weechat-relay-log (format "Broken color code (in ?\\x1A '%s' %s)" str i)
-                                    :warn)
-                 (setq i (1+ i)))
-             (if (eq (cl-third match-data) 'keep)
-                 (setq face (weechat--color-keep-attributes face))
-               (setq face (list (cl-third match-data))))
-             (setq i (cl-second match-data)))))
-
-        ((?\x1B) ;; Delete ATTR
-         (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
-               (old-face (copy-sequence face)))
-           (if (not match-data)
-               (progn
-                 (weechat-relay-log (format "Broken color code (in ?\\x1B '%s' %s)" str i)
-                                    :warn)
-                 (setq i (1+ i)))
-             (if (eq (cl-third match-data) 'keep)
-                 (setq face nil) ;; TODO Does keep here means delete all or keep all?
-               (setq face (delq (cl-third match-data) old-face)))
-             (setq i (cl-second match-data)))))
-
-        ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
-
-      (let ((r (string-match-p "\\(\x19\\|\x1A\\|\x1B\\|\x1C\\)" str i)))
-        (if r
-            (setq ret (concat ret
-                              (propertize  (substring str i r) 'face (or face 'default)))
-                  i r)
-          (setq ret (concat ret (propertize (substring str i) 'face (or face 'default)))
-                i len)))) ;; STOP
-    ret))
-
 (defvar weechat--last-notification-id nil
   "Last notification id parameter for :replaces-id.")
 
@@ -1045,7 +742,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
             (delete-region (point-min) (point))))))))
 
 (defun weechat-line-add-properties (nick date highlight invisible)
-  "Adds various text properties (read-only, etc.) to a line.
+  "Add various text properties (read-only, etc.) to a line.
 
 Must be called with `weechat-narrow-to-line' active."
   ;; Add `date' and `highlighted' to the whole line
@@ -1270,7 +967,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
       (setq highlight (= 1 highlight))
       (when (bufferp (weechat--emacs-buffer buffer-ptr))
         (with-current-buffer buffer
-          (when weechat-debug-strip-formatting
+          (when weechat-strip-formatting
             (setq prefix (weechat-strip-formatting prefix))
             (setq message (weechat-strip-formatting message)))
 

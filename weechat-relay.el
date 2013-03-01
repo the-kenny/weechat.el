@@ -24,41 +24,46 @@
 ;;; Commentary:
 ;;
 
-(require 'cl-lib)
+(require 'weechat-core)
+
 (require 'bindat)
+(require 'format-spec)
 (require 's)
 (require 'pp)
 
-(defvar weechat-relay-buffer-name "*weechat-relay*"
-  "Buffer holding the connection to the host weechat instance.")
+(defcustom weechat-relay-buffer-name "*weechat-relay*"
+  "Buffer holding the connection to the host weechat instance."
+  :type 'string
+  :group 'weechat-relay)
 
-(defvar weechat-relay-log-buffer-name "*weechat-relay-log*"
-  "Buffer name to use as debug log.
-Set to nil to disable logging.")
-
-(defvar weechat-relay-log-level :info
-  "Minimum log level.
-Might be one of :debug, :info, :warn, :error or nil")
-
-(defvar weechat-relay-message-function nil
-  "Function to call when receiving a new weechat message.")
+(defcustom weechat-relay-message-function nil
+  "Function to call when receiving a new weechat message."
+  :type '(choice (const :tag "Off" nil)
+                 (function :tag "Callback Function"))
+  :group 'weechat-relay)
 
 (defvar weechat-relay-ignored-message-ids '("_nicklist")
   "IDs to ignore.")
 
-(defvar weechat-relay-disconnect-hook ()
-  "Hook run when the relay disconnects.")
+(defcustom weechat-relay-disconnect-hook nil
+  "Hook run when the relay disconnects."
+  :type 'hook
+  :group 'weechat-relay)
 
-(defvar weechat-relay-connect-hook ()
+(defcustom weechat-relay-connect-hook nil
   "Hook run when the relay connects.
-Note: This DOESN'T mean the client can is already authenticated
-to the relay server.")
+Note: This DOES NOT mean the client can is already authenticated
+to the relay server."
+  :type 'hook
+  :group 'weechat-relay)
 
-(defvar weechat-relay-ssl-check-signatures t
+(defcustom weechat-relay-ssl-check-signatures t
   "Wether weechat-relay should check ssl certificate signatures.
 
 A value of nil will have strong security implications and enables
-man-in-the-middle attacks on your connection.")
+man-in-the-middle attacks on your connection."
+  :type 'boolean
+  :group 'weechat-relay)
 
 ;;; Code:
 
@@ -66,28 +71,6 @@ man-in-the-middle attacks on your connection.")
   "Alist mapping from ids to functions.
 Incoming message-ids will be searched in this alist and the
 corresponding function will be called.")
-
-(defun weechat-relay-log (text &optional level)
-  "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled.
-`LEVEL' might be one of :debug :info :warn :error.  Defaults
-to :info"
-  (let ((log-level-alist '((:debug . 0)
-                           (:info  . 1)
-                           (:warn  . 2)
-                           (:error . 3))))
-    (when (and (>= (assoc-default (or level :info) log-level-alist)
-                   (assoc-default weechat-relay-log-level log-level-alist))
-               weechat-relay-log-level
-               weechat-relay-log-buffer-name)
-      (with-current-buffer (get-buffer-create weechat-relay-log-buffer-name)
-        (let ((old-point (point)))
-          (save-excursion
-            (save-restriction
-              (widen)
-              (goto-char (point-max))
-              (insert (s-trim text))
-              (newline)))
-          (goto-char old-point))))))
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message TEXT with optional ID.
