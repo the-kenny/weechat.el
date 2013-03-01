@@ -36,6 +36,7 @@
 (require 'weechat-color)
 (require 'cl-lib)
 (require 'format-spec)
+(require 's)
 
 (defcustom weechat-host-default "localhost"
   "Default host for `weechat-connect'."

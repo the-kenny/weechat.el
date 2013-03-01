@@ -28,6 +28,7 @@
 
 (require 'weechat)
 (require 'flyspell)
+(require 's)
 
 (defgroup weechat-spelling nil
   "FlySpell support for WeeChat."

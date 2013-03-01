@@ -31,6 +31,7 @@
 
 (require 'weechat-core)
 (require 'rx)
+(require 's)
 
 (defgroup weechat-faces nil
   "WeeChat Faces and Color settings"

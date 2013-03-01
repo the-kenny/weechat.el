@@ -34,6 +34,7 @@
 
 (require 'weechat)
 (require 'pcomplete)
+(require 's)
 
 (defvar weechat-user-list)
 (defvar weechat-prompt-end-marker)

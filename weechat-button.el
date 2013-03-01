@@ -31,6 +31,7 @@
 
 (require 'weechat)
 (require 'button)
+(require 's)
 
 ;;; Customize
 

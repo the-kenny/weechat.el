@@ -30,6 +30,7 @@
 (require 'format-spec)
 (require 's)
 (require 'pp)
+(require 'cl-lib)
 
 (defcustom weechat-relay-buffer-name "*weechat-relay*"
   "Buffer holding the connection to the host weechat instance."
