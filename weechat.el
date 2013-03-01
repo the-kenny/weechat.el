@@ -853,11 +853,12 @@ Must be called with `weechat-narrow-to-line' active."
                   (text-start (point)))
               ;; trim & handle color codes
               (let ((text (weechat-handle-color-codes (s-trim text))))
-                (insert (if highlight
-                            (propertize text 'face 'weechat-highlight-face)
-                          (if (eq line-type :irc/x-error)
-                              (propertize text 'face 'weechat-error-face)
-                            text))
+                (insert (cond
+                         (highlight
+                          (propertize text 'face 'weechat-highlight-face))
+                         ((eq line-type :irc/x-error)
+                          (propertize text 'face 'weechat-error-face))
+                         (t text))
                         "\n"))
 
               (when weechat-fill-text
