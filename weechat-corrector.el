@@ -1,0 +1,114 @@
+;;; weechat-corrector.el --- Fix your messages using s/foo/bar/ syntax
+
+;; Copyright (C) 2013 Moritz Ulrich <moritz@tarn-vedra.de>
+
+;; Author: Moritz Ulrich <moritz@tarn-vedra.de>
+;;         Rüdiger Sonderfeld <ruediger@c-plusplus.de>
+;;         Aristid Breitkreuz <aristidb@gmail.com>
+;; Keywords: irc chat network weechat
+;; URL: https://github.com/the-kenny/weechat.el
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
+;;
+;; This module implements support to fix your own messages via the
+;; s/foo/bar/ syntax.
+
+
+;;; Code:
+
+(require 'weechat)
+(require 's)
+
+(defcustom weechat-corrector-search-limit 5
+  "How many previous lines to check for corrections."
+  :type 'integer
+  :group 'weechat)
+
+(defcustom weechat-corrector-replace-limit 1
+  "Limit to N replacements."
+  :type 'integer
+  :group 'weechat)
+
+(defcustom weechat-corrector-correct-other nil
+  "Wether to apply corrections by other people.
+
+Warning: Setting this to t MIGHT be a security problem as
+untrusted regular expression will be interpreted by
+`re-search-forward'."
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-corrector-support-plain-parentheses nil
+  "If t, s/a(.)c/\1/ will replace 'abc' with 'b'.
+
+If false, parentheses must be quotedL s/a\(.\)c/\1/.")
+
+(defface weechat-corrector-regex-face '((t :inherit default))
+  "Face used to highlight matched regular expressions.")
+
+(defface weechat-corrector-corrected-face '((t :inherit default))
+  "Face used to highlight corrected text.")
+
+(defun weechat-corrector-quote-parentheses (re)
+  (if weechat-corrector-support-plain-parentheses
+      (weechat->>
+       re
+       (s-replace "(" "\\(")
+       (s-replace ")" "\\)"))
+    re))
+
+(defvar weechat-corrector-regex "s/\\(.+\\)/\\(.*\\)/")
+(defun weechat-corrector-apply ()
+  (let ((nick (weechat-line-nick)))
+    (when (or weechat-corrector-correct-other
+              (string-equal (weechat-line-nick)
+                            (weechat-get-local-var "nick")))
+      (let* ((line (weechat-line-text))
+             (text-start (weechat-line-text-start))
+             (match (s-match weechat-corrector-regex line)))
+        (when (>= (length match) 3)
+          ;; Add `weechat-corrector-regex-face'
+          (add-text-properties (+ text-start (match-beginning 0))
+                               (+ text-start (match-end 0))
+                               '(face weechat-corrector-regex-face))
+          (let ((re (weechat-corrector-quote-parentheses
+                     (cadr match)))
+                (rp (caddr match)))
+            (save-excursion
+              (save-restriction
+                (widen)
+                (goto-char (point-at-bol))
+                (let ((count 0))
+                  (dotimes (i weechat-corrector-search-limit)
+                    (when (< count weechat-corrector-replace-limit)
+                      (save-restriction
+                        (previous-line)
+                        (weechat-narrow-to-line)
+                        (goto-char (weechat-line-text-start))
+                        (when (and (string-equal nick (weechat-line-nick))
+                                   (re-search-forward re nil t))
+                          (replace-match rp)
+                          ;; Add `weechat-corrector-corrected-face'
+                          (add-text-properties (match-beginning 0) (match-end 0)
+                                               '(face weechat-corrector-corrected-face))
+                          (setq count (1+ count)))))))))))))))
+
+(add-hook 'weechat-insert-modify-hook 'weechat-corrector-apply)
+
+(provide 'weechat-corrector)
+
+;;; weechat-corrector.el ends here
