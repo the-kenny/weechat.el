@@ -656,22 +656,28 @@ frame."
 (defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
 
+(defun weechat-reset-buffer-modified (buffer-ptr)
+  (let (hash (weechat-buffer-hash buffer-ptr))
+    (when (hash-table-p hash)
+      (remhash :last-message-date hash)
+      (remhash :last-highlight-date hash))))
+
 (defun weechat-update-buffer-modified (buffer-ptr line-data)
   (let ((line-type (weechat-line-type line-data))
         (line-date (assoc-default "date" line-data))
         (nick (weechat--get-nick-from-line-data line-data))
         (hash (weechat-buffer-hash buffer-ptr)))
-    (unless hash
+    (unless (hash-table-p hash)
       (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
     (when (and line-type line-date nick)
       (cond
        ;; Message from ourself. Reset modification times
        ((string-equal nick (weechat-get-local-var "nick" buffer-ptr))
-        (remhash :last-message-date hash)
-        (remhash :last-highlight-date hash))
+        (weechat-reset-buffer-modified buffer-ptr))
+       ;; General activity
        ((memq line-type weechat-buffer-activity-types)
         (puthash :last-message-date line-date hash)))
-
+      ;; Highlight
       (when (eq 1 (cdr (assoc-string "highlight" line-data)))
         (puthash :last-highlight-date line-date hash)))))
 
