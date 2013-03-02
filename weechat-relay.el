@@ -82,7 +82,7 @@ Trim TEXT prior to sending it."
     (send-string (get-buffer-process weechat-relay-buffer-name)
                  msg)))
 
-(defun weechat-relay-authenticate (password)
+(defun weechat-relay-authenticate (password &optional compression)
   "Authenticate to weechat with PASSWORD.
 
 PASSWORD can be a string, a function or nil."
@@ -90,7 +90,9 @@ PASSWORD can be a string, a function or nil."
                   (funcall password)
                 password)))
     (when (and pass (stringp pass) (not (s-blank? pass)))
-      (weechat--relay-send-message (format "init password=%s,compression=off\n" pass)))))
+      (weechat--relay-send-message (format "init password=%s,compression=%s\n"
+                                           pass
+                                           (if compression "on" "off"))))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int NUM to signed int.

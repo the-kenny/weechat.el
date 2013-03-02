@@ -73,12 +73,14 @@ If false, parentheses must be quotedL s/a\(.\)c/\1/.")
 
 (defvar weechat-corrector-regex "s/\\(.+\\)/\\(.*\\)/")
 (defun weechat-corrector-apply ()
-  (let ((nick (weechat-line-nick)))
-    (when (or weechat-corrector-correct-other
-              (string-equal (weechat-line-nick)
-                            (weechat-get-local-var "nick")))
-      (let* ((line (weechat-line-text))
-             (text-start (weechat-line-text-start))
+  (let ((nick (weechat-line-nick))
+        (line (weechat-line-text)))
+    (when (and (or weechat-corrector-correct-other
+                   (string-equal (weechat-line-nick)
+                                 (weechat-get-local-var "nick")))
+               line
+               (stringp line))
+      (let* ((text-start (weechat-line-text-start))
              (match (s-match weechat-corrector-regex line)))
         (when (>= (length match) 3)
           ;; Add `weechat-corrector-regex-face'
@@ -96,7 +98,8 @@ If false, parentheses must be quotedL s/a\(.\)c/\1/.")
                   (dotimes (i weechat-corrector-search-limit)
                     (when (< count weechat-corrector-replace-limit)
                       (save-restriction
-                        (previous-line)
+                        (let ((line-move-visual nil))
+                          (forward-line -1))
                         (weechat-narrow-to-line)
                         (goto-char (weechat-line-text-start))
                         (when (and (string-equal nick (weechat-line-nick))
