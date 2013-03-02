@@ -135,10 +135,27 @@
 (defvar weechat-user-list) ;; See weechat.el
 (defun weechat-speedbar--user-buttons (_directory depth name)
   (let ((buffer (get-buffer name))
-        nick-list)
-    (when (buffer-live-p buffer)
+        nick-list
+        topic)
+    (if (not (buffer-live-p buffer))
+        (speedbar-with-writable
+          (speedbar-make-tag-line
+           'angle ?i
+           nil nil
+           "Not Monitored!"
+           #'weechat-speedbar--goto-buffer name
+           nil depth))
       (with-current-buffer buffer
-        (setq nick-list weechat-user-list))
+        (setq nick-list weechat-user-list)
+        (setq topic weechat-topic))
+      (when topic
+        (speedbar-with-writable
+          (speedbar-make-tag-line
+           'angle ?i
+           nil nil
+           (concat "Topic: " topic)
+           nil nil
+           nil depth)))
       (dolist (nick nick-list)
         (speedbar-with-writable
          (speedbar-make-tag-line ;; TODO org-contacts/gravatar/bbdb?
