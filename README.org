@@ -89,6 +89,10 @@
 
     By using =weechat-latex-preview-region= or =weechat-latex-preview-line=
     the LaTeX previews can be limited to certain parts of the buffer.
+*** Speedbar
+    The =weechat-speedbar= module provides Emacs' Speedbar integration.  After
+    loading the module and opening the Speedbar there should be a Display mode
+    called "WeeChat" available.
 * Contact
   Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
 
