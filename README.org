@@ -83,6 +83,12 @@
     LaTeX.  It is based Org's LaTeX preview functionality and many of Org's
     LaTex customizations apply to it as well.  Use =weechat-latex-preview= to
     generate previews and =weechat-latex-remove= to remove them.
+
+    There is also =weechat-latex-auto-mode= to automatically turn LaTeX
+    fragments in every new message into a preview.
+
+    By using =weechat-latex-preview-region= or =weechat-latex-preview-line=
+    the LaTeX previews can be limited to certain parts of the buffer.
 * Contact
   Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
 
