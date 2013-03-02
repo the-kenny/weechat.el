@@ -657,7 +657,7 @@ frame."
 (defvar weechat-local-prompt)
 
 (defun weechat-reset-buffer-modified (buffer-ptr)
-  (let (hash (weechat-buffer-hash buffer-ptr))
+  (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
       (remhash :last-message-date hash)
       (remhash :last-highlight-date hash))))
@@ -666,20 +666,26 @@ frame."
   (let ((line-type (weechat-line-type line-data))
         (line-date (assoc-default "date" line-data))
         (nick (weechat--get-nick-from-line-data line-data))
-        (hash (weechat-buffer-hash buffer-ptr)))
+        (hash (weechat-buffer-hash buffer-ptr))
+        (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (hash-table-p hash)
       (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
-    (when (and line-type line-date nick)
-      (cond
-       ;; Message from ourself. Reset modification times
-       ((string-equal nick (weechat-get-local-var "nick" buffer-ptr))
-        (weechat-reset-buffer-modified buffer-ptr))
-       ;; General activity
-       ((memq line-type weechat-buffer-activity-types)
-        (puthash :last-message-date line-date hash)))
-      ;; Highlight
-      (when (eq 1 (cdr (assoc-string "highlight" line-data)))
-        (puthash :last-highlight-date line-date hash)))))
+    (if (and (buffer-live-p emacs-buffer)
+             (find emacs-buffer (weechat-visible-buffers) :test 'equal))
+        ;; Buffer is visible. Reset modification dates
+        (weechat-reset-buffer-modified buffer-ptr)
+      ;; Buffer invisible. Store modifications
+      (when (and line-type line-date nick)
+        (cond
+         ;; Message from ourself. Reset modification times
+         ((string-equal nick (weechat-get-local-var "nick" buffer-ptr))
+          (weechat-reset-buffer-modified buffer-ptr))
+         ;; General activity
+         ((memq line-type weechat-buffer-activity-types)
+          (puthash :last-message-date line-date hash)))
+        ;; Highlight
+        (when (eq 1 (cdr (assoc-string "highlight" line-data)))
+          (puthash :last-highlight-date line-date hash))))))
 
 (defun weechat-last-message-date (&optional buffer-ptr)
   (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
