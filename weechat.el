@@ -645,10 +645,15 @@ frame."
        (setq ret (cons (current-buffer) ret))))
     ret))
 
+;;; Buffer local variables
 (defvar weechat-buffer-ptr)
 (defvar weechat-server-buffer)
 (defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
+
+;; Following variables store dates as provided by `current-time':
+(defvar weechat-buffer-last-msg)
+(defvar weechat-buffer-last-highlight)
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
@@ -1307,6 +1312,10 @@ Default is current buffer."
 
     ;; Set Header
     (weechat-update-header-line-buffer (current-buffer))
+
+    ;; Initialize variables to store time of new messages etc.
+    (set (make-local-variable 'weechat-buffer-last-msg) nil)
+    (set (make-local-variable 'weechat-buffer-last-highlight) nil)
 
     ;; Hooks
     (run-mode-hooks 'weechat-mode-hook)))
