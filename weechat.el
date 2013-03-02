@@ -1268,13 +1268,12 @@ Default is current buffer."
     (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
     (setq major-mode 'weechat-mode)
 
-    (setq scroll-conservatively 1000)
-
     (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
     (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
     (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
     (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
 
+    ;; Start with empty user list
     (set (make-local-variable 'weechat-user-list) nil)
 
     ;; Setup prompt
@@ -1285,10 +1284,13 @@ Default is current buffer."
          (or prompt-end(point-max-marker)))
     (weechat-update-prompt)
 
+    ;; Initialize input-ring
     (set (make-local-variable 'weechat-input-ring) (make-ring weechat-input-ring-size))
 
     ;; Don't auto-add newlines on next-line
     (set (make-local-variable 'next-line-add-newlines) nil)
+    ;; Fix scrolling
+    (setq scroll-conservatively 1000)
 
     ;; Initialize buffer
     (weechat-request-initial-lines buffer-ptr)
