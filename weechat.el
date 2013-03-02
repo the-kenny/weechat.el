@@ -695,12 +695,12 @@ frame."
 
 (add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
 
-(defun weechat-last-message-date (&optional buffer-ptr)
+(defun weechat-last-background-message-date (&optional buffer-ptr)
   (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
          (hash (weechat-buffer-hash buffer-ptr)))
     (when hash (gethash :last-message-date hash))))
 
-(defun weechat-last-highlight-date (&optional buffer-ptr)
+(defun weechat-last-background-highlight-date (&optional buffer-ptr)
   (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
          (hash (weechat-buffer-hash buffer-ptr)))
     (when hash (gethash :last-highlight-date hash))))
