@@ -60,7 +60,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [7/22]
+* Nice to have [7/24]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** TODO Speedbar integration
@@ -80,6 +80,11 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
+** TODO Auto-Monitor 'old' buffers
+   Sometimes buffers from an earlier connection remain in Emacs, never
+   to be updated again. A refresh (C-c C-r) should re-monitor them.
+** TODO Clean pointers on disconnect
+   ...to prevent horrible WeeChat crashes
 ** DONE Module for applying s/foo/bar/ message corrections
 ** DONE SSL Connections
 ** DONE Sauron Integration
