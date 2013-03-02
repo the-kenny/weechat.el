@@ -675,6 +675,16 @@ frame."
       (when (eq 1 (cdr (assoc-string "highlight" line-data)))
         (puthash :last-highlight-date line-date hash)))))
 
+(defun weechat-last-message-date (&optional buffer-ptr)
+  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
+         (hash (weechat-buffer-hash buffer-ptr)))
+    (when hash (gethash :last-message-date hash))))
+
+(defun weechat-last-highlight-date (&optional buffer-ptr)
+  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
+         (hash (weechat-buffer-hash buffer-ptr)))
+    (when hash (gethash :last-highlight-date hash))))
+
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
 (defvar weechat-prompt-end-marker)
