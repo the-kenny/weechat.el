@@ -259,6 +259,11 @@ returns a string, or nil."
   :type 'function
   :group 'weechat)
 
+(defcustom weechat-buffer-activity-types '(:irc/privmsg :irc/action :irc/notice)
+  "List of types which will contribute to buffer activity."
+  :type '(repeat :tag "List" symbol)
+  :group 'weechat)
+
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
@@ -651,9 +656,24 @@ frame."
 (defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
 
-;; Following variables store dates as provided by `current-time':
-(defvar weechat-buffer-last-msg)
-(defvar weechat-buffer-last-highlight)
+(defun weechat-update-buffer-modified (buffer-ptr line-data)
+  (let ((line-type (weechat-line-type line-data))
+        (line-date (assoc-default "date" line-data))
+        (nick (weechat--get-nick-from-line-data line-data))
+        (hash (weechat-buffer-hash buffer-ptr)))
+    (unless hash
+      (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
+    (when (and line-type line-date nick)
+      (cond
+       ;; Message from ourself. Reset modification times
+       ((string-equal nick (weechat-get-local-var "nick" buffer-ptr))
+        (remhash :last-message-date hash)
+        (remhash :last-highlight-date hash))
+       ((memq line-type weechat-buffer-activity-types)
+        (puthash :last-message-date line-date hash)))
+
+      (when (eq 1 (cdr (assoc-string "highlight" line-data)))
+        (puthash :last-highlight-date line-date hash)))))
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
@@ -1041,6 +1061,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                :highlight highlight
                                :invisible invisible))))
 
+      (weechat-update-buffer-modified buffer-ptr line-data)
+
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
       (with-current-buffer (or (and (buffer-live-p buffer) buffer)
@@ -1312,10 +1334,6 @@ Default is current buffer."
 
     ;; Set Header
     (weechat-update-header-line-buffer (current-buffer))
-
-    ;; Initialize variables to store time of new messages etc.
-    (set (make-local-variable 'weechat-buffer-last-msg) nil)
-    (set (make-local-variable 'weechat-buffer-last-highlight) nil)
 
     ;; Hooks
     (run-mode-hooks 'weechat-mode-hook)))
