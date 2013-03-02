@@ -659,8 +659,8 @@ frame."
 (defun weechat-reset-buffer-modified (buffer-ptr)
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
-      (remhash :last-message-date hash)
-      (remhash :last-highlight-date hash))))
+      (remhash :background-message-date hash)
+      (remhash :background-highlight-date hash))))
 
 (defun weechat-update-buffer-modified (buffer-ptr line-data)
   (let ((line-type (weechat-line-type line-data))
@@ -682,10 +682,10 @@ frame."
           (weechat-reset-buffer-modified buffer-ptr))
          ;; General activity
          ((memq line-type weechat-buffer-activity-types)
-          (puthash :last-message-date line-date hash)))
+          (puthash :background-message-date line-date hash)))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
-          (puthash :last-highlight-date line-date hash))))))
+          (puthash :background-highlight-date line-date hash))))))
 
 (defun weechat-window-configuration-change ()
   (dolist (b (weechat-visible-buffers))
@@ -698,12 +698,12 @@ frame."
 (defun weechat-last-background-message-date (&optional buffer-ptr)
   (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
          (hash (weechat-buffer-hash buffer-ptr)))
-    (when hash (gethash :last-message-date hash))))
+    (when hash (gethash :background-message-date hash))))
 
 (defun weechat-last-background-highlight-date (&optional buffer-ptr)
   (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
          (hash (weechat-buffer-hash buffer-ptr)))
-    (when hash (gethash :last-highlight-date hash))))
+    (when hash (gethash :background-highlight-date hash))))
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
