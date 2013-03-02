@@ -687,6 +687,14 @@ frame."
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
           (puthash :last-highlight-date line-date hash))))))
 
+(defun weechat-window-configuration-change ()
+  (dolist (b (weechat-visible-buffers))
+    (with-current-buffer b
+      ;; Reset modification date for all visible buffers
+      (weechat-reset-buffer-modified weechat-buffer-ptr))))
+
+(add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
+
 (defun weechat-last-message-date (&optional buffer-ptr)
   (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
          (hash (weechat-buffer-hash buffer-ptr)))
