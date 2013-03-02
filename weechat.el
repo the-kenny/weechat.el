@@ -973,7 +973,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
      (or (cadr nick-match) prefix ""))))
 
-(defun weechat-print-line-data (line-data)
+(defun weechat-print-line-data (line-data &optional line-ptr)
   (let* ((buffer-ptr (assoc-default "buffer" line-data))
          (buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
@@ -1068,7 +1068,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (save-excursion
             (let ((weechat-inhibit-notifications t))
               (dolist (line-hdata (weechat--hdata-values lines-hdata))
-                (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
+                (weechat-print-line-data (weechat--hdata-value-alist line-hdata)
+                                         (car (weechat--hdata-value-pointer-path line-hdata)))))
             (weechat-recenter-bottom-maybe nil 'force)))))))
 
 (defvar weechat-initial-lines-buffer-properties
@@ -1389,8 +1390,9 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 
 (defun weechat--handle-buffer-line-added (response)
   (let* ((hdata (car response))
-         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata)))))
-    (weechat-print-line-data line-data)))
+         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata))))
+         (line-ptr (car (weechat--hdata-value-pointer-path (car (weechat--hdata-values hdata))))))
+    (weechat-print-line-data line-data line-ptr)))
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 
