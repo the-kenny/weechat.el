@@ -742,7 +742,7 @@ Used to identify it on the relay server.")
             (forward-line lines-to-delete)
             (delete-region (point-min) (point))))))))
 
-(defun weechat-line-add-properties (nick date highlight invisible)
+(defun weechat-line-add-properties (nick date highlight invisible line-ptr)
   "Add various text properties (read-only, etc.) to a line.
 
 Must be called with `weechat-narrow-to-line' active."
@@ -750,7 +750,8 @@ Must be called with `weechat-narrow-to-line' active."
   (add-text-properties (point-min) (point-max)
                        (list 'weechat-nick nick
                              'weechat-date date
-                             'weechat-highlighted highlight))
+                             'weechat-highlighted highlight
+                             'weechat-data line-ptr))
 
   ;; Make line read-only if `weechat-read-only' is t
   (when weechat-read-only
@@ -824,7 +825,10 @@ text (technically, this shouldn't happen)."
       (when (< start (point-at-eol))
         (buffer-substring start (point-at-eol))))))
 
-(cl-defun weechat-print-line (buffer-ptr &key prefix text date line-type highlight invisible nick)
+(cl-defun weechat-print-line (buffer-ptr &key
+                                         prefix text date line-type
+                                         highlight invisible nick
+                                         line-ptr)
   (setq text   (or text ""))
   (setq prefix (or prefix ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
@@ -891,7 +895,7 @@ text (technically, this shouldn't happen)."
             (goto-char (point-at-bol))
 
             ;; Add general properties
-            (weechat-line-add-properties nick date highlight invisible)
+            (weechat-line-add-properties nick date highlight invisible line-ptr)
 
             ;; Important: Run the hook after everything else
             (run-hooks 'weechat-insert-modify-hook)))
@@ -1015,7 +1019,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                  :nick nick
                                  :line-type line-type
                                  :date date
-                                 :highlight highlight)))
+                                 :highlight highlight
+                                 :line-ptr line-ptr)))
           (t
            (weechat-print-line buffer-ptr
                                :prefix prefix
@@ -1024,7 +1029,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                :date date
                                :line-type line-type
                                :highlight highlight
-                               :invisible invisible))))
+                               :invisible invisible
+                               :line-ptr line-ptr))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
