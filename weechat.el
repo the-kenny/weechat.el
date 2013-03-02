@@ -1434,7 +1434,7 @@ The format is (\"Action\" . SEXP) wher SEXP is evaluated with `nick' bound."
          (action (completing-read (concat "What action to take on '" nick "'? ")
                                   weechat-nick-operations))
          (code `(let ((nick ,nick))
-                  ,(cdr (assoc-string action weechat-button-nick-operations)))))
+                  ,(cdr (assoc-string action weechat-nick-operations)))))
     (when code
       (eval code))))
 
