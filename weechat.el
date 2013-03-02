@@ -645,12 +645,9 @@ frame."
        (setq ret (cons (current-buffer) ret))))
     ret))
 
-(defvar weechat-buffer-ptr nil
-  "The pointer of the channel buffer.
-Used to identify it on the relay server.")
-(defvar weechat-server-buffer nil
-  "The relay buffer associated with this channel buffer.")
-(defvar weechat-buffer-number nil)
+(defvar weechat-buffer-ptr)
+(defvar weechat-server-buffer)
+(defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
 
 ;;; Borrowed this behavior from rcirc
