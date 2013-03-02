@@ -632,6 +632,19 @@ the channel list with actual channels coming first."
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
     (gethash :emacs/buffer hash)))
 
+(defun weechat-visible-buffers (&optional current-frame-only)
+  "Returns list of all visible weechat.el channel buffers.
+
+Optional argument CURRENT-FRAME-ONLY limits list to current
+frame."
+  (let (ret)
+    (weechat-do-buffers
+     (when (window-live-p (get-buffer-window
+                           (current-buffer)
+                           (not current-frame-only)))
+       (setq ret (cons (current-buffer) ret))))
+    ret))
+
 (defvar weechat-buffer-ptr nil
   "The pointer of the channel buffer.
 Used to identify it on the relay server.")
