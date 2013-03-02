@@ -145,8 +145,11 @@
           nil nil
           nil nil ;; TODO expand for whois?
           nick
-          nil nil ;; TODO query? whois?
+          #'weechat-speedbar--user-action nick
           nil depth))))))
+
+(defun weechat-speedbar--user-action (_text nick _indent)
+  (weechat-nick-action nick))
 
 (defun weechat-speedbar-item-info ()
   "Display information about the current line."
