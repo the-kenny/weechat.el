@@ -60,7 +60,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [6/22]
+* Nice to have [7/22]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** TODO Speedbar integration
@@ -74,13 +74,13 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Request all highlighted lines when coming back online
 ** TODO Get (max 100 (count unread)) lines
 ** TODO Hooks for everything!
-** TODO Module for applying s/foo/bar/ message corrections
 ** TODO Re-Implement scrambling of passwords in lambdas
    Without lexical-let:
    - Pass symbols around: `make-symbol', `symbol-value'
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
+** DONE Module for applying s/foo/bar/ message corrections
 ** DONE SSL Connections
 ** DONE Sauron Integration
 ** DONE DBUS-Integration
