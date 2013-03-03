@@ -244,6 +244,17 @@ It is called with narrowing in the correct buffer."
   :type 'hook
   :group 'weechat)
 
+(defcustom weechat-message-post-receive-functions nil
+  "List of function called after a new line was received for a buffer.
+
+This hook is useful in conjunction with
+`weechat-last-background'-essage-date' or
+`weechat-last-background-highlight-date'.
+
+Functions must take one argument: The buffer-ptr."
+  :type 'hook
+  :group 'weechat)
+
 (defcustom weechat-complete-order-nickname t
   "If non-nil nicknames are completed in order of most recent speaker."
   :type 'boolean
@@ -1118,7 +1129,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                             :sender nick
                             :text message
                             :date date
-                            :buffer-ptr buffer-ptr)))))))
+                            :buffer-ptr buffer-ptr))))
+      (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
