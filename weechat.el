@@ -671,7 +671,7 @@ frame."
     (unless (hash-table-p hash)
       (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
     (if (and (buffer-live-p emacs-buffer)
-             (find emacs-buffer (weechat-visible-buffers) :test 'equal))
+             (cl-find emacs-buffer (weechat-visible-buffers) :test 'equal))
         ;; Buffer is visible. Reset modification dates
         (weechat-reset-buffer-modified buffer-ptr)
       ;; Buffer invisible. Store modifications
