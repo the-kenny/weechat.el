@@ -59,11 +59,10 @@ org-ruby). Please use the 'Raw' link on the right.
 ** DONE Colors
    Thanks, Rüdiger
 ** DONE Module System
-
-* Nice to have [7/24]
+* Nice to have [8/24]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
-** TODO Speedbar integration
+** DONE Speedbar integration
 ** TODO Faces based on message type
 ** TODO Typing auto-focuses the "input field"
 ** TODO More Notification Handlers

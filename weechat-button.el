@@ -253,7 +253,7 @@ If TEXT-BUTTONS is non-nil then use `make-text-button instead of `make-button'."
     (unless (s-blank? nick)
       (weechat-button--add-do (list (concat "\\b" (regexp-quote nick) "\\b")
                                     0 t 0 "Nick Action"
-                                    #'weechat-button--nick-action
+                                    #'weechat-nick-action
                                     0)
                               'text-button))))
 
@@ -274,40 +274,6 @@ and `apropos' for other symbols."
 (defun weechat-button--mailto (email)
   "Call `browse-url' on email with \"mailto:\" prepend."
   (browse-url (concat "mailto:" email)))
-
-(defun weechat-button--send-cmd (cmd &rest options)
-  "Send CMD with OPTIONS to WeeChat."
-  (weechat-send-input weechat-buffer-ptr
-                      (concat cmd " "
-                              (when options
-                                (cl-reduce (lambda (l r)
-                                             (concat l " " r))
-                                           options )))))
-
-(defcustom weechat-button-nick-operations
-  '(("DeOp" .  (weechat-button--send-cmd "/deop" nick))
-    ("Kick" . (weechat-button--send-cmd "/kick" nick
-                                        (read-from-minibuffer
-                                         (concat "Kick " nick ", reason: "))))
-    ("Query" . (weechat-button--send-cmd "/query" nick))
-    ("Whois" . (weechat-button--send-cmd "/whois" nick))
-    ("Op" . (weechat-button--send-cmd "/op" nick))
-    ("Voice" . (weechat-button--send-cmd "/voice" nick)))
-  "An alist of possible nickname actions.
-The format is (\"Action\" . SEXP) wher SEXP is evaluated with `nick' bound."
-  :group 'weechat-button
-  :type '(repeat (const (string :tag "Action")
-                        sexp)))
-
-(defun weechat-button--nick-action (nick)
-  "Ask user for action on NICK and `eval' it."
-  (let* ((completion-ignore-case t)
-         (action (completing-read (concat "What action to take on '" nick "'? ")
-                                  weechat-button-nick-operations))
-         (code `(let ((nick ,nick))
-                  ,(cdr (assoc-string action weechat-button-nick-operations)))))
-    (when code
-      (eval code))))
 
 ;;; Module load/unload
 

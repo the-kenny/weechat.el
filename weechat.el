@@ -1471,6 +1471,42 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
         (weechat-monitor-buffer (weechat--find-buffer full-name) 'show)
       (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))))
 
+;;; This should probably be in some util file:
+
+(defun weechat--send-cmd (cmd &rest options)
+  "Send CMD with OPTIONS to WeeChat."
+  (weechat-send-input
+   weechat-buffer-ptr
+   (concat cmd " " (when options
+                     (cl-reduce (lambda (l r)
+                                  (concat l " " r))
+                                options)))))
+
+(defcustom weechat-nick-operations
+  '(("DeOp" .  (weechat--send-cmd "/deop" nick))
+    ("Kick" . (weechat--send-cmd "/kick" nick
+                                        (read-from-minibuffer
+                                         (concat "Kick " nick ", reason: "))))
+    ("Query" . (weechat--send-cmd "/query" nick))
+    ("Whois" . (weechat--send-cmd "/whois" nick))
+    ("Op" . (weechat--send-cmd "/op" nick))
+    ("Voice" . (weechat--send-cmd "/voice" nick)))
+  "An alist of possible nickname actions.
+The format is (\"Action\" . SEXP) wher SEXP is evaluated with `nick' bound."
+  :group 'weechat
+  :type '(repeat (const (string :tag "Action")
+                        sexp)))
+
+(defun weechat-nick-action (nick)
+  "Ask user for action on NICK and `eval' it."
+  (let* ((completion-ignore-case t)
+         (action (completing-read (concat "What action to take on '" nick "'? ")
+                                  weechat-nick-operations))
+         (code `(let ((nick ,nick))
+                  ,(cdr (assoc-string action weechat-nick-operations)))))
+    (when code
+      (eval code))))
+
 (provide 'weechat)
 
 ;;; weechat.el ends here

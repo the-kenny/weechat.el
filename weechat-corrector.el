@@ -33,35 +33,44 @@
 (require 'weechat)
 (require 's)
 
+(defgroup weechat-corrector nil
+  "This module implements support to fix your own messages via the s/foo/bar/ syntax."
+  :link '(url-link "https://github.com/the-kenny/weechat.el")
+  :prefix "weechat-corrector"
+  :group 'weechat)
+
 (defcustom weechat-corrector-search-limit 5
   "How many previous lines to check for corrections."
   :type 'integer
-  :group 'weechat)
+  :group 'weechat-corrector)
 
 (defcustom weechat-corrector-replace-limit 1
   "Limit to N replacements."
   :type 'integer
-  :group 'weechat)
+  :group 'weechat-corrector)
 
 (defcustom weechat-corrector-correct-other nil
-  "Wether to apply corrections by other people.
+  "Whether to apply corrections by other people.
 
-Warning: Setting this to t MIGHT be a security problem as
-untrusted regular expression will be interpreted by
-`re-search-forward'."
+Warning: Setting this to non-nil MIGHT be a security problem as untrusted
+regular expression will be interpreted by `re-search-forward'."
   :type 'boolean
-  :group 'weechat)
+  :group 'weechat-corrector)
 
 (defcustom weechat-corrector-support-plain-parentheses nil
-  "If t, s/a(.)c/\1/ will replace 'abc' with 'b'.
+  "If non-nil, s/a(.)c/\1/ will replace 'abc' with 'b'.
 
-If false, parentheses must be quotedL s/a\(.\)c/\1/.")
+If nil, parentheses must be quotedL s/a\(.\)c/\1/."
+  :type 'boolean
+  :group 'weechat-corrector)
 
 (defface weechat-corrector-regex-face '((t :inherit default))
-  "Face used to highlight matched regular expressions.")
+  "Face used to highlight matched regular expressions."
+  :group 'weechat-corrector)
 
 (defface weechat-corrector-corrected-face '((t :inherit default))
-  "Face used to highlight corrected text.")
+  "Face used to highlight corrected text."
+  :group 'weechat-corrector)
 
 (defun weechat-corrector-quote-parentheses (re)
   (if weechat-corrector-support-plain-parentheses
