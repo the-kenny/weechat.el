@@ -6,11 +6,21 @@
   weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions below 24.3
   you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is recommended!
 
-  You can install both s and cl-lib via package.el ([[http://marmalade-repo.org/][marmalade]]
-  required):
+  You can install weechat.el via package.el ([[http://marmalade-repo.org/][marmalade]] (stable releases) or
+  [[http://melpa.milkbox.net/#installing][melpa]] (development snapshot) required):
 
-  : M-x package-install RET s RET
-  : M-x package-install RET cl-lib RET
+  : M-x package-install RET weechat RET
+
+** Manual Installation
+   - Install dependencies via package.el:
+     : M-x package-install RET s RET
+   - If your Emacs is older than 24.3:
+     : M-x package-install RET cl-lib RET
+   - Download this directory to your system and add it to the =load-path=:
+     : (add-to-list 'load-path (expand-file-name "path/to/weechat.el/"))
+   - Load weechat.el
+     : (require 'weechat)
+     (You can add this to your =~/.emacs.d/init.el= or similar)
 
 ** Usage
    First, setup the relay server in weechat.  Please refer to the
@@ -19,11 +29,12 @@
    To load and establish a connection:
 
    : (require 'weechat)
-   : M-x weechat-connect
+   : M-x weechat-connect RET
 
    To show a channel in Emacs, do:
 
-   : M-x weechat-monitor-buffer
+   : M-x weechat-monitor-buffer RET
+
 ** Color settings
    Most colors in weechat.el come directly from WeeChat and are only
    translated into Emacs faces.  There are a few notable exceptions
