@@ -1,13 +1,14 @@
 (require 'weechat)
 (require 'ert)
+(require 'cl-lib)
 
 ;;; weechat-relay.el
 
 (defmacro weechat-test-callback-value (command)
   "Execute COMMAND"
-  (let ((data-sym (gensym "data"))
-        (limit-sym (gensym "limit"))
-        (id (symbol-name (gensym "id"))))
+  (let ((data-sym (cl-gensym "data"))
+        (limit-sym (cl-gensym "limit"))
+        (id (symbol-name (cl-gensym "id"))))
     `(let (,data-sym
            (,limit-sym 200))
        (weechat-relay-add-id-callback ,id (lambda (d) (setq ,data-sym d)) 'one-shot)
