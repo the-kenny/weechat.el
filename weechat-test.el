@@ -90,9 +90,7 @@
   (when (weechat-relay-connected-p)
     (let ((version-resp (weechat-test-callback-value "info version")))
       (should (equal "version" (caar version-resp)))
-      (should (equal weechat-version
-                     (weechat-parse-version
-                      (cdar version-resp)))))))
+      (should (equal weechat-version (cdar version-resp))))))
 
 (ert-deftest weechat-relay-test-test-command ()
   (when (weechat-relay-connected-p)

@@ -263,11 +263,7 @@ returns a string, or nil."
 
 (defvar weechat--connected nil)
 (defvar weechat-version nil)
-
-(defun weechat-parse-version (str)
-  (let ((version-regexp-alist (cons '("^[-_+ ]dev$" . -3)
-                                    version-regexp-alist)))
-    (version-to-list str)))
+(add-to-list 'version-regexp-alist '("^[-_+ ]dev$" . -3))
 
 (defvar weechat-buffer-opened-functions nil
   "Hook ran when a WeeChat buffer opens.")
@@ -538,7 +534,7 @@ and port number respectively."
             (let ((version-str (cdar data)))
              (weechat-message "Connected to '%s', version %s" host
                               version-str)
-             (setq weechat-version (weechat-parse-version version-str)))
+             (setq weechat-version version-str))
             (weechat-update-buffer-list
              (lambda ()
                (weechat-relay-send-command "sync")
