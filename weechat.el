@@ -680,12 +680,17 @@ Used to identify it on the relay server.")
     (setq weechat--last-notification-id
           (notifications-notify
            :title (xml-escape-string
-                   (cl-case type
-                     (:highlight
-                      (concat "Weechat.el: Message from <"
-                              (weechat-strip-formatting sender)
-                              ">"))
-                     (:disconnect "Disconnected from WeeChat")))
+                   (or (cl-case type
+                         (:highlight
+                          (concat "Weechat.el: Message from <"
+                                  (weechat-strip-formatting sender)
+                                  ">"))
+                         (:query
+                          (concat "Weechat.el: Query from <"
+                                  (weechat-strip-formatting sender)
+                                  ">"))
+                         (:disconnect "Disconnected from WeeChat"))
+                       ""))
            :body (when text (xml-escape-string text))
            :app-icon weechat-notification-icon
            :replaces-id weechat--last-notification-id))))
