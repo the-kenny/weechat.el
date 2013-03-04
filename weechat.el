@@ -670,30 +670,47 @@ Used to identify it on the relay server.")
                                    'rear-nonsticky t
                                    'front-sticky t))))))
 
-(defvar weechat--last-notification-id nil
-  "Last notification id parameter for :replaces-id.")
+(defvar weechat--notifications-id-to-msg nil
+  "Map notification ids to buffer-ptrs.")
 
-(defun weechat-notifications-handler (type &optional sender text _date _buffer-ptr)
+(defun weechat--notifications-action (id key)
+  "Handle notifcations.el actions.
+See `weechat-notifications-handler'.
+
+Supported actions:
+- read: switch to buffer."
+  (when (string= key "read")
+    (let* ((buffer-ptr (cdr (assoc id weechat--notifications-id-to-msg))))
+      (when buffer-ptr
+        (weechat-switch-buffer buffer-ptr)))))
+
+(defun weechat-notifications-handler (type &optional sender text _date buffer-ptr)
   (require 'notifications nil t)
   (when (and (featurep 'notifications) (fboundp 'notifications-notify))
     (require 'xml)
-    (setq weechat--last-notification-id
-          (notifications-notify
-           :title (xml-escape-string
-                   (or (cl-case type
-                         (:highlight
-                          (concat "Weechat.el: Message from <"
-                                  (weechat-strip-formatting sender)
-                                  ">"))
-                         (:query
-                          (concat "Weechat.el: Query from <"
-                                  (weechat-strip-formatting sender)
-                                  ">"))
-                         (:disconnect "Disconnected from WeeChat"))
-                       ""))
-           :body (when text (xml-escape-string text))
-           :app-icon weechat-notification-icon
-           :replaces-id weechat--last-notification-id))))
+    (let ((notifications-id
+           (notifications-notify
+            :title (xml-escape-string
+                    (or (cl-case type
+                          (:highlight
+                           (concat "Weechat.el: Message from <"
+                                   (weechat-strip-formatting sender)
+                                   ">"))
+                          (:query
+                           (concat "Weechat.el: Query from <"
+                                   (weechat-strip-formatting sender)
+                                   ">"))
+                          (:disconnect "Disconnected from WeeChat"))
+                        ""))
+            :body (when text (xml-escape-string text))
+            :actions '("read" "Read")
+            :on-action #'weechat--notifications-action
+            :app-icon weechat-notification-icon
+            :replaces-id (caar weechat--notifications-id-to-msg))))
+      (when notifications-id
+        (setq weechat--notifications-id-to-msg
+              (append (list (cons notifications-id buffer-ptr))
+                      weechat--notifications-id-to-msg))))))
 
 (defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
