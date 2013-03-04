@@ -13,13 +13,21 @@
 
 ** Manual Installation
    - Install dependencies via package.el:
-     : M-x package-install RET s RET
+
+    : M-x package-install RET s RET
+
    - If your Emacs is older than 24.3:
-     : M-x package-install RET cl-lib RET
+   
+    : M-x package-install RET cl-lib RET
+
    - Download this directory to your system and add it to the =load-path=:
-     : (add-to-list 'load-path (expand-file-name "path/to/weechat.el/"))
+
+    : (add-to-list 'load-path (expand-file-name "path/to/weechat.el/"))
+
    - Load weechat.el
-     : (require 'weechat)
+
+    : (require 'weechat)
+
      (You can add this to your =~/.emacs.d/init.el= or similar)
 
 ** Usage
