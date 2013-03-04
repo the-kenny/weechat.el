@@ -415,8 +415,6 @@ BUFFER defaults to the current buffer."
           (delete-region (point-min) (+ (point-min) len)))
         ret))))
 
-
-
 (defun weechat-relay-get-id-callback (id)
   (gethash id weechat--relay-id-callback-hash))
 
@@ -485,7 +483,7 @@ CALLBACK takes one argument (the response data) which is a list."
                         :coding 'binary
                         :keepalive t))
 
-(defun weechat-open-gnutls-stream (name buffer host service)
+(defun weechat--relay-open-gnutls-stream (name buffer host service)
   "Just like `open-gnutls-stream' with added validation."
   (require 'gnutls)
   (gnutls-negotiate
@@ -498,14 +496,14 @@ CALLBACK takes one argument (the response data) which is a list."
 (defadvice open-gnutls-stream (around weechat-verifying
                                       (name buffer host service))
   (setq ad-return-value
-        (weechat-open-gnutls-stream name buffer host service)))
+        (weechat--relay-open-gnutls-stream name buffer host service)))
 (ad-activate 'open-gnutls-stream)
 
-(defun weechat-relay-plain-socket (bname host port)
+(defun weechat--relay-plain-socket (bname host port)
   (weechat-relay-log (format "PLAIN %s:%d" host port) :info)
   (weechat--relay-open-socket "weechat-relay" bname host port))
 
-(defun weechat-relay-tls-socket (bname host port)
+(defun weechat--relay-tls-socket (bname host port)
   (weechat-relay-log (format "TLS %s:%d" host port) :info)
   (require 'gnutls)
   ;; Advice `open-gnutls-stream' to verify signatures
@@ -519,7 +517,7 @@ CALLBACK takes one argument (the response data) which is a list."
                            :coding 'binary)
     (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)))
 
-(defun weechat-relay-from-command (cmdspec)
+(defun weechat--relay-from-command (cmdspec)
   (lambda (bname host port)
     (let ((cmd (format-spec cmdspec (format-spec-make
                                      ?h host
@@ -541,9 +539,9 @@ Optional argument CALLBACK Called after initialization is finished."
     (let ((inhibit-read-only t))
       (delete-region (point-min) (point-max))))
   (let* ((pfun (cond
-                ((or (null mode) (eq mode 'plain)) #'weechat-relay-plain-socket)
-                ((or (eq mode t) (eq mode 'ssl)) #'weechat-relay-tls-socket)
-                ((stringp mode) (weechat-relay-from-command mode))))
+                ((or (null mode) (eq mode 'plain)) #'weechat--relay-plain-socket)
+                ((or (eq mode t) (eq mode 'ssl)) #'weechat--relay-tls-socket)
+                ((stringp mode) (weechat--relay-from-command mode))))
          (process
           (funcall pfun weechat-relay-buffer-name host port)))
     (set-process-sentinel process #'weechat--relay-process-sentinel)
@@ -605,3 +603,4 @@ Optional argument CALLBACK Called after initialization is finished."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; weechat-relay.el ends here
+
