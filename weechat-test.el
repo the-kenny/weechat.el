@@ -88,15 +88,11 @@
 
 (ert-deftest weechat-relay-test-connection ()
   (when (weechat-relay-connected-p)
-    (let ((info-data nil)
-          (info-id (symbol-name (cl-gensym)))
-          (limit 200))
-      (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
-      (weechat--relay-send-message "info version" info-id)
-      (while (and (> limit 0) (not info-data))
-        (sleep-for 0 50)
-        (setq limit (1- limit)))
-      (should (equal "version" (caar info-data))))))
+    (let ((version-resp (weechat-test-callback-value "info version")))
+      (should (equal "version" (caar version-resp)))
+      (should (equal weechat-version
+                     (weechat-parse-version
+                      (cdar version-resp)))))))
 
 (ert-deftest weechat-relay-test-test-command ()
   (when (weechat-relay-connected-p)

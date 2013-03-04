@@ -262,6 +262,12 @@ returns a string, or nil."
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
+(defvar weechat-version nil)
+
+(defun weechat-parse-version (str)
+  (let ((version-regexp-alist (cons '("^[-_+ ]dev$" . -3)
+                                    version-regexp-alist)))
+    (version-to-list str)))
 
 (defvar weechat-buffer-opened-functions nil
   "Hook ran when a WeeChat buffer opens.")
@@ -529,8 +535,10 @@ and port number respectively."
          (weechat-relay-send-command
           "info version"
           (lambda (data)
-            (weechat-message "Connected to '%s', version %s" host
-                             (cdar data))
+            (let ((version-str (cdar data)))
+             (weechat-message "Connected to '%s', version %s" host
+                              version-str)
+             (setq weechat-version (weechat-parse-version version-str)))
             (weechat-update-buffer-list
              (lambda ()
                (weechat-relay-send-command "sync")
@@ -544,7 +552,8 @@ and port number respectively."
   (setq weechat--connected nil))
 
 (defun weechat-handle-disconnect ()
-  (setq weechat--connected nil)
+  (setq weechat--connected nil
+        weechat-version nil)
   ;; Print 'disconnected' message to all channel buffers
   (maphash (lambda (k v)
              (when (bufferp (gethash :emacs/buffer v))
