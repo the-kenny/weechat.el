@@ -22,7 +22,11 @@
 
 
 ;;; Commentary:
-;;
+
+;; This file implements low-level code used by weechat.el to connect
+;; to remote WeeChat instances using the relay protocol:
+
+;; http://www.weechat.org/files/doc/devel/weechat_relay_protocol.en.html
 
 (require 'weechat-core)
 
@@ -85,7 +89,10 @@ Trim TEXT prior to sending it."
 (defun weechat-relay-authenticate (password &optional compression)
   "Authenticate to weechat with PASSWORD.
 
-PASSWORD can be a string, a function or nil."
+PASSWORD can be a string, a function or nil.
+
+If COMPRESSION is non-nil, enable compression on this connection.
+Currently unsupported."
   (let ((pass (if (functionp password)
                   (funcall password)
                 password)))
