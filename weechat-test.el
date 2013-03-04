@@ -3,6 +3,20 @@
 
 ;;; weechat-relay.el
 
+(defmacro weechat-test-callback-value (command)
+  "Execute COMMAND"
+  (let ((data-sym (gensym "data"))
+        (limit-sym (gensym "limit"))
+        (id (symbol-name (gensym "id"))))
+    `(let (,data-sym
+           (,limit-sym 200))
+       (weechat-relay-add-id-callback ,id (lambda (d) (setq ,data-sym d)) 'one-shot)
+       (weechat--relay-send-message ,command ,id)
+       (while (and (> ,limit-sym 0) (not ,data-sym))
+         (sleep-for 0 50)
+         (setq ,limit-sym (1- ,limit-sym)))
+       ,data-sym)))
+
 (ert-deftest weechat-relay-id-callback ()
   (let ((weechat--relay-id-callback-hash
          (copy-hash-table weechat--relay-id-callback-hash)))
@@ -86,27 +100,19 @@
 
 (ert-deftest weechat-relay-test-test-command ()
   (when (weechat-relay-connected-p)
-    (let ((data nil)
-          (id (symbol-name (cl-gensym)))
-          (limit 200))
-      (weechat-relay-add-id-callback id (lambda (d) (setq data d)) t)
-      (weechat--relay-send-message "test" id)
-      (while (and (> limit 0) (not data))
-        (sleep-for 0 50)
-        (setq limit (1- limit)))
-      (message "%S" data)
-      (should (equal ?A (nth 0 data)))
-      (should (equal 123456 (nth 1 data)))
-      (should (equal 1234567890 (nth 2 data)))
-      (should (equal "a string" (nth 3 data)))
-      (should (equal "" (nth 4 data)))
-      (should (equal "" (nth 5 data)))
-      (should (equal [98 117 102 102 101 114] (nth 6 data)))
-      (should (equal [] (nth 7 data)))
-      ;; (should (equal "0x1234abcd" (nth 8 data)))
+    (let ((data (weechat-test-callback-value "test")))
+      (should (equal ?A                           (nth 0 data)))
+      (should (equal 123456                       (nth 1 data)))
+      (should (equal 1234567890                   (nth 2 data)))
+      (should (equal "a string"                   (nth 3 data)))
+      (should (equal ""                           (nth 4 data)))
+      (should (equal ""                           (nth 5 data)))
+      (should (equal [98 117 102 102 101 114]     (nth 6 data)))
+      (should (equal []                           (nth 7 data)))
+      ;; (should (equal "0x1234abcd"              (nth 8 data)))
       (should (equal (seconds-to-time 1321993456) (nth 9 data)))
-      (should (equal '("abc" "de") (nth 10 data)))
-      (should (equal '(123 456 789) (nth 11 data))))))
+      (should (equal '("abc" "de")                (nth 10 data)))
+      (should (equal '(123 456 789)               (nth 11 data))))))
 
 ;;; weechat.el
 
