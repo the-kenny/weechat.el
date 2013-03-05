@@ -244,6 +244,17 @@ It is called with narrowing in the correct buffer."
   :type 'hook
   :group 'weechat)
 
+(defcustom weechat-message-post-receive-functions nil
+  "List of function called after a new line was received for a buffer.
+
+This hook is useful in conjunction with
+`weechat-last-background'-essage-date' or
+`weechat-last-background-highlight-date'.
+
+Functions must take one argument: The buffer-ptr."
+  :type 'hook
+  :group 'weechat)
+
 (defcustom weechat-complete-order-nickname t
   "If non-nil nicknames are completed in order of most recent speaker."
   :type 'boolean
@@ -257,6 +268,11 @@ Value must be a function with two arguments: Hostname and port.
 The return value must be either a string, a function which
 returns a string, or nil."
   :type 'function
+  :group 'weechat)
+
+(defcustom weechat-buffer-activity-types '(:irc/privmsg :irc/action :irc/notice)
+  "List of types which will contribute to buffer activity."
+  :type '(repeat :tag "List" symbol)
   :group 'weechat)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
@@ -637,13 +653,73 @@ the channel list with actual channels coming first."
   (let ((hash (gethash buffer-ptr weechat--buffer-hashes)))
     (gethash :emacs/buffer hash)))
 
-(defvar weechat-buffer-ptr nil
-  "The pointer of the channel buffer.
-Used to identify it on the relay server.")
-(defvar weechat-server-buffer nil
-  "The relay buffer associated with this channel buffer.")
-(defvar weechat-buffer-number nil)
+(defun weechat-visible-buffers (&optional current-frame-only)
+  "Returns list of all visible weechat.el channel buffers.
+
+Optional argument CURRENT-FRAME-ONLY limits list to current
+frame."
+  (let (ret)
+    (weechat-do-buffers
+     (when (window-live-p (get-buffer-window
+                           (current-buffer)
+                           (not current-frame-only)))
+       (setq ret (cons (current-buffer) ret))))
+    ret))
+
+;;; Buffer local variables
+(defvar weechat-buffer-ptr)
+(defvar weechat-server-buffer)
+(defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
+
+(defun weechat-reset-buffer-modified (buffer-ptr)
+  (let ((hash (weechat-buffer-hash buffer-ptr)))
+    (when (hash-table-p hash)
+      (remhash :background-message-date hash)
+      (remhash :background-highlight-date hash))))
+
+(defun weechat-update-buffer-modified (buffer-ptr line-data)
+  (let ((line-type (weechat-line-type line-data))
+        (line-date (assoc-default "date" line-data))
+        (nick (weechat--get-nick-from-line-data line-data))
+        (hash (weechat-buffer-hash buffer-ptr))
+        (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
+    (unless (hash-table-p hash)
+      (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
+    (if (and (buffer-live-p emacs-buffer)
+             (cl-find emacs-buffer (weechat-visible-buffers) :test 'equal))
+        ;; Buffer is visible. Reset modification dates
+        (weechat-reset-buffer-modified buffer-ptr)
+      ;; Buffer invisible. Store modifications
+      (when (and line-type line-date nick)
+        (cond
+         ;; Message from ourself. Reset modification times
+         ((string-equal nick (weechat-get-local-var "nick" buffer-ptr))
+          (weechat-reset-buffer-modified buffer-ptr))
+         ;; General activity
+         ((memq line-type weechat-buffer-activity-types)
+          (puthash :background-message-date line-date hash)))
+        ;; Highlight
+        (when (eq 1 (cdr (assoc-string "highlight" line-data)))
+          (puthash :background-highlight-date line-date hash))))))
+
+(defun weechat-window-configuration-change ()
+  (dolist (b (weechat-visible-buffers))
+    (with-current-buffer b
+      ;; Reset modification date for all visible buffers
+      (weechat-reset-buffer-modified weechat-buffer-ptr))))
+
+(add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
+
+(defun weechat-last-background-message-date (&optional buffer-ptr)
+  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
+         (hash (weechat-buffer-hash buffer-ptr)))
+    (when hash (gethash :background-message-date hash))))
+
+(defun weechat-last-background-highlight-date (&optional buffer-ptr)
+  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
+         (hash (weechat-buffer-hash buffer-ptr)))
+    (when hash (gethash :background-highlight-date hash))))
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
@@ -1053,6 +1129,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                                :highlight highlight
                                :invisible invisible))))
 
+      (weechat-update-buffer-modified buffer-ptr line-data)
+
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
       (with-current-buffer (or (and (buffer-live-p buffer) buffer)
@@ -1078,7 +1156,8 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                             :sender nick
                             :text message
                             :date date
-                            :buffer-ptr buffer-ptr)))))))
+                            :buffer-ptr buffer-ptr))))
+      (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
