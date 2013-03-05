@@ -262,6 +262,14 @@ returns a string, or nil."
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
+
+(defvar weechat-host-history nil
+  "List of recently connected hosts.")
+(defvar weechat-last-port
+  "Last port connected to.")
+(defvar weechat-mode-history
+  "List of recently used connection modes.")
+
 (defvar weechat-version nil)
 (add-to-list 'version-regexp-alist '("^[-_+ ]dev$" . -3))
 
@@ -486,9 +494,9 @@ and port number respectively."
    (let* ((host
            (read-string
             (format "Relay host (default '%s'): " weechat-host-default)
-            nil 'weechat-host-hist weechat-host-default))
+            nil 'weechat-host-history weechat-host-default))
           (port
-           (read-number "Port: " weechat-port-default))
+           (read-number "Port: " (or weechat-last-port weechat-port-default)))
           (mode (let*
                     ((minibuffer-local-completion-map weechat-mode-completion-map)
                      (modestr (completing-read
@@ -501,6 +509,7 @@ and port number respectively."
                    ((string-equal modestr "plain") 'plain)
                    ((string-equal modestr "ssl") 'ssl)
                    (t modestr)))))
+     (setq weechat-last-port port)
      (list
       host port
       (or
