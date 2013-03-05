@@ -185,6 +185,15 @@ text-column will be increased for that line."
                  (file :tag "Icon file"))
   :group 'weechat)
 
+(defcustom weechat-notification-sound t
+  "Sound to use for notifications:
+- nil: No sound
+- t: default message-new-instant sound
+- string: file name of a sound file."
+  :type '(choice (const :tag "No sound" nil)
+                 (const :tag "Default system sound" t)
+                 (file :tag "Sound file")))
+
 (defcustom weechat-notification-handler
   (cond
    ((featurep 'sauron) 'weechat-sauron-handler)
@@ -779,9 +788,16 @@ Supported actions:
                           (:disconnect "Disconnected from WeeChat"))
                         ""))
             :body (when text (xml-escape-string text))
+            :category "im.received"
             :actions '("read" "Read")
             :on-action #'weechat--notifications-action
             :app-icon weechat-notification-icon
+            :app-name "WeeChat.el"
+            :sound-name (when (and weechat-notification-sound
+                                   (not (stringp weechat-notification-sound)))
+                          "message-new-instant")
+            :sound-file (when (stringp weechat-notification-sound)
+                          weechat-notification-sound)
             :replaces-id (caar weechat--notifications-id-to-msg))))
       (when notifications-id
         (setq weechat--notifications-id-to-msg
