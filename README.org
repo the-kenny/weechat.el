@@ -1,19 +1,123 @@
+# -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
 * weechat.el - Chat via Weechat in Emacs
-  Please note: This README is just a placeholder. A more detailed
-  documentation will follow.
-  
+  Please note: This README is work in progress.  A more detailed documentation
+  will follow.
+
+  weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions below 24.3
+  you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is recommended!
+
+  You can install weechat.el via package.el ([[http://marmalade-repo.org/][marmalade]] (stable releases) or
+  [[http://melpa.milkbox.net/#installing][melpa]] (development snapshot) required):
+
+  : M-x package-install RET weechat RET
+
+** Manual Installation
+   - Install dependencies via package.el:
+
+    : M-x package-install RET s RET
+
+   - If your Emacs is older than 24.3:
+   
+    : M-x package-install RET cl-lib RET
+
+   - Download this directory to your system and add it to the =load-path=:
+
+    : (add-to-list 'load-path (expand-file-name "path/to/weechat.el/"))
+
+   - Load weechat.el
+
+    : (require 'weechat)
+
+     (You can add this to your =~/.emacs.d/init.el= or similar)
+
 ** Usage
-   First, setup the relay server in weechat. Please refer to the
+   First, setup the relay server in weechat.  Please refer to the
    [[http://www.weechat.org/files/doc/stable/weechat_user.en.html#relay_weechat_protocol][manual]].
 
    To load and establish a connection:
-   
+
    : (require 'weechat)
-   : M-x weechat-connect
+   : M-x weechat-connect RET
 
    To show a channel in Emacs, do:
 
-   : M-x weechat-monitor-buffer
+   : M-x weechat-monitor-buffer RET
+
+** Color settings
+   Most colors in weechat.el come directly from WeeChat and are only
+   translated into Emacs faces.  There are a few notable exceptions
+   such as =weechat-highlight-face= or =weechat-nick-self-face=.
+
+   If you are unsatisfied with the colors that WeeChat send then
+   either change the corresponding color in WeeChat or customize
+   =weechat-color-list=.  Do *not* add or remove any values in the
+   list!  Simply change the value.  Using =rainbow-mode= (from GNU
+   ELPA) or =list-colors-display= can help finding good values.
+
+   The default configuration tries to match the WeeChat colors as
+   close as possible.  Example for colors that go better with the
+   Emacs' default theme are:
+
+#+BEGIN_SRC emacs-lisp
+  (setq weechat-color-list '(unspecified "black" "dim gray" "dark red" "red"
+                                         "dark green" "green" "brown"
+                                         "orange" "dark blue" "blue"
+                                         "dark magenta" "magenta" "dark cyan"
+                                         "royal blue" "dark gray" "gray"))
+#+END_SRC
+
+   If you do not want any color then set =weechat-debug-strip-formatting= to
+   =t=.
+** SSL
+   See documentation in [[file:SSL.org][SSL.org]].
+** Modules
+   Weechat.el comes with module support.  Modules can be loaded by simply
+   calling =load-library= and removed by using =unload-feature=.  The variable
+   =weechat-modules= can be customized to set default loaded modules.
+
+   Available modules are:
+*** Button
+    This module provides support for buttons in chat windows.  E.g., it turns
+    URLs into clickable buttons.  The module is default loaded.  See =weechat-modules=.
+
+    It supports several types of buttons such as URLs, Channels, Emacs' symbols,
+    E-Mails, Manpages, Info links, and Nick names.  However not all buttons are
+    activated as default.  See customization group =weechat-button= to enable
+    and disable specific buttons.
+
+    You can use =weechat-button-list= to simply add your own button types.
+*** Complete
+    This module provides support for nickname and command completion.  It uses
+    Emacs' =pcomplete= framework and is default loaded.
+*** Spelling
+    This module provides spelling support by using Emacs' =flyspell=.  You can
+    customize the dictionary on a per channel/server basis by customizing
+    =weechat-spelling-dictionaries=.
+*** Smiley
+    This module uses Gnus' =smiley-region= support to convert text smileys,
+    such as :-), into a graphical representation.  See the documentation of
+    =smiley.el= on how to customize it.
+*** LaTeX
+    The =weechat-latex= module provides a simple preview function for embedded
+    LaTeX.  It is based Org's LaTeX preview functionality and many of Org's
+    LaTex customizations apply to it as well.  Use =weechat-latex-preview= to
+    generate previews and =weechat-latex-remove= to remove them.
+
+    There is also =weechat-latex-auto-mode= to automatically turn LaTeX
+    fragments in every new message into a preview.
+
+    By using =weechat-latex-preview-region= or =weechat-latex-preview-line=
+    the LaTeX previews can be limited to certain parts of the buffer.
+*** Speedbar
+    The =weechat-speedbar= module provides Emacs' Speedbar integration.  After
+    loading the module and opening the Speedbar there should be a Display mode
+    called "WeeChat" available.
+* Contact
+  Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
 
 * Contributors
+  Please add yourself to this list when you contribute code!
+  
+  - [[https://github.com/the-kenny][Moritz Ulrich]] (Maintainer)
   - [[https://github.com/ruediger][Rüdiger Sonderfeld]]
+  - [[https://github.com/aristidb][Aristid Breitkreuz]]

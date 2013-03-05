@@ -1,0 +1,48 @@
+# -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
+* How to setup SSL
+** Important Notes
+   SSL support hasn't been verified by someone who has much experience
+   with encryption.  There's absolutely NO guarantee that the
+   connection is secure.
+   
+** Generating the SSL Certificate for WeeChat
+   Note: This guide is loosely based on http://frankkoehl.com/2012/02/create-self-signed-wildcard-ssl-certificate/
+   
+*** Generate the self-signed SSL Certificate:
+    #+BEGIN_SRC sh
+      mkdir -p ~/.weechat/ssl
+      cd ~/.weechat/ssl
+      
+      # Generate the secret key
+      openssl genrsa 2048 > relay.key
+      
+      # Generate the public certificate
+      # Enter your (sub)domain name for 'Common Name'. All other options are optional
+      openssl req -new -x509 -nodes -days 365 -key relay.key > relay.cert
+      
+      # Generate combined key/certificate file (this is the file weechat needs)
+      cat relay.cert relay.key > relay.pem
+    #+END_SRC
+    
+** Configure WeeChat
+    The following will load the SSL certificate in WeeChat and open a
+    ssl-enabled relay on port 9001:
+    #+BEGIN_EXAMPLE
+    /relay sslcertkey
+    /relay add ssl.weechat 9001
+    #+END_EXAMPLE
+
+** Configure weechat.el
+   - Copy =relay.cert= from your machine running WeeChat to the
+     machine where you run Emacs.
+   - Tell Emacs where =relay.cert= is located:
+     #+BEGIN_SRC elisp
+       (require 'gnutls)
+       ;;; Replace ~/.emacs.d/relay.cert with the location of your 'relay.cert' file
+       (add-to-list 'gnutls-trustfiles (expand-file-name "~/.emacs.d/relay.cert"))
+     #+END_SRC
+    
+** Connect via SSL
+   Now you should be able to connect via SSL on the port configured
+   earlier.  If you get any errors, re-check the location of your
+   =relay.cert= file.

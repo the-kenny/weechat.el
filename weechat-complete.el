@@ -6,6 +6,8 @@
 ;; Copyright (C) 2002-2004, 2006-2013 Free Software Foundation, Inc.
 
 ;; Author: Rüdiger Sonderfeld <ruediger@c-plusplus.de>
+;;         Moritz Ulrich <moritz@tarn-vedra.de>
+;;         Aristid Breitkreuz <aristidb@gmail.com>
 ;; Keywords: irc chat network weechat
 ;; URL: https://github.com/the-kenny/weechat.el
 
@@ -32,6 +34,7 @@
 
 (require 'weechat)
 (require 'pcomplete)
+(require 's)
 
 (defvar weechat-user-list)
 (defvar weechat-prompt-end-marker)
@@ -142,7 +145,7 @@ If IGNORE-SELF is non-nil the users nick is ignored."
     result))
 
 (weechat-do-buffers (pcomplete-weechat-setup))
-(add-hook 'weechat-mode-hook #'pcomplete-weechat-setup) ;; TODO run in all existing buffers?
+(add-hook 'weechat-mode-hook #'pcomplete-weechat-setup)
 (add-hook 'completion-at-point-functions #'weechat-pcompletions-at-point)
 
 (provide 'weechat-complete)

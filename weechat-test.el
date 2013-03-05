@@ -1,7 +1,20 @@
 (require 'weechat)
 (require 'ert)
+(require 'cl-lib)
 
 ;;; weechat-relay.el
+
+(defun weechat-test-callback-value (command)
+  "Execute COMMAND and return the server response in a synchronous fashion."
+  (let ((id (symbol-name (cl-gensym "id")))
+        (limit-sym 200)
+        data-sym)
+    (weechat-relay-add-id-callback id (lambda (d) (setq data-sym d)) 'one-shot)
+    (weechat--relay-send-message command id)
+    (while (and (> limit-sym 0) (not data-sym))
+      (sleep-for 0 50)
+      (setq limit-sym (1- limit-sym)))
+    data-sym))
 
 (ert-deftest weechat-relay-id-callback ()
   (let ((weechat--relay-id-callback-hash
@@ -74,39 +87,30 @@
 
 (ert-deftest weechat-relay-test-connection ()
   (when (weechat-relay-connected-p)
-    (let ((info-data nil)
-          (info-id (symbol-name (cl-gensym)))
-          (limit 200))
-      (weechat-relay-add-id-callback info-id (lambda (data) (setq info-data data)) t)
-      (weechat--relay-send-message "info version" info-id)
-      (while (and (> limit 0) (not info-data))
-        (sleep-for 0 50)
-        (setq limit (1- limit)))
-      (should (equal "version" (caar info-data))))))
+    (let ((version-resp (weechat-test-callback-value "info version")))
+      (should (equal "version" (caar version-resp)))
+      (should (equal weechat-version (cdar version-resp))))))
 
 (ert-deftest weechat-relay-test-test-command ()
   (when (weechat-relay-connected-p)
-    (let ((data nil)
-          (id (symbol-name (cl-gensym)))
-          (limit 200))
-      (weechat-relay-add-id-callback id (lambda (d) (setq data d)) t)
-      (weechat--relay-send-message "test" id)
-      (while (and (> limit 0) (not data))
-        (sleep-for 0 50)
-        (setq limit (1- limit)))
-      (message "%S" data)
-      (should (equal ?A (nth 0 data)))
-      (should (equal 123456 (nth 1 data)))
-      (should (equal 1234567890 (nth 2 data)))
-      (should (equal "a string" (nth 3 data)))
-      (should (equal "" (nth 4 data)))
-      (should (equal "" (nth 5 data)))
-      (should (equal [98 117 102 102 101 114] (nth 6 data)))
-      (should (equal [] (nth 7 data)))
-      ;; (should (equal "0x1234abcd" (nth 8 data)))
-      (should (equal (seconds-to-time 1321993456) (nth 9 data)))
-      (should (equal '("abc" "de") (nth 10 data)))
-      (should (equal '(123 456 789) (nth 11 data))))))
+    (let ((data (weechat-test-callback-value "test"))
+          (i -1))
+      (cl-flet ((next-val () (nth (setq i (1+ i)) data)))
+        (should (equal ?A                           (next-val)))
+        (should (equal 123456                       (next-val)))
+        (should (equal 1234567890                   (next-val)))
+        (should (equal "a string"                   (next-val)))
+        (should (equal ""                           (next-val)))
+        (should (equal ""                           (next-val)))
+        (should (equal [98 117 102 102 101 114]     (next-val)))
+        (should (equal []                           (next-val)))
+        (when (version< "0.4.0" weechat-version)
+          (should (equal "0x1234abcd"               (next-val))))
+        (when (version<= weechat-version "0.4.1")
+          (should (equal nil                        (next-val))))
+        (should (equal (seconds-to-time 1321993456) (next-val)))
+        (should (equal '("abc" "de")                (next-val)))
+        (should (equal '(123 456 789)               (next-val)))))))
 
 ;;; weechat.el
 
@@ -127,12 +131,43 @@
                  "someone has joined #asdfasdfasdf"))
   (should (equal (weechat-strip-formatting "ddd") "ddd")))
 
+(defun weechat-test--property-list (str &optional prop pos)
+  "Return a list of property PROP in STR starting at POS.
+Default property is `face'.  The returned format is ((START END (PROP VALUE)))."
+  (setq pos (or pos 0))
+  (setq prop (or prop 'face))
+  (let ((next-pos pos)
+        result)
+    (while pos
+      (setq next-pos (next-single-property-change pos prop str))
+      (setq result (cons (list pos (or next-pos (length str))
+                               (list prop
+                                     (get-text-property pos prop str)))
+                         result))
+      (setq pos next-pos))
+    result))
+
 (ert-deftest weechat-color-handling ()
   "Test `weechat-handle-color-codes'."
   (should (string= (weechat-handle-color-codes "foo bar baz")
                    "foo bar baz"))
   (should (string= (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world")
-                   "hi world")))
+                   "hi world"))
+  (should (equal (weechat-test--property-list
+                  (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world"))
+                 '((3 8
+                      (face
+                       ((:foreground "red")
+                        (:slant italic))))
+                   (2 3
+                      (face default))
+                   (0 2
+                      (face
+                       ((:foreground "dark gray")
+                        (:weight bold)))))))
+  (should (string= (weechat-handle-color-codes "\x19\Fkaputt") "kaputt"))
+  (should (string= (weechat-handle-color-codes "XY\x1A\Z") "XYZ"))
+  (should (string= (weechat-handle-color-codes "\x1Bx") "x")))
 
 (ert-deftest weechat-alist-merging ()
   (should (equal '((x . 42)) (weechat-merge-alists '((x . 23)) '((x . 42)))))
@@ -158,5 +193,9 @@
     (should (equal weechat-user-list '("test_")))
     (weechat--user-list-remove "test_")
     (should (eq weechat-user-list nil))
+    (weechat--user-list-add "")
+    (should (eq weechat-user-list nil))
     (weechat--user-list-add "x")
+    (should (equal weechat-user-list '("x")))
+    (weechat--user-list-add "")
     (should (equal weechat-user-list '("x")))))

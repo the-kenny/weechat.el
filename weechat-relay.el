@@ -3,6 +3,8 @@
 ;; Copyright (C) 2013 Moritz Ulrich
 
 ;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
+;;         Rüdiger Sonderfeld <ruediger@c-plusplus.de>
+;;         Aristid Breitkreuz <aristidb@gmail.com>
 ;; Keywords: irc chat network weechat
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -20,37 +22,53 @@
 
 
 ;;; Commentary:
-;;
 
-(require 'cl-lib)
+;; This file implements low-level code used by weechat.el to connect
+;; to remote WeeChat instances using the relay protocol:
+
+;; http://www.weechat.org/files/doc/devel/weechat_relay_protocol.en.html
+
+(require 'weechat-core)
+
 (require 'bindat)
+(require 'format-spec)
 (require 's)
 (require 'pp)
+(require 'cl-lib)
 
-(defvar weechat-relay-buffer-name "*weechat-relay*"
-  "Buffer holding the connection to the host weechat instance.")
+(defcustom weechat-relay-buffer-name "*weechat-relay*"
+  "Buffer holding the connection to the host weechat instance."
+  :type 'string
+  :group 'weechat-relay)
 
-(defvar weechat-relay-log-buffer-name "*weechat-relay-log*"
-  "Buffer name to use as debug log.
-Set to nil to disable logging.")
-
-(defvar weechat-relay-log-level :info
-  "Minimum log level.
-Might be one of :debug, :info, :warn, :error or nil")
-
-(defvar weechat-relay-message-function nil
-  "Function to call when receiving a new weechat message.")
+(defcustom weechat-relay-message-function nil
+  "Function to call when receiving a new weechat message."
+  :type '(choice (const :tag "Off" nil)
+                 (function :tag "Callback Function"))
+  :group 'weechat-relay)
 
 (defvar weechat-relay-ignored-message-ids '("_nicklist")
   "IDs to ignore.")
 
-(defvar weechat-relay-disconnect-hook ()
-  "Hook run when the relay disconnects.")
+(defcustom weechat-relay-disconnect-hook nil
+  "Hook run when the relay disconnects."
+  :type 'hook
+  :group 'weechat-relay)
 
-(defvar weechat-relay-connect-hook ()
+(defcustom weechat-relay-connect-hook nil
   "Hook run when the relay connects.
-Note: This DOESN'T mean the client can is already authenticated
-to the relay server.")
+Note: This DOES NOT mean the client can is already authenticated
+to the relay server."
+  :type 'hook
+  :group 'weechat-relay)
+
+(defcustom weechat-relay-ssl-check-signatures t
+  "Wether weechat-relay should check ssl certificate signatures.
+
+A value of nil will have strong security implications and enables
+man-in-the-middle attacks on your connection."
+  :type 'boolean
+  :group 'weechat-relay)
 
 ;;; Code:
 
@@ -58,28 +76,6 @@ to the relay server.")
   "Alist mapping from ids to functions.
 Incoming message-ids will be searched in this alist and the
 corresponding function will be called.")
-
-(defun weechat-relay-log (text &optional level)
-  "Log `TEXT' to `weechat-relay-log-buffer-name' if enabled.
-`LEVEL' might be one of :debug :info :warn :error.  Defaults
-to :info"
-  (let ((log-level-alist '((:debug . 0)
-                           (:info  . 1)
-                           (:warn  . 2)
-                           (:error . 3))))
-    (when (and (>= (assoc-default (or level :info) log-level-alist)
-                   (assoc-default weechat-relay-log-level log-level-alist))
-               weechat-relay-log-level
-               weechat-relay-log-buffer-name)
-      (with-current-buffer (get-buffer-create weechat-relay-log-buffer-name)
-        (let ((old-point (point)))
-          (save-excursion
-            (save-restriction
-              (widen)
-              (goto-char (point-max))
-              (insert (s-trim text))
-              (newline)))
-          (goto-char old-point))))))
 
 (defun weechat--relay-send-message (text &optional id)
   "Send message TEXT with optional ID.
@@ -90,9 +86,20 @@ Trim TEXT prior to sending it."
     (send-string (get-buffer-process weechat-relay-buffer-name)
                  msg)))
 
-(defun weechat-relay-authenticate (password)
-  "Authenticate to weechat with PASSWORD."
-  (weechat--relay-send-message (format "init password=%s,compression=off\n" password)))
+(defun weechat-relay-authenticate (password &optional compression)
+  "Authenticate to weechat with PASSWORD.
+
+PASSWORD can be a string, a function or nil.
+
+If COMPRESSION is non-nil, enable compression on this connection.
+Currently unsupported."
+  (let ((pass (if (functionp password)
+                  (funcall password)
+                password)))
+    (when (and pass (stringp pass) (not (s-blank? pass)))
+      (weechat--relay-send-message (format "init password=%s,compression=%s\n"
+                                           pass
+                                           (if compression "on" "off"))))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int NUM to signed int.
@@ -122,7 +129,7 @@ Return the value and number of bytes consumed."
 (defun weechat--relay-unpack-lon (data)
   (let ((obj (bindat-unpack weechat--relay-lon-spec data)))
     (cl-values (string-to-number (decode-coding-string (bindat-get-field obj 'val) 'utf-8))
-            (bindat-length weechat--relay-lon-spec obj))))
+               (bindat-length weechat--relay-lon-spec obj))))
 
 (defun weechat--relay-unpack-chr (data)
   "Unpack a one byte char from unibyte string DATA.
@@ -146,7 +153,7 @@ Returns value and bytes consumed."
 Optional second return value contains length of parsed data."
   (let ((obj (bindat-unpack weechat--relay-str-spec data)))
     (cl-values (decode-coding-string (bindat-get-field obj 'val) 'utf-8)
-            (bindat-length weechat--relay-str-spec obj))))
+               (bindat-length weechat--relay-str-spec obj))))
 
 (defconst weechat--relay-buf-spec
   '((len u32)
@@ -159,7 +166,7 @@ Optional second return value contains length of parsed data."
 (defun weechat--relay-unpack-buf (data)
   (let ((obj (bindat-unpack weechat--relay-buf-spec data)))
     (cl-values (bindat-get-field obj 'val)
-            (bindat-length weechat--relay-buf-spec obj))))
+               (bindat-length weechat--relay-buf-spec obj))))
 
 (defconst weechat--relay-ptr-spec
   '((len u8)
@@ -174,8 +181,9 @@ Optional second return value contains length of parsed data."
 DATA must be an unibyte string.  Return string-value and number
 of bytes consumed."
   (let ((obj (bindat-unpack weechat--relay-ptr-spec data)))
-    (cl-values (concat "0x" (bindat-get-field obj 'val))
-            (bindat-length weechat--relay-ptr-spec obj))))
+    (cl-values (unless (string-equal "0" (bindat-get-field obj 'val))
+                 (concat "0x" (bindat-get-field obj 'val)))
+               (bindat-length weechat--relay-ptr-spec obj))))
 
 (defconst weechat--relay-tim-spec
   '((len u8)
@@ -215,7 +223,7 @@ of bytes consumed."
           (setq acc (cons (cons key val) acc))
           (setq offset (+ offset key-len val-len)))))
     (cl-values acc
-            offset)))
+               offset)))
 
 (defconst weechat--relay-arr-spec
   '((type str 3)
@@ -249,7 +257,7 @@ of bytes consumed."
   (cl-multiple-value-bind (name len) (weechat--relay-unpack-str data)
     (cl-multiple-value-bind (value len*) (weechat--relay-unpack-str (substring data len))
       (cl-values (cons name value)
-              (+ len len*)))))
+                 (+ len len*)))))
 
 (defconst weechat--relay-inl-item-spec
   '((name struct weechat--relay-str-spec)
@@ -274,7 +282,7 @@ of bytes consumed."
                      (cons (bindat-get-field obj 'name 'val) value)
                      acc)))))
     (cl-values acc
-            offset)))
+               offset)))
 
 (defconst weechat--relay-inl-spec
   '((name struct weechat--relay-str-spec)
@@ -292,7 +300,7 @@ of bytes consumed."
         (setq acc (cons item acc))
         (setq offset (+ offset offset*))))
     (cl-values acc
-            offset)))
+               offset)))
 
 (defun weechat--relay-parse-hda-item (h-path-length name-type-alist data)
   (let ((p-path ())
@@ -308,7 +316,7 @@ of bytes consumed."
           (setq result (cons (cons (car name-type) obj) result))
           (setq offset (+ offset offset*)))))
     (cl-values (cons (reverse p-path) result)
-            offset)))
+               offset)))
 
 (defconst weechat--relay-hdh-spec
   '((h-path struct weechat--relay-str-spec)
@@ -344,7 +352,7 @@ of bytes consumed."
         (setq offset (+ offset offset*))))
     (let ((h-path (bindat-get-field obj 'h-path 'val)))
       (cl-values (list h-path acc)
-              offset))))
+                 offset))))
 
 (defconst weechat--relay-message-spec
   '((length u32)
@@ -361,7 +369,7 @@ of bytes consumed."
          (fun (symbol-function (intern (concat "weechat--relay-parse-" type)))))
     (cl-multiple-value-bind (obj len) (funcall fun (string-make-unibyte (substring data 3)))
       (cl-values obj
-              (+ len 3)))))
+                 (+ len 3)))))
 
 (defun weechat-unpack-message (message-data)
   "Unpack weechat relay message in MESSAGE-DATA.
@@ -382,7 +390,7 @@ Return a list: (id data)."
           (setq offset (+ offset offset*))
           (setq acc (cons obj acc)))))
     (cl-values (cons msg-id (if ignore-msg '(ignored) (reverse acc)))
-            (bindat-get-field msg 'length))))
+               (bindat-get-field msg 'length))))
 
 (defun weechat--message-available-p (&optional buffer)
   "Check if a weechat relay message available in BUFFER.
@@ -406,8 +414,6 @@ BUFFER defaults to the current buffer."
         (let ((inhibit-read-only t))
           (delete-region (point-min) (+ (point-min) len)))
         ret))))
-
-
 
 (defun weechat-relay-get-id-callback (id)
   (gethash id weechat--relay-id-callback-hash))
@@ -466,33 +472,92 @@ CALLBACK takes one argument (the response data) which is a list."
     (weechat-relay-log (format "Received event: %s\n" event))
     (cl-case event
       ('closed (run-hooks 'weechat-relay-disconnect-hook))
-      ('open (progn
-               (when (functionp weechat--relay-connected-callback)
-                 (funcall weechat--relay-connected-callback)
-                 (setq weechat--relay-connected-callback nil))
-               (run-hooks 'weechat-relay-connect-hook)))
       ('failed (progn (error "Failed to connect to weechat relay")
                       (weechat-relay-disconnect))))))
 
-(defun weechat-relay-connect (host port &optional callback)
-  "Open a new weechat relay connection to HOST at PORT."
-  (setq weechat--relay-connected-callback callback)
-  (make-network-process :name "weechat-relay"
-                        :buffer weechat-relay-buffer-name
+(defun weechat--relay-open-socket (name buffer host service)
+  (make-network-process :name name
+                        :buffer buffer
                         :host host
-                        :service port
-                        :filter #'weechat--relay-process-filter
-                        :sentinel #'weechat--relay-process-sentinel
-                        :nowait t
-                        :filter-multibyte nil
-                        :coding 'binary)
+                        :service service
+                        :coding 'binary
+                        :keepalive t))
+
+(defun weechat--relay-open-gnutls-stream (name buffer host service)
+  "Just like `open-gnutls-stream' with added validation."
+  (require 'gnutls)
+  (gnutls-negotiate
+   :process (weechat--relay-open-socket name buffer host service)
+   :type 'gnutls-x509pki
+   :hostname host
+   :verify-error weechat-relay-ssl-check-signatures
+   :verify-hostname-error weechat-relay-ssl-check-signatures))
+
+(defadvice open-gnutls-stream (around weechat-verifying
+                                      (name buffer host service))
+  (setq ad-return-value
+        (weechat--relay-open-gnutls-stream name buffer host service)))
+(ad-activate 'open-gnutls-stream)
+
+(defun weechat--relay-plain-socket (bname host port)
+  (weechat-relay-log (format "PLAIN %s:%d" host port) :info)
+  (weechat--relay-open-socket "weechat-relay" bname host port))
+
+(defun weechat--relay-tls-socket (bname host port)
+  (weechat-relay-log (format "TLS %s:%d" host port) :info)
+  (require 'gnutls)
+  ;; Advice `open-gnutls-stream' to verify signatures
+  (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
+  (unwind-protect
+      (open-network-stream "weechat-relay-tls"
+                           bname
+                           host
+                           port
+                           :type 'tls
+                           :coding 'binary)
+    (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)))
+
+(defun weechat--relay-from-command (cmdspec)
+  (lambda (bname host port)
+    (let ((cmd (format-spec cmdspec (format-spec-make
+                                     ?h host
+                                     ?p port))))
+      (weechat-relay-log (format "COMMAND %s:%s: `%s'" host port cmd))
+      (let ((process-connection-type nil))  ; Use a pipe.
+        (start-process-shell-command "weechat-relay-cmd" bname cmd)))))
+
+(defun weechat-relay-connect (host port mode &optional callback)
+  "Open a new weechat relay connection to HOST at PORT.
+
+Argument MODE Null or 'plain for a plain socket, t or 'ssl for a TLS socket;
+a string denotes a command to run. You can use %h and %p to interpolate host
+and port number respectively.
+
+Optional argument CALLBACK Called after initialization is finished."
+  ;; Clean relay buffer to start with clean state
+  (with-current-buffer (get-buffer-create weechat-relay-buffer-name)
+    (let ((inhibit-read-only t))
+      (delete-region (point-min) (point-max))))
+  (let* ((pfun (cond
+                ((or (null mode) (eq mode 'plain)) #'weechat--relay-plain-socket)
+                ((or (eq mode t) (eq mode 'ssl)) #'weechat--relay-tls-socket)
+                ((stringp mode) (weechat--relay-from-command mode))))
+         (process
+          (funcall pfun weechat-relay-buffer-name host port)))
+    (set-process-sentinel process #'weechat--relay-process-sentinel)
+    (set-process-coding-system process 'binary)
+    (set-process-filter process #'weechat--relay-process-filter)
+    (with-current-buffer (get-buffer weechat-relay-buffer-name)
+      (setq buffer-read-only t)
+      (set-buffer-multibyte nil)
+      (buffer-disable-undo)))
+
   (with-current-buffer (get-buffer-create
                         weechat-relay-log-buffer-name)
     (buffer-disable-undo))
-  (with-current-buffer (get-buffer weechat-relay-buffer-name)
-    (read-only-mode 1)
-    (set-buffer-multibyte nil)
-    (buffer-disable-undo)))
+  (when (functionp callback)
+    (funcall callback))
+  (run-hooks 'weechat-relay-connect-hook))
 
 (defun weechat-relay-connected-p ()
   (and (get-buffer weechat-relay-buffer-name)
@@ -530,8 +595,12 @@ CALLBACK takes one argument (the response data) which is a list."
 (defun weechat--hdata-value-alist (value)
   (cdr value))
 
+(defun weechat-unload-function ()
+  (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying))
+
 (provide 'weechat-relay)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; weechat-relay.el ends here
+

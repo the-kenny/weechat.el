@@ -5,7 +5,7 @@ EMACS := emacs
 BATCH := $(EMACS) -Q --batch --eval '(add-to-list '"'"'load-path ".")'
 
 TESTS   := $(wildcard *-test.el)
-EL 	:= $(wildcard weechat-*.el)
+EL 	:= $(wildcard weechat*.el)
 SOURCES := $(filter-out $(TESTS),$(EL))
 DEPS    := ((s \"1.3.1\"))
 

@@ -1,9 +1,10 @@
 # -*- mode:org; coding:utf-8; org-pretty-entities:nil; -*-
 #+STARTUP: nologdone
 
-* Short-Term [12/21]
-** DONE Handle network errors (disconnect)
-** DONE Handle opening/closing of buffers (after 'sync')
+Note: This list is broken on Github (they should really update
+org-ruby). Please use the 'Raw' link on the right.
+
+* Short-Term [16/22]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -20,22 +21,10 @@
    - [ ] _nicklist
    - [ ] _upgrade
    - [ ] _upgrade_ended
-** DONE Print 'connection lost' message to all buffers
-** DONE Input-Ring
-** DONE Nick Completion
 ** TODO Auto-Reconnect
-** DONE List with buffers to "auto-watch"
 ** TODO Mark channel as "read" from Emacs
    send command: "input 0x10f29d0 /input set_unread_current_buffer"
 *** This is currently broken on weechat's side. Waiting for FlashCode.
-** TODO Get (max 100 (count unread)) lines
-** DONE Fill region when receiving long messages
-** TODO Buffer-local URL ring for easy access
-** TODO Limit buffer size
-** DONE Fix /me display
-** DONE Nicklist handling
-   Waiting for delta updates (WeeChat 4.1?)
-** DONE Buttons for URLs and other stuff
 ** TODO Handle different types of messages [1/8]
    Incomplete List
    (Some of them can be ignored as they print fine with defaults)
@@ -47,25 +36,58 @@
    - [ ] Netsplit
    - [ ] CTCP
    - [ ] WHOIS
-** TODO Hooks for everything!
-** DONE package.el package
+** TODO Check performance with >1000 lines and nick-buttons enabled
+** TODO Request more backlog when scrolling / via shortcut
+** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
+*** DONE marmalade
+    Wait for more stable release.
+** DONE Don't delete prompt contents on re-monitor
+** DONE :query notification type
+** DONE Limit buffer size
+** DONE Handle network errors (disconnect)
+** DONE Handle opening/closing of buffers (after 'sync')
+** DONE Print 'connection lost' message to all buffers
+** DONE Input-Ring
+** DONE Nick Completion
+** DONE List with buffers to "auto-watch"
+** DONE Fill region when receiving long messages
+** DONE Fix /me display
+** DONE Nicklist handling
+   Waiting for delta updates (WeeChat 4.1?)
+** DONE Buttons for URLs and other stuff
 ** DONE Colors
    Thanks, Rüdiger
-
-** TODO Module System
-
-* Nice to have [3/11]
-** DONE Sauron Integration
-** DONE DBUS-Integration
+** DONE Module System
+* Nice to have [8/24]
 ** TODO More Unit Tests (ert)
-** TODO SSL Connections
 ** TODO Compression
-** TODO Read passwords from ~/.authinfo
-** TODO Speedbar integration
+** DONE Speedbar integration
 ** TODO Faces based on message type
-** DONE URL Detection
 ** TODO Typing auto-focuses the "input field"
 ** TODO More Notification Handlers
    - `message'
-
+** TODO Marker for away state
+** TODO Opening buffers in Emacs should update activation state on weechat side
+** TODO Buffer-local URL ring for easy access
+** TODO Request all highlighted lines when coming back online
+** TODO Get (max 100 (count unread)) lines
+** TODO Hooks for everything!
+** TODO Re-Implement scrambling of passwords in lambdas
+   Without lexical-let:
+   - Pass symbols around: `make-symbol', `symbol-value'
+** TODO Custom commands (defun weechat-cmd-NAME ...)
+** TODO Imenu support
+   See http://www.emacswiki.org/emacs/ErcImenu
+** TODO Auto-Monitor 'old' buffers
+   Sometimes buffers from an earlier connection remain in Emacs, never
+   to be updated again. A refresh (C-c C-r) should re-monitor them.
+** TODO Clean pointers on disconnect
+   ...to prevent horrible WeeChat crashes
+** DONE Module for applying s/foo/bar/ message corrections
+** DONE SSL Connections
+** DONE Sauron Integration
+** DONE DBUS-Integration
+** DONE Read passwords from ~/.authinfo
+** DONE URL Detection
+** DONE Buttons for nick names.

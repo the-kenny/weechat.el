@@ -2,7 +2,9 @@
 
 ;; Copyright (C) 2013 Moritz Ulrich
 
-;; Author: Moritz Ulrich (moritz@tarn-vedra.de)
+;; Author: Moritz Ulrich <moritz@tarn-vedra.de>
+;;         Rüdiger Sonderfeld <ruediger@c-plusplus.de>
+;;         Aristid Breitkreuz <aristidb@gmail.com>
 ;; Keywords: irc chat network weechat
 ;; URL: https://github.com/the-kenny/weechat.el
 
@@ -29,16 +31,34 @@
 
 ;;; Code:
 
+(require 'weechat-core)
 (require 'weechat-relay)
+(require 'weechat-color)
 (require 'cl-lib)
-(require 'rx)
 (require 'format-spec)
+(require 's)
 
-(defgroup weechat nil
-  "Weechat based IRC client for Emacs."
-  :link '(url-link "https://github.com/the-kenny/weechat.el")
-  :prefix "weechat-"
-  :group 'applications)
+(defcustom weechat-host-default "localhost"
+  "Default host for `weechat-connect'."
+  :type 'string
+  :group 'weechat)
+
+(defcustom weechat-port-default 9000
+  "Default port for `weechat-connect'."
+  :type 'string
+  :group 'weechat)
+
+(defcustom weechat-mode-default 'plain
+  "Wether to connect via SSL by default.
+
+Null or 'plain: Plain socket.
+t or 'ssl: TLS socket.
+String: comand to run."
+  :type '(choice
+          (const :tag "Plain" 'plain)
+          (const :tag "SSL/TLS" 'ssl)
+          (string :tag "Command to run"))
+  :group 'weechat)
 
 (defcustom weechat-modules '(weechat-button weechat-complete)
   "Modules that should always be loaded together with weechat.el
@@ -65,6 +85,12 @@ To unload modules, use (unload-feature FEATURE)."
   :type 'string
   :group 'weechat)
 
+(defcustom weechat-buffer-line-limit 1000
+  "Number of max. lines per buffer."
+  :type '(choice integer
+                 (const :tag "Unlimited" nil))
+  :group 'weechat)
+
 (defcustom weechat-return-always-replace-input t
   "Always replace current input with line on return.
 
@@ -74,8 +100,15 @@ empty."
   :type 'boolean
   :group 'weechat)
 
-(defcustom weechat-hide-like-weechat t
-  "Hide lines in buffer when they're hidden in Weechat."
+(defcustom weechat-auto-recenter t
+  "Wether the prompt will always stay at the bottom"
+  :type 'boolean
+  :group 'weechat)
+
+(defcustom weechat-hidden-text-hidden t
+  "Wether weechat.el should hide or show hidden text.
+
+Use `weechat-toggle-hidden' to toggle hidden text in buffers."
   :type 'boolean
   :group 'weechat)
 
@@ -103,7 +136,7 @@ monitored on connect. A value of t will monitor all available
 buffers. Be warned, a too long list will use much bandwidth on
 connect."
   :type '(choice (const :tag "All" t)
-                 (repeat :tag "List" string ))
+                 (repeat :tag "List" string))
   :group 'weechat)
 
 (defcustom weechat-auto-monitor-new-buffers 'silent
@@ -129,22 +162,6 @@ See `format-time-string' for format description."
   :type 'string
   :group 'weechat)
 
-(defface weechat-nick-self-face '((t :weight bold :foreground "brown"))
-  "Face for your own nick."
-  :group 'weechat)
-
-(defface weechat-time-face '((t :inherit default))
-  "Weechat face used for timestamps."
-  :group 'weechat)
-
-(defface weechat-prompt-face '((t :inherit minibuffer-prompt))
-  "Weechat face used for the prompt."
-  :group 'weechat)
-
-(defface weechat-highlight-face '((t :background "light blue"))
-  "Weechat face for highlighted lines."
-  :group 'weechat)
-
 (defcustom weechat-text-column 22
   "Column after which text will be inserted.
 If `(length (concat nick timestamp))' is longer than this value,
@@ -162,9 +179,12 @@ text-column will be increased for that line."
   :type '(choice
           (const :tag "Frame width" 'frame-width)
           (integer :tag "Number")
-          (const :tag "Default" t)))
+          (const :tag "Default" t))
+  :group 'weechat)
 
-(defcustom weechat-notification-icon nil
+(defcustom weechat-notification-icon
+  (when (boundp 'notifications-application-icon)
+    notifications-application-icon)
   "Icon used in notifications."
   :type '(choice (const :tag "No icon" nil)
                  (file :tag "Icon file"))
@@ -177,8 +197,8 @@ text-column will be increased for that line."
   "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
-          (const :tag "Sauron" 'weechat-sauron-handler)
-          (const :tag "DBUS" 'weechat-notifications-handler)
+          (const :tag "Sauron"           'weechat-sauron-handler)
+          (const :tag "notifications.el" 'weechat-notifications-handler)
           (function :tag "Custom Function"))
   :group 'weechat)
 
@@ -190,11 +210,26 @@ buffers) and t (All buffers)."
   :type '(choice
           (const :tag "Never" nil)
           (const :tag "Monitored buffers" :monitored)
-          (const :tag "All Buffers" t)))
+          (const :tag "All Buffers" t))
+  :group 'weechat)
+
+(defcustom weechat-notification-types '(:highlight :disconnect :query)
+  "Events for which a notification should be shown."
+  :type '(repeat symbol)
+  :group 'weechat)
+
+(defvar weechat-inhibit-notifications nil
+  "Non-nil means don't display any weechat notifications.")
 
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
-Set to nil to disable header line.  Currently only supported format option is %t for the title."
+Set to nil to disable header line.  Supported options are:
+
+- %n nick name
+- %s server name
+- %c channel name
+- %N buffer name
+- %t topic"
   :type '(choice (const :tag "Disabled" nil)
                  string)
   :set (lambda (sym val)
@@ -219,14 +254,29 @@ It is called with narrowing in the correct buffer."
   :type 'boolean
   :group 'weechat)
 
-(defvar weechat-debug-strip-formatting nil)
+(defcustom weechat-password-callback 'weechat-password-auth-source-callback
+  "Function called to get the relay password. Set to nil if no
+  password is needed.
+
+Value must be a function with two arguments: Hostname and port.
+The return value must be either a string, a function which
+returns a string, or nil."
+  :type 'function
+  :group 'weechat)
 
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
 
-(defvar weechat-inhibit-notifications nil
-  "Non-nil means don't display any weechat notifications.")
+(defvar weechat-host-history nil
+  "List of recently connected hosts.")
+(defvar weechat-last-port
+  "Last port connected to.")
+(defvar weechat-mode-history
+  "List of recently used connection modes.")
+
+(defvar weechat-version nil)
+(add-to-list 'version-regexp-alist '("^[-_+ ]dev$" . -3))
 
 (defvar weechat-buffer-opened-functions nil
   "Hook ran when a WeeChat buffer opens.")
@@ -234,18 +284,11 @@ It is called with narrowing in the correct buffer."
 (defvar weechat-buffer-closed-functions nil
   "Hook ran when a WeeChat buffer closes.")
 
-(defun weechat-warn (message &rest args)
-  "Displays MESSAGE with `warn' and logs it to
-  `weechat-relay-log-buffer-name'"
-  (let ((str (format message args)))
-    (weechat-relay-log str :warn)
-    (display-warning 'weechat str)))
-
 (defun weechat-load-modules-maybe ()
   "Load all modules listed in `weechat-modules'"
   ;; Inspired by `org-load-modules-maybe'
   (dolist (module weechat-modules)
-    (condition-case nil (require module)
+    (condition-case nil (load-library (symbol-name module))
       (error (weechat-warn "Problems while trying to load feature `%s'" module)))))
 
 ;;; This is a hack to load modules after weechat.el is loaded
@@ -316,7 +359,7 @@ It is called with narrowing in the correct buffer."
       (weechat-monitor-buffer
        buffer-ptr
        (not (eq weechat-auto-monitor-new-buffers 'silent))))
-    
+
     (run-hook-with-args 'weechat-buffer-opened-functions
                         buffer-ptr)))
 
@@ -326,10 +369,10 @@ It is called with narrowing in the correct buffer."
          (buffer-ptr (car (weechat--hdata-value-pointer-path value)))
          (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
-      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr)) 
+      (error "Received '_buffer_closed' event for '%s' but the buffer doesn't exist" buffer-ptr))
     (when (buffer-live-p emacs-buffer)
       ;; Add text about quitting etc. bla
-      (weechat-print-line buffer-ptr "" "Buffer closed")
+      (weechat-print-line buffer-ptr :prefix "Buffer closed")
       ;; Close buffer if user wants this
       (when weechat-auto-close-buffers
         (kill-buffer emacs-buffer)))
@@ -415,31 +458,102 @@ It is called with narrowing in the correct buffer."
 (weechat-relay-add-id-callback "_buffer_localvar_changed" #'weechat--handle-localvar-changed nil 'force)
 (weechat-relay-add-id-callback "_buffer_localvar_added" #'weechat--handle-localvar-changed nil 'force)
 
-;;;###autoload
-(defun weechat-connect (host port password)
-  (interactive (list (read-string "Relay Host: ")
-                     (read-number "Port: ")
-                     (read-passwd "Password: ")))
-  (when (weechat-relay-connected-p)
-    (if (y-or-n-p "Already connected.  Disconnect other connection? ")
-        (weechat-relay-disconnect)
-      (error "Can't open two connections")))
+(defun weechat-password-auth-source-callback (host port)
+  "Get password for HOST and PORT via `auth-source-search'.
+Returns either a string or a function.  See Info node `(auth) Top' for details."
+  (when (fboundp 'auth-source-search)
+    (weechat-message "Using auth-source to retrieve weechat relay password")
+    (plist-get
+     (car (auth-source-search
+           :max 1
+           :host host
+           :port port
+           :require '(:secret)))
+     :secret)))
 
-  (when (and (stringp host)
-             (integerp port))
-    (weechat-relay-connect
-     host port
-     (lambda ()
-       (weechat-relay-authenticate password)
-       (weechat-relay-send-command
-        "info version"
-        (lambda (data)
-          (message "Connected to '%s', version %s" host (cdar data))
-          (weechat-update-buffer-list
-           (lambda ()
-             (weechat-relay-send-command "sync")
-             (setq weechat--connected t)
-             (run-hooks 'weechat-connect-hook)))))))))
+(defun weechat-get-password (host port)
+  "Get password for HOST and PORT.
+Return either a string, a function returning a string, or nil."
+  (when (functionp weechat-password-callback)
+    (funcall weechat-password-callback host port)))
+
+(defvar weechat-mode-completion-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map minibuffer-local-map)
+    (define-key map "\t" 'minibuffer-complete)
+    (define-key map "?" 'minibuffer-completion-help)
+    map)
+  "Weechat mode selection: Local keymap for minibuffer input with completion.")
+
+;;;###autoload
+(defun weechat-connect (&optional host port password mode)
+  "Connect to WeeChat.
+
+HOST is the relay host, `weechat-host-default' by default.
+PORT is the port where the relay listens, `weechat-port-default' by default.
+PASSWORD is either a string, a function or nil.
+MODE is null or 'plain for a plain socket, t or 'ssl for a TLS socket;
+a string denotes a command to run.  You can use %h and %p to interpolate host
+and port number respectively."
+  (interactive
+   (let* ((host
+           (read-string
+            (format "Relay host (default '%s'): " weechat-host-default)
+            nil 'weechat-host-history weechat-host-default))
+          (port
+           (read-number "Port: " (or weechat-last-port weechat-port-default)))
+          (mode (let*
+                    ((minibuffer-local-completion-map weechat-mode-completion-map)
+                     (modestr (completing-read
+                               (format "Mode (`plain', `ssl' or command, default `%s'): "
+                                       weechat-mode-default)
+                               '("plain" "ssl" "ssh -W localhost:%p %h")
+                               nil nil nil 'weechat-mode-history)))
+                  (cond
+                   ((string-equal modestr "") nil)
+                   ((string-equal modestr "plain") 'plain)
+                   ((string-equal modestr "ssl") 'ssl)
+                   (t modestr)))))
+     (setq weechat-last-port port)
+     (list
+      host port
+      (or
+       (progn
+         (weechat-message "Trying to get password via `weechat-password-callback'...")
+         (weechat-get-password host port))
+       ;; Use lexical-let to scramble password lambda in *Backtrace*
+       (read-passwd "Password: "))
+      mode)))
+  (let* ((host (or host weechat-host-default))
+         (port (or port weechat-port-default))
+         (password (or password
+                       (weechat-get-password host port)))
+         (mode (or mode weechat-mode-default)))
+    (weechat-message "Weechat connecting to %s:%d" host port)
+    (when (weechat-relay-connected-p)
+      (if (y-or-n-p "Already connected.  Disconnect other connection? ")
+          (weechat-relay-disconnect)
+        (error "Can't open two connections")))
+    (when (and (stringp host)
+               (integerp port))
+      (weechat-relay-connect
+       host
+       port
+       mode
+       (lambda ()
+         (weechat-relay-authenticate password)
+         (weechat-relay-send-command
+          "info version"
+          (lambda (data)
+            (let ((version-str (cdar data)))
+             (weechat-message "Connected to '%s', version %s" host
+                              version-str)
+             (setq weechat-version version-str))
+            (weechat-update-buffer-list
+             (lambda ()
+               (weechat-relay-send-command "sync")
+               (setq weechat--connected t)
+               (run-hooks 'weechat-connect-hook))))))))))
 
 (defun weechat-disconnect ()
   (interactive)
@@ -448,13 +562,20 @@ It is called with narrowing in the correct buffer."
   (setq weechat--connected nil))
 
 (defun weechat-handle-disconnect ()
-  (setq weechat--connected nil)
+  (setq weechat--connected nil
+        weechat-version nil)
   ;; Print 'disconnected' message to all channel buffers
   (maphash (lambda (k v)
              (when (bufferp (gethash :emacs/buffer v))
                (with-current-buffer (gethash :emacs/buffer v)
-                 (weechat-print-line k "!!!" "Lost connection to relay server"))))
-           weechat--buffer-hashes))
+                 (weechat-print-line k
+                                     :prefix "!!!"
+                                     :text "Lost connection to relay server"
+                                     :date (current-time)
+                                     :line-type :irc/x-error))))
+           weechat--buffer-hashes)
+  (weechat-notify :disconnect
+                  :date (current-time)))
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
@@ -476,13 +597,30 @@ It is called with narrowing in the correct buffer."
      weechat--buffer-hashes)
     ret))
 
-(defun weechat-channel-names ()
+(defun weechat--channel-names-pred (l r)
+  "Compare channel name L and R.
+Return non-nil if L < R.  Names of actual channels should come first."
+  (let ((l?  (s-contains? "#" l))
+        (r?  (s-contains? "#" r))
+        (l<r? (string< l r)))
+    (or (and l? l<r?)
+        (and l? (not r?))
+        (and (not r?) l<r?))))
+
+(defun weechat-channel-names (&optional arg sort)
+  "Return all available buffer names in WeeChat.
+
+If ARG is non-nil, only return monitored buffers.  If SORT is non-nil then sort
+the channel list with actual channels coming first."
   (let (ret)
     (maphash
-     (lambda (k _)
-       (setq ret (cons (weechat-buffer-name k) ret)))
+     (lambda (k v)
+       (when (or (not arg) (buffer-live-p (gethash :emacs/buffer v)))
+         (setq ret (cons (weechat-buffer-name k) ret))))
      weechat--buffer-hashes)
-    ret))
+    (if sort
+        (sort ret #'weechat--channel-names-pred)
+      ret)))
 
 (defun weechat-buffer-list ()
   "List all Weechat buffers."
@@ -546,278 +684,82 @@ Used to identify it on the relay server.")
                                    'rear-nonsticky t
                                    'front-sticky t))))))
 
-(defvar weechat-formatting-regex
-  (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
-         (std  `(= 2 digit))
-         (astd `(seq ,attr (= 2 digit)))
-         (ext  `(seq "@" (= 5 digit)))
-         (aext `(seq "@" ,attr (= 5 digit))))
-    (rx-form
-     `(or (seq ""
-               (or ,std
-                   ,ext
-                   (seq "F" (or ,std ,astd ,ext ,aext))
-                   (seq "B" (or ,std ,ext))
-                   (seq "*" (or ,std
-                                ,astd
-                                ,ext
-                                ,aext
-                                (seq (or ,std ,astd ,ext ,aext)
-                                     ","
-                                     (or ,std ,astd ,ext ,aext))))
-                   (seq "b" (in "FDB_-#il"))
-                   ""))
-          (seq "" ,attr)
-          (seq "" ,attr)
-          ""))))
+(defvar weechat--notifications-id-to-msg nil
+  "Map notification ids to buffer-ptrs.")
 
-(defun weechat-strip-formatting (string)
-  "Strip weechat color codes from STRING."
-  (replace-regexp-in-string weechat-formatting-regex "" string))
+(defun weechat--notifications-action (id key)
+  "Handle notifcations.el actions.
+See `weechat-notifications-handler'.
 
-(defcustom weechat-color-list '(unspecified "black" "dark gray" "dark red" "red"
-                                            "dark green" "light green" "brown"
-                                            "yellow" "dark blue" "light blue"
-                                            "dark magenta" "magenta" "dark cyan"
-                                            "light cyan" "gray" "white")
-  "Mapping of Weechat colors.
-See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
-  :type '(repeat (choice (const :tag "Unspecified" unspecified)
-                         (const :tag "Color" color)))
-  :group 'weechat)
+Supported actions:
+- read: switch to buffer."
+  (when (string= key "read")
+    (let* ((buffer-ptr (cdr (assoc id weechat--notifications-id-to-msg))))
+      (when buffer-ptr
+        (weechat-switch-buffer buffer-ptr)))))
 
-(defvar weechat-color-attributes-alist '((?* . (:weight  bold))    ; bold
-                                         (?! . (:inverse-video t)) ; reverse??
-                                         (?/ . (:slant  italic))   ; italic
-                                         (?_ . (:underline t))     ; underline
-                                         (?| . keep))              ; keep
-  "Map color attribute specifiers to Emacs face property.")
-
-(defun weechat--match-color-code (what str i)
-  "Match std, ext, attr WHAT on STR at position I.
-This is internal and used by `weechat-handle-color-codes'."
-  (when (symbolp what)
-    (cl-case what
-      ((std)
-       (let ((std (substring str i (+ i 2))))
-         (when (s-matches? "^[0-9]+$" std)
-           (list 'std (+ i 2) (string-to-number std)))))
-      ((ext)
-       (when (= (aref str i) ?@)
-         (let ((std (substring str (1+ i) (+ i 6))))
-           (when (s-matches? "^[0-9]+$" std)
-             (list 'ext (+ i 6) (string-to-number std))))))
-      ((attr)
-       (let* ((a (aref str i))
-              (x (cdr (assq a weechat-color-attributes-alist))))
-         (when x
-           (list 'attr (1+ i) x))))
-      (t (error "Unknown parameter %s" what)))))
-
-(defun weechat--color-keep-attributes (old-face)
-  "Remove color settings from OLD-FACE but keep the attributes."
-  (cl-delete-if (lambda (x)
-                  (memq (car x) '(:foreground :background)))
-                old-face))
-
-(defun weechat--color-handle-F (str i old-face)
-  "Handle ?F (A)STD|(A)EXT color code in STR at I with OLD-FACE.
-This is an internal function of `weechat-handle-color-codes'."
-  (let (match-data
-        face
-        (j (1+ i)))
-    (while (setq match-data (weechat--match-color-code 'attr str j)) ;; (A)
-      (if (eq (cl-third match-data) 'keep)
-          (setq face (weechat--color-keep-attributes old-face))
-        (setq face (append (list (cl-third match-data)) face)))
-      (setq j (cl-second match-data)))
-    (setq match-data (weechat--match-color-code 'std str j))
-    (if match-data
-        (setq face (append (list (list :foreground (nth (cl-third match-data)
-                                                        weechat-color-list)))
-                           face)) ;; TODO set attribute instead of simply append
-      (setq match-data (weechat--match-color-code 'ext str j))
-      (if match-data
-          t ;; TODO ext
-        (error "Broken color code (in ?F '%s' %s)" str i)))
-    (cl-values (cl-second match-data)
-               face)))
-
-(defvar weechat-color-options-list
-  '(("weechat.color.separator" . "blue") ;; KEEP THE ORDER!
-    ("weechat.color.chat" . default)
-    ("weechat.color.chat_time" . weechat-time-face)
-    ("weechat.color.chat_time_delimiters" . weechat-time-face)
-    ("weechat.color.chat_prefix_error" . "yellow")
-    ("weechat.color.chat_prefix_network" . "magenta")
-    ("weechat.color.chat_prefix_action" . "white")
-    ("weechat.color.chat_prefix_join" . "light green")
-    ("weechat.color.chat_prefix_quit" . "light red")
-    ("weechat.color.chat_prefix_more" . "light magenta")
-    ("weechat.color.chat_prefix_suffix" . "green")
-    ("weechat.color.chat_buffer" . "white")
-    ("weechat.color.chat_server" . "brown")
-    ("weechat.color.chat_channel" . "white")
-    ("weechat.color.chat_nick" . "light cyan")
-    ("weechat.color.chat_nick_self" . weechat-nick-self-face)
-    ("weechat.color.chat_nick_other" . "cyan")
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    (nil . default)
-    ("weechat.color.chat_host" . "cyan")
-    ("weechat.color.chat_delimiters" . "green")
-    ("weechat.color.chat_highlight" . weechat-highlight-face)
-    ("weechat.color.chat_read_marker" . "magenta")
-    ("weechat.color.chat_text_found" . "yellow")
-    ("weechat.color.chat_value" . "cyan")
-    ("weechat.color.chat_prefix_buffer")
-    ("weechat.color.chat_tags" . "red")
-    ("weechat.color.chat_inactive_window" . "dark grey")
-    ("weechat.color.chat_inactive_buffer" . "dark grey")
-    ("weechat.color.chat_prefix_buffer_inactive_buffer" . "dark grey")
-    ("weechat.color.chat_nick_offline" . "dark grey")
-    ("weechat.color.chat_nick_offline_highlight" . default))
-  "List of color options for \x19XX.")
-;; TODO every option here should probably be a face!
-
-(defun weechat--color-std-to-theme (num)
-  "Turn color code in NUM using option into face."
-  (if (or (not (integerp num))
-          (> num (length weechat-color-options-list)))
-      'default
-    (let ((face (cdr (nth num weechat-color-options-list))))
-      (if (stringp face) ;; color value
-          (list (list :foreground face ))
-        face))))
-
-(defun weechat-handle-color-codes (str)
-  "Convert the Weechat color codes in STR to properties.
-EXT colors are currently not supported.  Any color codes left are stripped.
-
-Be aware that Weechat does not use mIRC color codes.
-See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings'."
-  (let ((i 0)
-        face
-        (ret "")
-        (len (length str)))
-    (while (< i len)
-      (cl-case (aref str i)
-        ((?\x19) ;; STD|EXT|?F((A)STD|(A)EXT)|?B(STD|EXT)|?\x1C|?*...|?b...
-         (let ((old-face face)
-               (next (aref str (1+ i))))
-           (setq face nil)
-           (setq i (1+ i))
-           (cond
-            ((and (<= ?0 next) (<= next ?9)) ;; STD
-             (let ((match-data (weechat--match-color-code 'std str i)))
-               (when match-data
-                 (setq face (weechat--color-std-to-theme (cl-third match-data)))
-                 (setq i (cl-second match-data)))))
-            ((= next ?@) ;; EXT
-             (let ((match-data (weechat--match-color-code 'ext str i)))
-               (when match-data
-                 ;; TODO
-                 (setq i (cl-second match-data)))))
-            ((= next ?F) ;; ?F(A)STD|?F(A)EXT
-             (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face)))
-            ((= next ?B) ;; ?BSTD|?BEXT
-             (let ((match-data (weechat--match-color-code 'std str i)))
-               (if match-data
-                   (setq face (list (list :background (nth (cl-third match-data)
-                                                           weechat-color-list))))
-                 (setq match-data (weechat--match-color-code 'ext str i))
-                 (if match-data
-                     t ;; TODO ext
-                   (error "Broken color code (in ?B '%s' %s)" str i)))
-               (when match-data
-                 (setq i (cl-second match-data)))))
-            ((= next ?*) ;; (A)STD | (A)EXT | (A)STD ?, (A)STD | ...
-             (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face))
-             (if (= (aref str i) ?,)
-                 (let* ((i (1+ i))
-                        (match-data (weechat--match-color-code 'std str i)))
-                   (if match-data
-                       (setq face (append (list (list :background (nth (cl-third match-data)
-                                                                       weechat-color-list)))
-                                          face))
-                     (setq match-data (weechat--match-color-code 'ext str i))
-                     (if match-data
-                         t ;; TODO ext
-                       (error "Broken color code (in ?* '%s' %s)" str i)))
-                   (setq i (cl-second match-data)))))
-            ((= next ?b) 'b) ;; ignore for now
-            ((= next ?\x1C)  ;; Clear color, leave attributes
-             (setq face (weechat--color-keep-attributes old-face))))))
-
-        ((?\x1A) ;; Set ATTR
-         (let ((match-data (weechat--match-color-code 'attr str (1+ i))))
-           (unless match-data
-             (error "Broken color code (in ?\\x1A '%s' %s)" str i))
-           (if (eq (cl-third match-data) 'keep)
-               (setq face (weechat--color-keep-attributes face))
-             (setq face (list (cl-third match-data))))
-           (setq i (cl-second match-data))))
-
-        ((?\x1B) ;; Delete ATTR
-         (let ((match-data (weechat--match-color-code 'attr str (1+ i)))
-               (old-face (copy-sequence face)))
-           (unless match-data
-             (error "Broken color code (in ?\\x1B '%s' %s)" str i))
-           (if (eq (cl-third match-data) 'keep)
-               (setq face nil) ;; TODO Does keep here means delete all or keep all?
-             (setq face (delq (cl-third match-data) old-face)))
-           (setq i (cl-second match-data))))
-
-        ((?\x1C) (setq i (1+ i) face nil))) ;; reset face
-
-      (let ((r (string-match-p "\\(\x19\\|\x1A\\|\x1B\\|\x1C\\)" str i)))
-        (if r
-            (setq ret (concat ret
-                              (propertize  (substring str i r) 'face (or face 'default)))
-                  i r)
-          (setq ret (concat ret (propertize (substring str i) 'face (or face 'default)))
-                i len)))) ;; STOP
-    ret))
-
-(defvar weechat--last-notification-id nil
-  "Last notification id parameter for :replaces-id.")
-
-(defun weechat-notifications-handler (sender text &optional _date _buffer-name)
+(defun weechat-notifications-handler (type &optional sender text _date buffer-ptr)
+  (require 'notifications nil t)
   (when (and (featurep 'notifications) (fboundp 'notifications-notify))
-    (setq weechat--last-notification-id
-          (notifications-notify
-           :title (xml-escape-string (concat "Weechat.el: Message from <"
-                                             (weechat-strip-formatting sender)
-                                             ">"))
-           :body (xml-escape-string text)
-           :app-icon weechat-notification-icon
-           :replaces-id weechat--last-notification-id))))
+    (require 'xml)
+    (let ((notifications-id
+           (notifications-notify
+            :title (xml-escape-string
+                    (or (cl-case type
+                          (:highlight
+                           (concat "Weechat.el: Message from <"
+                                   (weechat-strip-formatting sender)
+                                   ">"))
+                          (:query
+                           (concat "Weechat.el: Query from <"
+                                   (weechat-strip-formatting sender)
+                                   ">"))
+                          (:disconnect "Disconnected from WeeChat"))
+                        ""))
+            :body (when text (xml-escape-string text))
+            :actions '("read" "Read")
+            :on-action #'weechat--notifications-action
+            :app-icon weechat-notification-icon
+            :replaces-id (caar weechat--notifications-id-to-msg))))
+      (when notifications-id
+        (setq weechat--notifications-id-to-msg
+              (append (list (cons notifications-id buffer-ptr))
+                      weechat--notifications-id-to-msg))))))
 
-(defun weechat-sauron-handler (sender _text &optional _date _buffer-name)
+(defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
   (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
-    (lexical-let ((jump-position (point-max-marker)))
+    (setq text (if text (weechat-strip-formatting text)))
+    (setq sender (if sender (weechat-strip-formatting sender)))
+    (let ((jump-position (point-max-marker)))
       (sauron-add-event 'weechat 3
-                        (format "Message from %s"
-                                (weechat-strip-formatting sender))
+                        (cl-case type
+                          (:highlight
+                           (format "%s in %s: %S"
+                                   sender
+                                   (weechat-buffer-name buffer-ptr)
+                                   text))
+                          (:query
+                           (format "Query from %s: %S"
+                                   sender
+                                   text))
+                          (:disconnect
+                           "Disconnected from WeeChat"))
                         (lambda ()
                           (when (fboundp 'sauron-switch-to-marker-or-buffer)
-                            (sauron-switch-to-marker-or-buffer jump-position)))))))
+                            (sauron-switch-to-marker-or-buffer jump-position)))
+                        ;; Flood protection based on sender
+                        (when sender
+                          (list :sender sender))))))
 
 
-(defun weechat-notify (sender text &optional date buffer-name)
-  (when (and (functionp weechat-notification-handler)
+(cl-defun weechat-notify (type &key sender text date buffer-ptr)
+  (when (and (memq type weechat-notification-types)
+             (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
-    (funcall weechat-notification-handler sender text date buffer-name)))
+    (funcall weechat-notification-handler type sender text date buffer-ptr)))
 
 (defun weechat-narrow-to-line ()
   (interactive)
@@ -825,30 +767,107 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
     (error "No weechat-mode buffer"))
   (when (> (point) weechat-prompt-start-marker)
     (error "Only narrowing to lines is supported"))
-  (narrow-to-region (point-at-bol) (min weechat-prompt-start-marker
-                                        (point-at-eol))))
+  (narrow-to-region (point-at-bol) (min (point-at-eol)
+                                        weechat-prompt-start-marker)))
 
-(defun weechat-line-add-properties (date highlight)
-  "Adds various text properties (read-only, etc.) to a line.
+(defun weechat-truncate-buffer ()
+  (when (integerp weechat-buffer-line-limit)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (let ((lines-to-delete (- (- weechat-buffer-line-limit
+                                     (count-lines (point-min) (point-max)))))
+              (inhibit-read-only t))
+          (when (> lines-to-delete 0)
+            (goto-char (point-min))
+            (forward-line lines-to-delete)
+            (delete-region (point-min) (point))))))))
+
+(defun weechat-line-add-properties (nick date highlight invisible)
+  "Add various text properties (read-only, etc.) to a line.
 
 Must be called with `weechat-narrow-to-line' active."
   ;; Add `date' and `highlighted' to the whole line
   (add-text-properties (point-min) (point-max)
-                       (list 'weechat-date date
+                       (list 'weechat-nick nick
+                             'weechat-date date
                              'weechat-highlighted highlight))
 
   ;; Make line read-only if `weechat-read-only' is t
   (when weechat-read-only
     (add-text-properties (point-min) (point-max)
-                         '(read-only t))))
+                         '(read-only t)))
+
+  ;; Make line invisible if `invisible' is t
+  (when invisible
+    (add-text-properties (point-min) (point-max)
+                         `(invisible ,weechat-hidden-text-hidden
+                                     weechat-hidden-text t))))
+
+(defun weechat-toggle-hidden (&optional buffer)
+  (interactive)
+  (setq weechat-hidden-text-hidden (not weechat-hidden-text-hidden))
+  (with-current-buffer (or buffer (current-buffer))
+    (unless (eq major-mode 'weechat-mode)
+      (error "Can only toggle hidden in weechat-mode buffers"))
+    (save-excursion
+      (goto-char (point-min))
+      (let ((inhibit-read-only t)
+            (start (or (when (get-text-property (point) 'weechat-hidden-text) (point))
+                       (next-single-property-change (point) 'weechat-hidden-text)))
+            end)
+        (while start
+          (setq end (next-single-property-change start 'weechat-hidden-text))
+          (when end
+            (when end
+              (if weechat-hidden-text-hidden
+                  (add-text-properties start end '(invisible t))
+                (remove-text-properties start end '(invisible t))))
+            (setq start (next-single-property-change end 'weechat-hidden-text))))))
+    (weechat-recenter-bottom-maybe nil 'force)))
+
+(defun weechat-recenter-bottom-maybe (&optional window force)
+  (when weechat-auto-recenter
+    (let ((window (or (windowp window) (get-buffer-window))))
+      (when window
+        (with-selected-window window
+          (when (eq major-mode 'weechat-mode)
+            (when (or force
+                      (<= (- (window-body-height)
+                             (count-screen-lines (window-point)
+                                                 (window-start))
+                             2)         ;2, not 1 (like in rcirc)
+                                        ;because of the header-line
+                          0))
+              (recenter -1))))))))
 
 (defun weechat-line-date ()
-  "Returns the date of the line under point resides in."
+  "Return the date of the line under point."
   (get-text-property (point) 'weechat-date))
 
-(defun weechat-print-line (buffer-ptr sender text &optional date line-type highlight)
+(defun weechat-line-nick ()
+  "Return the nickname of the line under point."
+  (get-text-property (point) 'weechat-nick))
+
+(defun weechat-line-text-start ()
+  "Return position where line text (message etc.) starts.
+
+Might return the value of (point-at-eol) when there's no
+text (technically, this shouldn't happen)."
+  (next-single-property-change (point-at-bol)
+                               'weechat-text
+                               nil
+                               (point-at-eol)))
+
+(defun weechat-line-text ()
+  (save-excursion
+    (let ((start (weechat-line-text-start)))
+      (when (< start (point-at-eol))
+        (buffer-substring start (point-at-eol))))))
+
+(cl-defun weechat-print-line (buffer-ptr &key prefix text date line-type highlight invisible nick)
   (setq text   (or text ""))
-  (setq sender (or sender ""))
+  (setq prefix (or prefix ""))
   (let ((buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (bufferp buffer)
       (error "Couldn't find Emacs buffer for weechat-buffer %s" buffer-ptr))
@@ -873,8 +892,8 @@ Must be called with `weechat-narrow-to-line' active."
                        'face 'weechat-time-face)
                       " "))
 
-            (unless (s-blank? (weechat-handle-color-codes sender))
-              (insert (weechat-handle-color-codes sender))
+            (unless (s-blank? (weechat-handle-color-codes prefix))
+              (insert (weechat-handle-color-codes prefix))
               (when (or (eq line-type :irc/privmsg)
                         (not line-type))
                 (insert ":")))
@@ -890,11 +909,16 @@ Must be called with `weechat-narrow-to-line' active."
             (let ((prefix-string (make-string (- (point-max) (point-min)) ?\s))
                   (text-start (point)))
               ;; trim & handle color codes
-              (let ((text (weechat-handle-color-codes
-                           (s-trim text))))
-                (insert (if highlight
-                            (propertize text 'face 'weechat-highlight-face)
-                          text)
+              (let* ((text (weechat-> text
+                                      (s-trim)
+                                      (weechat-handle-color-codes)
+                                      (propertize 'weechat-text t))))
+                (insert (cond
+                         (highlight
+                          (propertize text 'face 'weechat-highlight-face))
+                         ((eq line-type :irc/x-error)
+                          (propertize text 'face 'weechat-error-face))
+                         (t text))
                         "\n"))
 
               (when weechat-fill-text
@@ -903,8 +927,12 @@ Must be called with `weechat-narrow-to-line' active."
                 (let ((overlay (make-overlay text-start (point-max))))
                   (overlay-put overlay 'wrap-prefix prefix-string))))
 
+            ;; Go to start of inserted line
+            (goto-char (1- (point)))    ;skip newline
+            (goto-char (point-at-bol))
+
             ;; Add general properties
-            (weechat-line-add-properties date highlight)
+            (weechat-line-add-properties nick date highlight invisible)
 
             ;; Important: Run the hook after everything else
             (run-hooks 'weechat-insert-modify-hook)))
@@ -921,8 +949,15 @@ Must be called with `weechat-narrow-to-line' active."
           ;; ...for active buffer
           (goto-char p-to-go))
 
+        ;; Recenter window if there are more lines than fit in the
+        ;; frame. This is borrowed from rcirc.
+        (weechat-recenter-bottom-maybe)
+
         (set-marker-insertion-type weechat-prompt-start-marker nil)
         (set-marker-insertion-type weechat-prompt-end-marker nil))
+
+      ;; Truncate
+      (weechat-truncate-buffer)
 
       ;; Drop undo information (borrowed from weechat)
       (buffer-disable-undo)
@@ -931,7 +966,6 @@ Must be called with `weechat-narrow-to-line' active."
 (defun weechat-line-type (line-hdata)
   (let ((tags (cdr (assoc-string "tags_array" line-hdata))))
     (cond
-     ((member "irc_privmsg" tags) :irc/privmsg)
      ((member "irc_join" tags) :irc/join)
      ((member "irc_action" tags) :irc/action)
      ((member "irc_part" tags) :irc/part)
@@ -940,19 +974,24 @@ Must be called with `weechat-narrow-to-line' active."
      ((member "irc_nick" tags) :irc/nick)
      ((member "irc_topic" tags) :irc/topic)
      ((member "irc_numeric" tags) :irc/numeric)
-     (:irc/privmsg))))                     ;fallback
+     ((member "irc_notice" tags) :irc/notice)
+     ((member "irc_privmsg" tags) :irc/privmsg)
+     (:irc/unknown))))                     ;fallback
 
-(defun weechat-print-irc-action (buffer-ptr sender message date highlight)
-  (let ((weechat-text-column 0))
-    (weechat-print-line buffer-ptr
-                        nil
-                        (concat sender message)
-                        date
-                        highlight)))
+(defun weechat-buffer-type (&optional buffer-ptr)
+  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
+         (type (weechat->> buffer-ptr
+                           (weechat-buffer-hash)
+                           (gethash "local_variables")
+                           (assoc-string "type")
+                           (cdr)) ))
+    (when (stringp type)
+      (intern (format ":%s" type)))))
 
 (defvar weechat-user-list)
 (defun weechat--user-list-add (nick)
-  (setq weechat-user-list (cons nick (delete nick weechat-user-list))))
+  (unless (s-blank? nick)
+    (setq weechat-user-list (cons nick (delete nick weechat-user-list)))))
 (defun weechat--user-list-remove (nick)
   (setq weechat-user-list (delete nick weechat-user-list)))
 
@@ -980,23 +1019,22 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
          (buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (weechat-buffer-hash buffer-ptr)
       (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
-    (let ((sender (assoc-default "prefix" line-data))
+    (let ((prefix (assoc-default "prefix" line-data))
           (message (assoc-default "message" line-data))
           (date (assoc-default "date" line-data))
           (highlight (assoc-default "highlight" line-data nil 0))
           (line-type (weechat-line-type line-data))
-          (visible (= 1 (assoc-default "displayed" line-data nil 0)))
+          (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
           (nick (weechat--get-nick-from-line-data line-data)))
       (setq highlight (= 1 highlight))
-      (when (and (bufferp (weechat--emacs-buffer buffer-ptr))
-                 (and weechat-hide-like-weechat
-                      visible))
-
+      (when (bufferp (weechat--emacs-buffer buffer-ptr))
         (with-current-buffer buffer
-          (when weechat-debug-strip-formatting
-            (setq sender (weechat-strip-formatting sender))
+          (when weechat-strip-formatting
+            (setq prefix (weechat-strip-formatting prefix))
             (setq message (weechat-strip-formatting message)))
 
+          ;; Nicklist handling. To be replaced with real nicklist
+          ;; updates when WeeChat starts sending nicklist deltas
           (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
                   (eq line-type :irc/join))
               (weechat--user-list-add nick)
@@ -1007,47 +1045,72 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                  (when (and from-nick to-nick)
                    (weechat--user-list-remove from-nick)
                    (weechat--user-list-add to-nick))))
-              ((:irc/part :irc/quit)) (weechat--user-list-remove nick))))
+              ((:irc/part :irc/quit) (weechat--user-list-remove nick)))))
 
         ;; Print the line
         (cl-case line-type
           (:irc/action
-           (weechat-print-irc-action buffer-ptr
-                                     nil
-                                     (concat sender message)
-                                     date
-                                     highlight))
-          (t
-           (progn
+           (let ((weechat-text-column 0))
              (weechat-print-line buffer-ptr
-                                 sender
-                                 message
-                                 date
-                                 line-type
-                                 highlight)))))
+                                 :text (concat prefix message)
+                                 :nick nick
+                                 :line-type line-type
+                                 :date date
+                                 :highlight highlight)))
+          (t
+           (weechat-print-line buffer-ptr
+                               :prefix prefix
+                               :text message
+                               :nick nick
+                               :date date
+                               :line-type line-type
+                               :highlight highlight
+                               :invisible invisible))))
 
       ;; TODO: Debug highlight for monitored and un-monitored channels
       ;; (Maybe) notify the user
       (with-current-buffer (or (and (buffer-live-p buffer) buffer)
                                (get-buffer weechat-relay-log-buffer-name)
                                (current-buffer))
-        (when (and (not weechat-inhibit-notifications) highlight)
-          (weechat-notify sender message date (buffer-name)))))))
+        (let* ((buftype (weechat-buffer-type buffer-ptr))
+               (highlight (cl-case buftype
+                            (:private t) ;always highlight queries
+                            (:server nil) ;never highlight server buffers
+                            (t highlight)))
+               (type (cl-case buftype
+                       (:private (unless (string-equal
+                                          (weechat-get-local-var
+                                           "nick"
+                                           buffer-ptr)
+                                          nick)
+                                   :query))
+                       (:channel :highlight))))
+          (when (and (not weechat-inhibit-notifications)
+                     highlight
+                     type)
+            (weechat-notify type
+                            :sender nick
+                            :text message
+                            :date date
+                            :buffer-ptr buffer-ptr)))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
-         (buf-ptr (weechat->
-                   lines-hdata
-                   (weechat--hdata-values)
-                   (car)
-                   (weechat--hdata-value-pointer-path)
-                   (car))))
-    ;; Need to get buffer-ptr from hdata pointer list
-    (with-current-buffer (weechat--emacs-buffer buf-ptr)
-      (save-excursion
-        (let ((weechat-inhibit-notifications t))
-          (dolist (line-hdata (weechat--hdata-values lines-hdata))
-            (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))))))
+         (hdata-values
+          (weechat--hdata-values lines-hdata)))
+    (when hdata-values
+      (let ((buf-ptr (weechat->
+                      hdata-values
+                      (car)
+                      (weechat--hdata-value-pointer-path)
+                      (car))))
+        ;; Need to get buffer-ptr from hdata pointer list
+        (with-current-buffer (weechat--emacs-buffer buf-ptr)
+          (save-excursion
+            (let ((weechat-inhibit-notifications t))
+              (dolist (line-hdata (weechat--hdata-values lines-hdata))
+                (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
+            (weechat-recenter-bottom-maybe nil 'force)))))))
 
 (defvar weechat-initial-lines-buffer-properties
   '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
@@ -1070,11 +1133,16 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     weechat-prompt-end-marker
     (point-max))))
 
-(defun weechat-replace-input (replacement)
+(defun weechat-replace-input (replacement &optional not-move-eol)
+  "Replace input line with REPLACEMENT.
+If NOT-MOVE-EOL is non-nil the point is not changed else it is moved to
+the end of line."
   (save-excursion
     (delete-region weechat-prompt-end-marker (point-max))
     (goto-char weechat-prompt-end-marker)
-    (insert (or replacement ""))))
+    (insert (or replacement "")))
+  (unless not-move-eol
+    (move-end-of-line 1)))
 
 (defvar weechat-input-ring)
 
@@ -1118,24 +1186,41 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
         (weechat-replace-input (ring-previous weechat-input-ring input)))))))
 
 (defun weechat-return ()
+  "Return key action.
+If point is in input field send message. If the point is in a chat line
+copy the message.  Only the message text is copied unless the prefix argument
+is given (\\[universal-argument])."
   (interactive)
   (cond
    ((>= (point) weechat-prompt-end-marker)
     ;; Submit
     (let ((input (weechat-get-input)))
-      (unless (string= "" input)
+      (unless (s-blank? input)
         (dolist (l (split-string input "\n"))
           (weechat-send-input weechat-buffer-ptr l))
         (weechat-input-ring-insert input)
         (weechat-replace-input ""))))
    ((< (point) weechat-prompt-start-marker)
-    (when (or (string-equal "" (weechat-get-input))
+    (when (or (s-blank? (weechat-get-input))
               weechat-return-always-replace-input)
       ;; Copy current line to input line
       (weechat-replace-input
        (buffer-substring-no-properties
-        (point-at-bol) (point-at-eol))))
+        (if current-prefix-arg
+            (point-at-bol)
+          (+ (point-at-bol) weechat-text-column))
+        (point-at-eol))))
     (goto-char (point-max)))))
+
+(defun weechat-bol (&optional arg)
+  "Go to the beginning of line, then skip past the prompt, if any.
+If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
+  ;; basically copied from `comint-bol'.
+  (interactive "P")
+  (cond
+   (arg (forward-line 0))
+   ((> (point) weechat-prompt-start-marker) (goto-char weechat-prompt-end-marker))
+   (t (beginning-of-line))))
 
 (defvar weechat-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1144,7 +1229,11 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
     (define-key map (kbd "TAB") 'completion-at-point)
+    (define-key map (kbd "C-a") 'weechat-bol)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
+    (define-key map (kbd "C-c C-t") 'weechat-toggle-hidden)
+    (define-key map (kbd "C-c C-b") 'weechat-switch-buffer)
+    (define-key map (kbd "C-c C-m") 'weechat-monitor-buffer)
     map)
   "Keymap for weechat mode.")
 
@@ -1154,8 +1243,13 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
     ["Previous Input" weechat-previous-input t]
     ["Next Input" weechat-next-input t]
     "-"
+    ["Toggle Hidden Lines" weechat-toggle-hidden t]
+    ["Narrow To Line" weechat-narrow-to-line
+     :active (< (point) weechat-prompt-start-marker)]
+    "-"
     ["Reload Buffer" weechat-reload-buffer t]
     ["Close Buffer" kill-buffer t]
+    ["Switch Buffer" weechat-switch-buffer t]
     ["Monitor Buffer" weechat-monitor-buffer t]
     ["Disconnect" weechat-disconnect t]))
 
@@ -1193,56 +1287,74 @@ Default is current buffer."
 
 \\{weechat-mode-map}"
 
-  (kill-all-local-variables)
+  ;; Hack to restore prompt location
+  (let ((prompt-start (when (boundp 'weechat-prompt-start-marker)
+                        weechat-prompt-start-marker))
+        (prompt-end (when (boundp 'weechat-prompt-end-marker)
+                      weechat-prompt-end-marker)))
 
-  (puthash :emacs/buffer (current-buffer) buffer-hash)
-  (add-hook 'kill-buffer-hook
-            (lambda ()
-              (when (hash-table-p weechat--buffer-hashes)
-                (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
-                  (when (hash-table-p hash)
-                    (remhash :emacs/buffer hash)))))
-            nil
-            'local-hook)
+    (kill-all-local-variables)
 
-  (use-local-map weechat-mode-map)
-  (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
-  (setq major-mode 'weechat-mode)
+    (puthash :emacs/buffer (current-buffer) buffer-hash)
+    (add-hook 'kill-buffer-hook
+              (lambda ()
+                (when (hash-table-p weechat--buffer-hashes)
+                  (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+                    (when (hash-table-p hash)
+                      (remhash :emacs/buffer hash)))))
+              nil
+              'local-hook)
 
-  (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
-  (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
-  (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
-  (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+    (use-local-map weechat-mode-map)
+    (setq mode-name (format "weechat: %s" (weechat-buffer-name buffer-ptr)))
+    (setq major-mode 'weechat-mode)
 
-  (set (make-local-variable 'weechat-user-list) nil)
-  (make-local-variable 'weechat-local-prompt)
-  (set (make-local-variable 'weechat-prompt-start-marker) (point-max-marker))
-  (set (make-local-variable 'weechat-prompt-end-marker) (point-max-marker))
-  (weechat-update-prompt)
+    (set (make-local-variable 'weechat-buffer-ptr) buffer-ptr)
+    (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
+    (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
+    (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
 
-  (set (make-local-variable 'weechat-input-ring) (make-ring weechat-input-ring-size))
+    ;; Start with empty user list
+    (set (make-local-variable 'weechat-user-list) nil)
 
-  ;; Don't auto-add newlines on next-line
-  (set (make-local-variable 'next-line-add-newlines) nil)
+    ;; Setup prompt
+    (make-local-variable 'weechat-local-prompt)
+    (set (make-local-variable 'weechat-prompt-start-marker)
+         (or prompt-start(point-max-marker)))
+    (set (make-local-variable 'weechat-prompt-end-marker)
+         (or prompt-end(point-max-marker)))
+    (weechat-update-prompt)
 
-  ;; Initialize buffer
-  (weechat-request-initial-lines buffer-ptr)
+    ;; Initialize input-ring
+    (set (make-local-variable 'weechat-input-ring) (make-ring weechat-input-ring-size))
 
-  ;; Set Header
-  (weechat-update-header-line-buffer (current-buffer))
+    ;; Don't auto-add newlines on next-line
+    (set (make-local-variable 'next-line-add-newlines) nil)
+    ;; Fix scrolling
+    (setq scroll-conservatively 1000)
 
-  ;; Hooks
-  (run-mode-hooks 'weechat-mode-hook))
+    ;; Initialize buffer
+    (weechat-request-initial-lines buffer-ptr)
 
+    ;; Set Header
+    (weechat-update-header-line-buffer (current-buffer))
+
+    ;; Hooks
+    (run-mode-hooks 'weechat-mode-hook)))
+
+(defun weechat--read-channel-name (&optional only-monitored)
+  "Read channel name from minibuffer in combination with `interactive'."
+  (weechat--find-buffer
+   (funcall (or (and (featurep 'ido)
+                     (symbol-function 'ido-completing-read))
+                #'completing-read)
+            "Channel Name: "
+            (weechat-channel-names only-monitored 'sort))))
 
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
-  (interactive (list
-                (weechat--find-buffer
-                 (funcall (or (and (featurep 'ido)
-                                   (symbol-function 'ido-completing-read))
-                              #'completing-read)
-                          "Channel Name: " (weechat-channel-names-unmonitored)))
-                t))
+  "Start monitoring BUFFER-PTR.
+If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
+  (interactive (list (weechat--read-channel-name) t))
   (save-excursion
     (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
            (name (weechat-buffer-name buffer-ptr)))
@@ -1250,20 +1362,34 @@ Default is current buffer."
         (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
       (with-current-buffer (get-buffer-create name)
-        (fundamental-mode)
+        ;; (fundamental-mode)
         (let ((inhibit-read-only t))
-          (kill-region (point-min) (point-max)))
+          (when (eq major-mode 'weechat-mode)
+            (delete-region (point-min) weechat-prompt-start-marker)))
         (weechat-mode (get-buffer-process weechat-relay-buffer-name)
                       buffer-ptr
                       buffer-hash)
         (when show-buffer
           (switch-to-buffer (current-buffer)))))))
 
+(defun weechat-switch-buffer (buffer-ptr)
+  "Like `switch-buffer' but limited to WeeChat buffers.
+
+BUFFER-PTR is a string containing a pointer to the buffer to switch to.
+
+Will monitor channels if necessary.  Will list remotely available buffers if
+called with prefix (\\[universal-argument]), otherwise only monitored buffers."
+  (interactive (list (weechat--read-channel-name (not current-prefix-arg))))
+  (let ((buffer (weechat--emacs-buffer buffer-ptr)))
+    (if (buffer-live-p buffer)
+        (switch-to-buffer buffer)
+      (weechat-monitor-buffer buffer-ptr 'show))))
+
 (defun weechat-reload-buffer (&optional buffer)
-  (interactive)
+  (interactive (list (current-buffer)))
   (with-current-buffer (or buffer (current-buffer))
     (weechat-relay-log
-     (format "Re-monitoring buffer %S" buffer))
+     (format "Re-monitoring buffer %s" (buffer-name buffer)))
     (weechat-monitor-buffer weechat-buffer-ptr)))
 
 (defun weechat-re-monitor-buffers ()
@@ -1285,7 +1411,7 @@ Default is current buffer."
     (dolist (channel (if (listp weechat-auto-monitor-buffers)
                          weechat-auto-monitor-buffers
                        (progn
-                         (message "Monitoring all available WeeChat buffers. Be patient...")
+                         (weechat-message "Monitoring all available WeeChat buffers. Be patient...")
                          available-channels)))
       ;; Check if one of the available channels partially matches the
       ;; channel we want to monitor
@@ -1313,9 +1439,48 @@ Default is current buffer."
 
 (defun weechat-join (channel)
   "Join CHANNEL."
-  (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))
+  (let ((full-name (cl-some (lambda (x) (when (s-contains? channel x) x))
+                            (weechat-channel-names))))
+    (if full-name
+        (weechat-monitor-buffer (weechat--find-buffer full-name) 'show)
+      (weechat-send-input weechat-buffer-ptr (concat "/join " channel)))))
+
+;;; This should probably be in some util file:
+
+(defun weechat--send-cmd (cmd &rest options)
+  "Send CMD with OPTIONS to WeeChat."
+  (weechat-send-input
+   weechat-buffer-ptr
+   (concat cmd " " (when options
+                     (cl-reduce (lambda (l r)
+                                  (concat l " " r))
+                                options)))))
+
+(defcustom weechat-nick-operations
+  '(("DeOp" .  (weechat--send-cmd "/deop" nick))
+    ("Kick" . (weechat--send-cmd "/kick" nick
+                                        (read-from-minibuffer
+                                         (concat "Kick " nick ", reason: "))))
+    ("Query" . (weechat--send-cmd "/query" nick))
+    ("Whois" . (weechat--send-cmd "/whois" nick))
+    ("Op" . (weechat--send-cmd "/op" nick))
+    ("Voice" . (weechat--send-cmd "/voice" nick)))
+  "An alist of possible nickname actions.
+The format is (\"Action\" . SEXP) wher SEXP is evaluated with `nick' bound."
+  :group 'weechat
+  :type '(repeat (const (string :tag "Action")
+                        sexp)))
+
+(defun weechat-nick-action (nick)
+  "Ask user for action on NICK and `eval' it."
+  (let* ((completion-ignore-case t)
+         (action (completing-read (concat "What action to take on '" nick "'? ")
+                                  weechat-nick-operations))
+         (code `(let ((nick ,nick))
+                  ,(cdr (assoc-string action weechat-nick-operations)))))
+    (when code
+      (eval code))))
 
 (provide 'weechat)
 
 ;;; weechat.el ends here
-
