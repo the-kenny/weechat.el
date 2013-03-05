@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* Short-Term [16/22]
+* Short-Term [16/23]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -38,6 +38,8 @@ org-ruby). Please use the 'Raw' link on the right.
    - [ ] WHOIS
 ** TODO Check performance with >1000 lines and nick-buttons enabled
 ** TODO Request more backlog when scrolling / via shortcut
+** TODO Fix failed certificate when using gnutls-cli
+   See http://p.tarn-vedra.de/weechat-relay-cert-check-fail.html
 ** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
 *** DONE marmalade
