@@ -1324,7 +1324,9 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     ["Previous Input" weechat-previous-input t]
     ["Next Input" weechat-next-input t]
     "-"
-    ["Toggle Hidden Lines" weechat-toggle-hidden t]
+    ["Show Hidden Lines" weechat-toggle-hidden
+     :style toggle
+     :selected (not weechat-hidden-text-hidden)]
     ["Narrow To Line" weechat-narrow-to-line
      :active (< (point) weechat-prompt-start-marker)]
     "-"
