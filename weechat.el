@@ -522,9 +522,9 @@ and port number respectively."
                                '("plain" "ssl" "ssh -W localhost:%p %h")
                                nil nil nil 'weechat-mode-history)))
                   (cond
-                   ((string-equal modestr "") nil)
-                   ((string-equal modestr "plain") 'plain)
-                   ((string-equal modestr "ssl") 'ssl)
+                   ((string= modestr "") nil)
+                   ((string= modestr "plain") 'plain)
+                   ((string= modestr "ssl") 'ssl)
                    (t modestr)))))
      (list
       host port
@@ -703,7 +703,7 @@ frame."
       (when (and line-type line-date nick)
         (cond
          ;; Message from ourself. Reset modification times
-         ((string-equal nick (weechat-get-local-var "nick" buffer-ptr))
+         ((string= nick (weechat-get-local-var "nick" buffer-ptr))
           (weechat-reset-buffer-modified buffer-ptr))
          ;; General activity
          ((memq line-type weechat-buffer-activity-types)
@@ -1158,7 +1158,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                             (:server nil) ;never highlight server buffers
                             (t highlight)))
                (type (cl-case buftype
-                       (:private (unless (string-equal
+                       (:private (unless (string=
                                           (weechat-get-local-var
                                            "nick"
                                            buffer-ptr)

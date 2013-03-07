@@ -85,7 +85,7 @@ If nil, parentheses must be quotedL s/a\(.\)c/\1/."
   (let ((nick (weechat-line-nick))
         (line (weechat-line-text)))
     (when (and (or weechat-corrector-correct-other
-                   (string-equal (weechat-line-nick)
+                   (string= (weechat-line-nick)
                                  (weechat-get-local-var "nick")))
                line
                (stringp line))
@@ -111,7 +111,7 @@ If nil, parentheses must be quotedL s/a\(.\)c/\1/."
                           (forward-line -1))
                         (weechat-narrow-to-line)
                         (goto-char (weechat-line-text-start))
-                        (when (and (string-equal nick (weechat-line-nick))
+                        (when (and (string= nick (weechat-line-nick))
                                    (re-search-forward re nil t))
                           (replace-match rp)
                           ;; Add `weechat-corrector-corrected-face'
