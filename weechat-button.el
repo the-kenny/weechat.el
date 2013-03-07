@@ -92,6 +92,17 @@ Format is (info \"link\")."
   :group 'weechat-button
   :type 'boolean)
 
+(defcustom weechat-button-rfc-url "http://www.faqs.org/rfcs/rfc%s.html"
+  "URL used to browse rfc references.
+%s is replaced by the number."
+  :group 'weechat-button
+  :type 'string)
+
+(defcustom weechat-button-buttonize-rfc nil
+  "Buttonize rfc links?"
+  :group 'weechat-button
+  :type 'boolean)
+
 ; temporarily disabled due to performance problems
 (defcustom weechat-button-buttonize-nicks nil
   "Buttonize nicknames?"
@@ -103,12 +114,15 @@ Format is (info \"link\")."
                                browse-url 0)
     ("#[-#+_.[:alnum:]]+" 0 weechat-button-buttonize-channels nil "Join Channel"
      weechat-join 0)
-    ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
+    ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil
+     "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
      weechat-button--describe-symbol 1)
     ("[[:alpha:][:alnum:]]+([1-9])" 0 weechat-button-buttonize-man nil "Manpage" man 0)
     ("(info \"\\(([[:alnum:]]+) .+?\\)\"" 1 weechat-button-buttonize-info nil "info"
-     info 1))
+     info 1)
+    ("\\brfc[#: ]?\\([0-9]+\\)" 0 weechat-button-buttonize-rfc nil "RFC"
+     weechat-button--rfc 1))
   "List of potential buttons in WeeChat chat buffers.
 Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
 DATA-MATCH...), where
@@ -274,6 +288,10 @@ and `apropos' for other symbols."
 (defun weechat-button--mailto (email)
   "Call `browse-url' on email with \"mailto:\" prepend."
   (browse-url (concat "mailto:" email)))
+
+(defun weechat-button--rfc (rfc)
+  "Call `browse-url' on RFC using `weechat-button-rfc-url'."
+  (browse-url (format weechat-button-rfc-url rfc)))
 
 ;;; Module load/unload
 
