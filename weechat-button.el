@@ -94,7 +94,7 @@ Format is man(1)."
   :group 'weechat-button
   :type 'boolen)
 
-(defcustom weechat-button-buttonize-info '("#emacs" "#weechat.el")
+(defcustom weechat-button-buttonize-info '("#emacs" "#weechat\\.el")
   "Buttonize info links?
 Format is (info \"link\")."
   :group 'weechat-button
