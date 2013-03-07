@@ -257,7 +257,7 @@ It is called with narrowing in the correct buffer."
   "List of function called after a new line was received for a buffer.
 
 This hook is useful in conjunction with
-`weechat-last-background'-essage-date' or
+`weechat-last-background-message-date' or
 `weechat-last-background-highlight-date'.
 
 Functions must take one argument: The buffer-ptr."
