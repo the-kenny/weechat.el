@@ -192,7 +192,8 @@ text-column will be increased for that line."
 - string: file name of a sound file."
   :type '(choice (const :tag "No sound" nil)
                  (const :tag "Default system sound" t)
-                 (file :tag "Sound file")))
+                 (file :tag "Sound file"))
+  :group 'weechat)
 
 (defcustom weechat-notification-handler
   (cond
