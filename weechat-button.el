@@ -65,28 +65,28 @@ defined in `weechat-button-list')"
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-channels t
   "Buttonize channel links?"
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-symbols t
   "Buttonize symbol links?"
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-emails nil
   "Buttonize e-mail link?"
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-man nil
   "Buttonize manpage links?
@@ -100,7 +100,7 @@ Format is (info \"link\")."
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-rfc-url "http://www.faqs.org/rfcs/rfc%s.html"
   "URL used to browse rfc references.
@@ -113,7 +113,7 @@ Format is (info \"link\")."
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 ; temporarily disabled due to performance problems
 (defcustom weechat-button-buttonize-nicks nil
@@ -121,7 +121,7 @@ Format is (info \"link\")."
   :group 'weechat-button
   :type '(choice (const :tag "Never" nil)
                  (const :tag "Always" t)
-                 (repeat :tag "If regular expression matches buffer name" string)))
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
@@ -170,7 +170,7 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                                (const :tag "Always" t)
                                (const :tag "Never" nil)
                                (repeat :tag "If regular expression matches buffer name"
-                                       string)
+                                       regexp)
                                (symbol :tag "Variable name"))
                        (choice :tag "Log match"
                                (const :tag "To default buffer" t)
