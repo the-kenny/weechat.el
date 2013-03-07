@@ -56,7 +56,7 @@
     (if (buffer-live-p buf)
         (switch-to-buffer buf)
       (when (y-or-n-p (format "Monitor buffer '%s'? " buffer))
-        (weechat-monitor-buffer buffer 'show)))))
+        (weechat-monitor-buffer (weechat--find-buffer buffer) 'show)))))
 
 (defvar weechat--buffer-hashes) ;; See weechat.el
 
