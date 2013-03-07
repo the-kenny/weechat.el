@@ -155,15 +155,15 @@ Default property is `face'.  The returned format is ((START END (PROP VALUE)))."
                    "hi world"))
   (should (equal (weechat-test--property-list
                   (weechat-handle-color-codes "\x19\F*02hi\x1C \x19\F/04world"))
-                 '((3 8
+                 `((3 8
                       (face
-                       ((:foreground "red")
+                       ((:foreground ,(nth 4 weechat-color-list))
                         (:slant italic))))
                    (2 3
                       (face default))
                    (0 2
                       (face
-                       ((:foreground "dark gray")
+                       ((:foreground ,(nth 2 weechat-color-list))
                         (:weight bold)))))))
   (should (string= (weechat-handle-color-codes "\x19\Fkaputt") "kaputt"))
   (should (string= (weechat-handle-color-codes "XY\x1A\Z") "XYZ"))
