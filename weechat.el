@@ -598,14 +598,12 @@ and port number respectively."
         (gethash "short_name"  hash))))
 
 (defun weechat--find-buffer (name)
+  "Return buffer-ptr for channel NAME."
   (let (ret)
     (maphash
      (lambda (ptr _)
-       (let ((bname (weechat-buffer-name ptr)))
-         (when (or (equal bname  name)
-                   (equal bname  name)
-                   (equal bname  name))
-           (setq ret ptr))))
+       (when (string= name (weechat-buffer-name ptr))
+         (setq ret ptr)))
      weechat--buffer-hashes)
     ret))
 
