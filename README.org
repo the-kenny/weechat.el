@@ -112,6 +112,19 @@
     The =weechat-speedbar= module provides Emacs' Speedbar integration.  After
     loading the module and opening the Speedbar there should be a Display mode
     called "WeeChat" available.
+*** Image
+    This modules allows (embedded) previews of image urls.  After loading the
+    module a button should appear next to urls to image files.  By clicking the
+    button images should be opened inline and by clicking the button again they
+    should be removed.
+
+    By changing =weechat-image-display-func= the images can instead be opened
+    inside the buffer =weechat-image-buffer=.  The detection of image URLs can
+    be influenced with =weechat-image-url-regex= and
+    =weechat-image-url-blacklist-regex=.
+
+    Be careful when loading images of sources you do not trust.  Change
+    =weechat-image-size-limit= to prevent the display of large images.
 * Contact
   Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
 

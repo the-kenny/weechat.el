@@ -24,6 +24,7 @@
 
 ;;; Commentary:
 ;;
+;; TODO: resize, make buffer more beautiful, test test test
 
 ;;; Code:
 ;;
