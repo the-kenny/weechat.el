@@ -839,6 +839,7 @@ Supported actions:
     (funcall weechat-notification-handler type sender text date buffer-ptr)))
 
 (defun weechat-buffer-p (&optional buffer)
+  "Return non-nil if buffer is a WeeChat buffer."
   (eq 'weechat-mode (buffer-local-value 'major-mode
                                         (or buffer (current-buffer)))))
 
