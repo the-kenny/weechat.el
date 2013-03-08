@@ -838,9 +838,13 @@ Supported actions:
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
     (funcall weechat-notification-handler type sender text date buffer-ptr)))
 
+(defun weechat-buffer-p (&optional buffer)
+  (eq 'weechat-mode (buffer-local-value 'major-mode
+                                        (or buffer (current-buffer)))))
+
 (defun weechat-narrow-to-line ()
   (interactive)
-  (unless (eq major-mode 'weechat-mode)
+  (unless (weechat-buffer-p)
     (error "No weechat-mode buffer"))
   (when (> (point) weechat-prompt-start-marker)
     (error "Only narrowing to lines is supported"))
@@ -885,7 +889,7 @@ Must be called with `weechat-narrow-to-line' active."
   (interactive)
   (setq weechat-hidden-text-hidden (not weechat-hidden-text-hidden))
   (with-current-buffer (or buffer (current-buffer))
-    (unless (eq major-mode 'weechat-mode)
+    (unless (weechat-buffer-p buffer)
       (error "Can only toggle hidden in weechat-mode buffers"))
     (save-excursion
       (goto-char (point-min))
@@ -908,7 +912,7 @@ Must be called with `weechat-narrow-to-line' active."
     (let ((window (or (windowp window) (get-buffer-window))))
       (when window
         (with-selected-window window
-          (when (eq major-mode 'weechat-mode)
+          (when (weechat-buffer-p)
             (when (or force
                       (<= (- (window-body-height)
                              (count-screen-lines (window-point)
@@ -1446,7 +1450,7 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
       (with-current-buffer (get-buffer-create name)
         ;; (fundamental-mode)
         (let ((inhibit-read-only t))
-          (when (eq major-mode 'weechat-mode)
+          (when (weechat-buffer-p)
             (delete-region (point-min) weechat-prompt-start-marker)))
         (weechat-mode (get-buffer-process weechat-relay-buffer-name)
                       buffer-ptr
