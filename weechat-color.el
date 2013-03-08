@@ -186,8 +186,8 @@ This is an internal function of `weechat-handle-color-codes'."
     ("weechat.color.chat_prefix_network" . "magenta")
     ("weechat.color.chat_prefix_action" . "white")
     ("weechat.color.chat_prefix_join" . "light green")
-    ("weechat.color.chat_prefix_quit" . "light red")
-    ("weechat.color.chat_prefix_more" . "light magenta")
+    ("weechat.color.chat_prefix_quit" . "orange red") ;; light red
+    ("weechat.color.chat_prefix_more" . "medium violet red") ;; light magenta
     ("weechat.color.chat_prefix_suffix" . "green")
     ("weechat.color.chat_buffer" . "white")
     ("weechat.color.chat_server" . "brown")
