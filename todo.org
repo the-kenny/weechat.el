@@ -61,7 +61,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** DONE Colors
    Thanks, Rüdiger
 ** DONE Module System
-* Nice to have [8/24]
+* Nice to have [8/25]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** DONE Speedbar integration
@@ -86,6 +86,7 @@ org-ruby). Please use the 'Raw' link on the right.
    to be updated again. A refresh (C-c C-r) should re-monitor them.
 ** TODO Clean pointers on disconnect
    ...to prevent horrible WeeChat crashes
+** TODO Don't kill undo-history on buffer change (annoying when you're typing sth.)
 ** DONE Module for applying s/foo/bar/ message corrections
 ** DONE SSL Connections
 ** DONE Sauron Integration
