@@ -124,7 +124,7 @@ The Function should accept the following paramter (URL IMAGE BUFFER MARKER)."
 
 (defun weechat-image--get-image (_status url buffer marker)
   (goto-char (point-min))
-  (unless (looking-at "^HTTP/1.1 200 OK")
+  (unless (looking-at "^HTTP/.+ 200 OK$")
     (kill-buffer)
     (error "Error while fetching image `%s'" url))
   (unless (search-forward "\n\n" nil t)
