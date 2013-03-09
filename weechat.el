@@ -177,12 +177,12 @@ text-column will be increased for that line."
           (const :tag "Default" t))
   :group 'weechat)
 
-(defcustom weechat-notification-icon
-  (when (boundp 'notifications-application-icon)
-    notifications-application-icon)
-  "Icon used in notifications."
+(defcustom weechat-notification-icon #'weechat-notification-icon-function
+  "Icon used in notifications.
+Either nil, a file-name, or a function which is called with (SENDER BUFFER-PTR)."
   :type '(choice (const :tag "No icon" nil)
-                 (file :tag "Icon file"))
+                 (file :tag "Icon file")
+                 (function :tag "Icon function"))
   :group 'weechat)
 
 (defcustom weechat-notification-sound t
@@ -754,6 +754,11 @@ frame."
                                    'rear-nonsticky t
                                    'front-sticky t))))))
 
+(defun weechat-notification-icon-function (_sender _buffer-ptr)
+  "Default icon."
+  (when (boundp 'notifications-application-icon)
+    notifications-application-icon))
+
 (defvar weechat--notifications-id-to-msg nil
   "Map notification ids to buffer-ptrs.")
 
@@ -790,7 +795,10 @@ Supported actions:
             :category "im.received"
             :actions '("read" "Read")
             :on-action #'weechat--notifications-action
-            :app-icon weechat-notification-icon
+            :app-icon (cl-typecase weechat-notification-icon
+                        (string weechat-notification-icon)
+                        (function (funcall weechat-notification-icon
+                                           sender buffer-ptr)))
             :app-name "WeeChat.el"
             :sound-name (when (and weechat-notification-sound
                                    (not (stringp weechat-notification-sound)))
