@@ -73,8 +73,31 @@ The Function should accept the following paramter (URL IMAGE BUFFER MARKER)."
 
 (defcustom weechat-image-size-limit (* 1024 1024) ;; 1M
   "Size limit for images."
-  :type '(choide (const :tag "No limit" nil)
+  :type '(choice (const :tag "No limit" nil)
                  (integer :tag "Size limit in bytes"))
+  :group 'weechat-image)
+
+(defcustom weechat-image-max-width (/ (frame-pixel-width nil) 2)
+  "Max image width.
+If `weechate-image-size' is non-nil the image is resized.  Be aware that
+`weechat-image-size-limit' is checked before."
+  :type '(choice (const :tag "No limit" nil)
+                 (integer :tag "Max width in pixel"))
+  :group 'weechat-image)
+
+(defcustom weechat-image-max-height nil
+  "Max image height.
+If `weechate-image-size' is non-nil the image is resized.  Be aware that
+`weechat-image-size-limit' is checked before."
+  :type '(choice (const :tag "No limit" nil)
+                 (integer :tag "Max height in pixel"))
+  :group 'weechat-image)
+
+(defcustom weechat-image-resize weechat-image-use-imagemagick
+  "Resize image if it's larger than `weechat-image-max-width' and
+`weechat-image-max-height'.  This only works if imagemagick is used.
+See `weechat-image-use-imagemagick'."
+  :type 'boolean
   :group 'weechat-image)
 
 (defun weechat-image--remove (button)
@@ -122,6 +145,16 @@ The Function should accept the following paramter (URL IMAGE BUFFER MARKER)."
   (message "Added new image to %s" weechat-image-buffer)
   (switch-to-buffer weechat-image-buffer))
 
+(defun weechat-image-resize (image what px)
+  "Resize IMAGE.
+WHAT should be either `:width' or `:height' and PX is the new size in pixel.
+This function is a no-op if `weechat-image-use-imagemagick' is nil."
+  (if weechat-image-use-imagemagick
+      (or (create-image (plist-get (cdr image) :data) 'imagemagick t
+                        what px)
+          image)
+    image))
+
 (defun weechat-image--get-image (_status url buffer marker)
   (goto-char (point-min))
   (unless (looking-at "^HTTP/.+ 200 OK$")
@@ -133,12 +166,25 @@ The Function should accept the following paramter (URL IMAGE BUFFER MARKER)."
   (when (and weechat-image-size-limit
              (> (- (point-max) (point)) weechat-image-size-limit))
     (kill-buffer)
-    (error "Image %s is too large (%s bytes)" url(- (point-max) (point))))
-  (let ((image (create-image (buffer-substring (point) (point-max))
-                             (if weechat-image-use-imagemagick
-                                 'imagemagick
-                               nil)
-                             t)))
+    (error "Image %s is too large (%s bytes)" url (- (point-max) (point))))
+  (let* ((image (create-image (buffer-substring (point) (point-max))
+                              (if weechat-image-use-imagemagick
+                                  'imagemagick
+                                nil)
+                              t))
+         (size (image-size image 'pixels)))
+    (when (and weechat-image-max-width
+               (> (car size) weechat-image-max-width))
+      (if weechat-image-resize
+          (setq image (weechat-image-resize image :width weechat-image-max-width))
+        (kill-buffer)
+        (error "Image %s is too wide (%s px)" url (car size))))
+    (when (and weechat-image-max-height
+               (> (cdr size) weechat-image-max-height))
+      (if weechat-image-resize
+          (setq image (weechat-image-resize image :height weechat-image-max-width))
+        (kill-buffer)
+        (error "Image %s is too heigh (%s px)" url (cdr size))))
     (kill-buffer)
     (funcall weechat-image-display-func url image buffer marker)))
 
