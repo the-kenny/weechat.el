@@ -1347,7 +1347,10 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     ["Close Buffer" kill-buffer t]
     ["Switch Buffer" weechat-switch-buffer t]
     ["Monitor Buffer" weechat-monitor-buffer t]
-    ["Disconnect" weechat-disconnect t]))
+    ["Connect" weechat-connect
+     :visible (not (weechat-connected-p))]
+    ["Disconnect" weechat-disconnect
+     :visible (weechat-connected-p)]))
 
 (defun weechat-get-local-var (var &optional buffer-ptr)
   "Return value of local VAR in BUFFER-PTR.
