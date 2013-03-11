@@ -565,6 +565,7 @@ and port number respectively."
              (lambda ()
                (weechat-relay-send-command "sync")
                (setq weechat--connected t)
+               (weechat--relay-start-ping-timer)
                (run-hooks 'weechat-connect-hook))))))))))
 
 (defun weechat-disconnect ()
