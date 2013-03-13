@@ -105,7 +105,7 @@ See `weechat-image-use-imagemagick'."
   (let ((start (button-get button 'weechat-image-begin))
         (end (button-get button 'weechat-image-end)))
     (remove-images start end)
-    (delete-region (overlay-start button) (overlay-end button))
+    (delete-region (1- (overlay-start button)) (overlay-end button))
     (delete-overlay button)
     (save-excursion
       (save-restriction
@@ -213,7 +213,7 @@ This function is a no-op if `weechat-image-use-imagemagick' is nil."
                      'weechat-image-marker (point)
                      'weechat-image-buffer (current-buffer)
                      'weechat-image-url url)
-      (unless (eolp)
+      (unless (or (eolp) (looking-at "[[:space:]]"))
         (insert " ")))))
 
 (add-hook 'weechat-insert-modify-hook #'weechat-image--add-preview-button)
