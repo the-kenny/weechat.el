@@ -44,8 +44,8 @@
 (defcustom weechat-button-url-regexp
   (concat "\\(www\\.\\|\\(s?https?\\|"
           "ftp\\|file\\|gopher\\|news\\|telnet\\|wais\\|mailto\\):\\)"
-          "\\(//[-a-zA-Z0-9_.]+:[0-9]*\\)?"
-          "[-a-zA-Z0-9_=!?#$@~`%&*+\\/:;.,()]+[-a-zA-Z0-9_=#$@~`%&*+\\/()]")
+          "\\(//[-[:alnum:]_.]+:[0-9]*\\)?"
+          "[-[:alnum:]_=!?#$@~`%&*+\\/:;.,()]+[-[:alnum:]_=#$@~`%&*+\\/()]")
   "Regexp to match URLs.
 Copied from erc-button.el."
   :type 'regexp
