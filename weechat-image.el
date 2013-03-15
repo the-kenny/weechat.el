@@ -140,47 +140,89 @@ See `format-time-string'."
                    'weechat-image-end (point))))
   (message "Inserted inline %s %s %s" url buffer marker))
 
+(defun weechat-image-view-next ()
+  "Go to next image."
+  (interactive)
+  (search-forward "URL:" nil t))
+
+(defun weechat-image-view-previous ()
+  "Go to previous image."
+  (interactive)
+  (search-backward "URL:" nil t))
+
+(defun weechat-image-view-clear ()
+  "Clear image view buffer."
+  (interactive)
+  (when (and (called-interactively-p 'interactive)
+             (y-or-n-p "Clear buffer? "))
+   (let ((inhibit-read-only t))
+     (remove-images (point-min) (point-max))
+     (erase-buffer))))
+
+(defvar weechat-image-view-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "p" #'weechat-image-view-previous)
+    (define-key map "n" #'weechat-image-view-next)
+    (define-key map "c" #'weechat-image-view-clear)
+    map)
+  "Keymap for `weechat-image-view-mode'.")
+
+(easy-menu-define weechat-image-view-mode-menu weechat-image-view-mode-map
+  "WeeChat Image"
+  '("WeeChatImage"
+    ["Previous Image" weechat-image-view-previous t]
+    ["Next Image" weechat-image-view-next t]
+    ["Clear Buffer" weechat-image-view-clear t]))
+
+(define-derived-mode weechat-image-view-mode special-mode "WeechatImage"
+  "Mode for the weechat-image viewer
+
+\{weechat-image-view-mode-map}"
+  :group 'weechat-image)
+
 (defun weechat-image-insert-other-buffer (url image buffer marker)
   "Insert IMAGE into `weechat-image-buffer'."
   (with-current-buffer (get-buffer-create weechat-image-buffer)
+    (weechat-image-view-mode)
     (goto-char (point-max))
-    (unless (bolp)
-      (insert "\n"))
-    (insert "URL: ")
-    (insert-button url
-                   'action (lambda (button)
-                             (browse-url (button-get button 'weechat-image-url)))
-                   'help-echo "Browse URL"
-                   'follow-link t
-                   'weechat-image-url url)
-    (insert "\n")
-    (let ((channel-name (buffer-name buffer)))
-      (insert "Channel: ")
-      (insert-button channel-name
-                     'action (lambda (button)
-                               (let ((buf (button-get button 'weechat-image-buffer))
-                                     (mark (button-get button 'weechat-image-marker)))
-                                 (when (buffer-live-p buf)
-                                   (switch-to-buffer buf)
-                                   (with-current-buffer buf
-                                     (goto-char mark)))))
-                     'help-echo "Goto buffer"
-                     'follow-link t
-                     'weechat-image-buffer buffer
-                     'weechat-image-marker marker)
-      (insert "\n"))
-    (let (nick date)
-      (with-current-buffer buffer
-        (goto-char marker)
-        (beginning-of-line)
-        (setq nick (get-text-property (point) 'weechat-nick))
-        (setq date (get-text-property (point) 'weechat-date)))
-      (when date
-        (insert "Date: " (format-time-string weechat-image-time-format date) "\n"))
-      (when nick
-        (insert "By: " nick "\n")))
-    (put-image image (point))
-    (insert "\n"))
+    (let ((inhibit-read-only t))
+     (unless (bolp)
+       (insert "\n"))
+     (insert "URL: ")
+     (insert-button url
+                    'action (lambda (button)
+                              (browse-url (button-get button 'weechat-image-url)))
+                    'help-echo "Browse URL"
+                    'follow-link t
+                    'weechat-image-url url)
+     (insert "\n")
+     (let ((channel-name (buffer-name buffer)))
+       (insert "Channel: ")
+       (insert-button channel-name
+                      'action (lambda (button)
+                                (let ((buf (button-get button 'weechat-image-buffer))
+                                      (mark (button-get button 'weechat-image-marker)))
+                                  (when (buffer-live-p buf)
+                                    (switch-to-buffer buf)
+                                    (with-current-buffer buf
+                                      (goto-char mark)))))
+                      'help-echo "Goto buffer"
+                      'follow-link t
+                      'weechat-image-buffer buffer
+                      'weechat-image-marker marker)
+       (insert "\n"))
+     (let (nick date)
+       (with-current-buffer buffer
+         (goto-char marker)
+         (beginning-of-line)
+         (setq nick (get-text-property (point) 'weechat-nick))
+         (setq date (get-text-property (point) 'weechat-date)))
+       (when date
+         (insert "Date: " (format-time-string weechat-image-time-format date) "\n"))
+       (when nick
+         (insert "By: " nick "\n")))
+     (put-image image (point))
+     (insert "\n")))
   (message "Added new image to %s" weechat-image-buffer)
   (switch-to-buffer weechat-image-buffer))
 
