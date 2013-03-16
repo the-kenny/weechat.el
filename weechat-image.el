@@ -150,6 +150,24 @@ See `format-time-string'."
   (interactive)
   (search-backward "URL:" nil t))
 
+(defun weechat-image-view-remove-entry ()
+  "Remove current entry."
+  (interactive)
+  (save-excursion
+   (let ((beg
+          (if (looking-at "^URL:")
+              (point)
+            (search-backward "URL:" nil t)))
+         (end (progn
+                (end-of-line)
+                (search-forward "URL:" nil t))))
+     (if end
+         (setq end (- end 4))
+       (setq end (point-max)))
+     (let ((inhibit-read-only t))
+       (remove-images beg end)
+       (delete-region beg end)))))
+
 (defun weechat-image-view-clear ()
   "Clear image view buffer."
   (interactive)
@@ -164,6 +182,7 @@ See `format-time-string'."
     (define-key map "p" #'weechat-image-view-previous)
     (define-key map "n" #'weechat-image-view-next)
     (define-key map "c" #'weechat-image-view-clear)
+    (define-key map "k" #'weechat-image-view-remove-entry)
     map)
   "Keymap for `weechat-image-view-mode'.")
 
@@ -172,6 +191,7 @@ See `format-time-string'."
   '("WeeChatImage"
     ["Previous Image" weechat-image-view-previous t]
     ["Next Image" weechat-image-view-next t]
+    ["Remove Image" weechat-image-view-remove-entry t]
     ["Clear Buffer" weechat-image-view-clear t]))
 
 (define-derived-mode weechat-image-view-mode special-mode "WeechatImage"
