@@ -498,6 +498,9 @@ Return either a string, a function returning a string, or nil."
     map)
   "Weechat mode selection: Local keymap for minibuffer input with completion.")
 
+(defvar weechat-mode-history nil
+  "History list for connection mode.")
+
 ;;;###autoload
 (defun weechat-connect (&optional host port password mode)
   "Connect to WeeChat.
