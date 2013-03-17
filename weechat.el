@@ -36,6 +36,7 @@
 (require 'weechat-color)
 (require 'cl-lib)
 (require 'format-spec)
+(require 'tracking)
 (require 's)
 
 (defcustom weechat-host-default "localhost"
@@ -225,6 +226,13 @@ buffers) and t (All buffers)."
 
 (defvar weechat-inhibit-notifications nil
   "Non-nil means don't display any weechat notifications.")
+
+(defcustom weechat-faces-priorities '(weechat-highlight-face) ;; TODO
+  "A list of faces which should show up in the tracking.
+The first face is kept if the new message has only lower faces,
+or faces that don't show up at all."
+  :type '(repeat face)
+  :group 'weechat)
 
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
@@ -687,6 +695,7 @@ frame."
 (defun weechat-reset-buffer-modified (buffer-ptr)
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
+      (tracking-remove-buffer (weechat--emacs-buffer buffer-ptr))
       (remhash :background-message-date hash)
       (remhash :background-highlight-date hash))))
 
@@ -713,6 +722,7 @@ frame."
           (puthash :background-message-date line-date hash)))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
+          (tracking-add-buffer emacs-buffer 'weechat-highlight-face)
           (puthash :background-highlight-date line-date hash))))))
 
 (defun weechat-window-configuration-change ()
@@ -1415,6 +1425,8 @@ Default is current buffer."
     (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
     (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
     (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+
+    (set (make-local-variable 'tracking-faces-priorities) weechat-faces-priorities)
 
     ;; Start with empty user list
     (set (make-local-variable 'weechat-user-list) nil)
