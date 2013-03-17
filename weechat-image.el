@@ -240,7 +240,18 @@ See `format-time-string'."
        (when date
          (insert "Date: " (format-time-string weechat-image-time-format date) "\n"))
        (when nick
-         (insert "By: " nick "\n")))
+         (insert "By: ")
+         (insert-button nick
+                        'action (lambda (button)
+                                  (let ((buf (button-get button 'weechat-image-buffer))
+                                        (nick (button-get button 'weechat-image-nick)))
+                                    (with-current-buffer buf
+                                      (weechat-nick-action nick))))
+                        'help-echo "Nick Actions"
+                        'follow-link t
+                        'weechat-image-buffer buffer
+                        'weechat-image-nick nick)
+         (insert "\n")))
      (put-image image (point))
      (insert "\n")))
   (message "Added new image to %s" weechat-image-buffer)
