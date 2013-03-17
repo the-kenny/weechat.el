@@ -285,6 +285,9 @@ This function is a no-op if `weechat-image-use-imagemagick' is nil."
                                 nil)
                               t))
          (size (image-size image 'pixels)))
+    (unless image
+      (kill-buffer)
+      (error "Image type not supported or not an image."))
     (when (and weechat-image-max-width
                (> (car size) weechat-image-max-width))
       (if weechat-image-resize
