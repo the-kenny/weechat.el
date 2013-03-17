@@ -70,6 +70,14 @@
    =t=.
 ** SSL
    See documentation in [[file:SSL.org][SSL.org]].
+** Tracking
+   To get tracking information in the mode line, similar to erc-track, you
+   should activate =M-x tracking-mode RET=.  You can do this automatically by
+   adding
+#+BEGIN_SRC emacs-lisp
+   (add-hook 'weechat-mode-hook #'tracking-mode)
+#+END_SRC
+   to your =init.el= file.
 ** Modules
    Weechat.el comes with module support.  Modules can be loaded by simply
    calling =load-library= and removed by using =unload-feature=.  The variable
