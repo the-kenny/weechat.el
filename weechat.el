@@ -695,7 +695,8 @@ frame."
 (defun weechat-reset-buffer-modified (buffer-ptr)
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
-      (tracking-remove-buffer (weechat--emacs-buffer buffer-ptr))
+      (when (fboundp 'tracking-remove-buffer)
+       (tracking-remove-buffer (weechat--emacs-buffer buffer-ptr)))
       (remhash :background-message-date hash)
       (remhash :background-highlight-date hash))))
 
@@ -722,7 +723,9 @@ frame."
           (puthash :background-message-date line-date hash)))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
-          (tracking-add-buffer emacs-buffer 'weechat-highlight-face)
+          (when (fboundp 'tracking-add-buffer)
+            (with-current-buffer emacs-buffer
+             (tracking-add-buffer emacs-buffer '(weechat-highlight-face))))
           (puthash :background-highlight-date line-date hash))))))
 
 (defun weechat-window-configuration-change ()
