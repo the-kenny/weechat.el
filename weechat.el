@@ -191,7 +191,7 @@ text-column will be increased for that line."
          (cl-case val
           ('weechat-sauron-handler (require 'weechat-sauron))
           ('weechat-notifications-hanlder (require 'weechat-notifications)))
-         (set sym val))x
+         (set sym val))
   :group 'weechat)
 
 (defcustom weechat-notification-mode :monitored
