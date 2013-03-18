@@ -177,34 +177,21 @@ text-column will be increased for that line."
           (const :tag "Default" t))
   :group 'weechat)
 
-(defcustom weechat-notification-icon #'weechat-notification-icon-function
-  "Icon used in notifications.
-Either nil, a file-name, or a function which is called with (SENDER BUFFER-PTR)."
-  :type '(choice (const :tag "No icon" nil)
-                 (file :tag "Icon file")
-                 (function :tag "Icon function"))
-  :group 'weechat)
-
-(defcustom weechat-notification-sound t
-  "Sound to use for notifications:
-- nil: No sound
-- t: default message-new-instant sound
-- string: file name of a sound file."
-  :type '(choice (const :tag "No sound" nil)
-                 (const :tag "Default system sound" t)
-                 (file :tag "Sound file"))
-  :group 'weechat)
-
 (defcustom weechat-notification-handler
   (cond
-   ((featurep 'sauron) 'weechat-sauron-handler)
-   ((featurep 'notifications) 'weechat-notifications-handler))
+   ((featurep 'weechat-sauron) 'weechat-sauron-handler)
+   ((featurep 'weechat-notifications) 'weechat-notifications-handler))
   "Function called to display notificiations."
   :type '(choice
           (const :tag "No Notifications" nil)
           (const :tag "Sauron"           'weechat-sauron-handler)
           (const :tag "notifications.el" 'weechat-notifications-handler)
           (function :tag "Custom Function"))
+  :set (lambda (sym val)
+         (cl-case val
+          ('weechat-sauron-handler (require 'weechat-sauron))
+          ('weechat-notifications-hanlder (require 'weechat-notifications)))
+         (set sym val))x
   :group 'weechat)
 
 (defcustom weechat-notification-mode :monitored
@@ -757,89 +744,6 @@ frame."
                                    'field t
                                    'rear-nonsticky t
                                    'front-sticky t))))))
-
-(defun weechat-notification-icon-function (_sender _buffer-ptr)
-  "Default icon."
-  (when (boundp 'notifications-application-icon)
-    notifications-application-icon))
-
-(defvar weechat--notifications-id-to-msg nil
-  "Map notification ids to buffer-ptrs.")
-
-(defun weechat--notifications-action (id key)
-  "Handle notifcations.el actions.
-See `weechat-notifications-handler'.
-
-Supported actions:
-- read: switch to buffer."
-  (when (string= key "view")
-    (let* ((buffer-ptr (cdr (assoc id weechat--notifications-id-to-msg))))
-      (when buffer-ptr
-        (weechat-switch-buffer buffer-ptr)))))
-
-(defun weechat-notifications-handler (type &optional sender text _date buffer-ptr)
-  (require 'notifications nil t)
-  (when (and (featurep 'notifications) (fboundp 'notifications-notify))
-    (require 'xml)
-    (let ((notifications-id
-           (notifications-notify
-            :title (xml-escape-string
-                    (or (cl-case type
-                          (:highlight
-                           (concat "Weechat.el: Message from <"
-                                   (weechat-strip-formatting sender)
-                                   ">"))
-                          (:query
-                           (concat "Weechat.el: Query from <"
-                                   (weechat-strip-formatting sender)
-                                   ">"))
-                          (:disconnect "Disconnected from WeeChat"))
-                        ""))
-            :body (when text (xml-escape-string text))
-            :category "im.received"
-            :actions '("view" "View")
-            :on-action #'weechat--notifications-action
-            :app-icon (cl-typecase weechat-notification-icon
-                        (string weechat-notification-icon)
-                        (function (funcall weechat-notification-icon
-                                           sender buffer-ptr)))
-            :app-name "WeeChat.el"
-            :sound-name (when (and weechat-notification-sound
-                                   (not (stringp weechat-notification-sound)))
-                          "message-new-instant")
-            :sound-file (when (stringp weechat-notification-sound)
-                          weechat-notification-sound)
-            :replaces-id (caar weechat--notifications-id-to-msg))))
-      (when notifications-id
-        (setq weechat--notifications-id-to-msg
-              (append (list (cons notifications-id buffer-ptr))
-                      weechat--notifications-id-to-msg))))))
-
-(defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
-  (when (and (featurep 'sauron) (fboundp 'sauron-add-event))
-    (setq text (if text (weechat-strip-formatting text)))
-    (setq sender (if sender (weechat-strip-formatting sender)))
-    (let ((jump-position (point-max-marker)))
-      (sauron-add-event 'weechat 3
-                        (cl-case type
-                          (:highlight
-                           (format "%s in %s: %S"
-                                   sender
-                                   (weechat-buffer-name buffer-ptr)
-                                   text))
-                          (:query
-                           (format "Query from %s: %S"
-                                   sender
-                                   text))
-                          (:disconnect
-                           "Disconnected from WeeChat"))
-                        (lambda ()
-                          (when (fboundp 'sauron-switch-to-marker-or-buffer)
-                            (sauron-switch-to-marker-or-buffer jump-position)))
-                        ;; Flood protection based on sender
-                        (when sender
-                          (list :sender sender))))))
-
 
 (cl-defun weechat-notify (type &key sender text date buffer-ptr)
   (when (and (memq type weechat-notification-types)
