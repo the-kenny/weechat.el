@@ -86,7 +86,7 @@ To unload modules, use (unload-feature FEATURE)."
   :group 'weechat)
 
 (defcustom weechat-buffer-line-limit 1000
-  "Number of max. lines per buffer."
+  "Number of max.  lines per buffer."
   :type '(choice integer
                  (const :tag "Unlimited" nil))
   :group 'weechat)
@@ -95,7 +95,7 @@ To unload modules, use (unload-feature FEATURE)."
   "Always replace current input with line on return.
 
 If set to t, pressing return will always copy the current line to
-the input prompt. If nil, only copy when the input line is
+the input prompt.  If nil, only copy when the input line is
 empty."
   :type 'boolean
   :group 'weechat)
@@ -127,8 +127,8 @@ Use `weechat-toggle-hidden' to toggle hidden text in buffers."
   "List of buffer names to auto-monitor on connect.
 
 If value is a list, buffers corresponding the names will be
-monitored on connect. A value of t will monitor all available
-buffers. Be warned, a too long list will use much bandwidth on
+monitored on connect.  A value of t will monitor all available
+buffers.  Be warned, a too long list will use much bandwidth on
 connect."
   :type '(choice (const :tag "All" t)
                  (repeat :tag "List" string))
@@ -137,9 +137,9 @@ connect."
 (defcustom weechat-auto-monitor-new-buffers 'silent
   "Wether to auto-monitor new WeeChat buffers.
 
-Value can be t, silent or nil. If t, new Emacs buffers will be
-created when a new buffer in WeeChat is opened. If value
-is (quote silent), new buffers will be opened in background. If
+Value can be t, silent or nil.  If t, new Emacs buffers will be
+created when a new buffer in WeeChat is opened.  If value
+is (quote silent), new buffers will be opened in background.  If
 nil, no action will be taken for new WeeChat buffers."
   :type '(choice (const :tag "Popup new buffer" t)
                  (const :tag "Open in background" 'silent)
@@ -238,7 +238,7 @@ Functions must take one argument: The buffer-ptr."
   :group 'weechat)
 
 (defcustom weechat-password-callback 'weechat-password-auth-source-callback
-  "Function called to get the relay password. Set to nil if no
+  "Function called to get the relay password.  Set to nil if no
   password is needed.
 
 Value must be a function with two arguments: Hostname and port.
@@ -690,12 +690,12 @@ frame."
       (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
     (if (and (buffer-live-p emacs-buffer)
              (cl-find emacs-buffer (weechat-visible-buffers) :test 'equal))
-        ;; Buffer is visible. Reset modification dates
+        ;; Buffer is visible.  Reset modification dates
         (weechat-reset-buffer-modified buffer-ptr)
-      ;; Buffer invisible. Store modifications
+      ;; Buffer invisible.  Store modifications
       (when (and line-type line-date nick)
         (cond
-         ;; Message from ourself. Reset modification times
+         ;; Message from ourself.  Reset modification times
          ((string= nick (weechat-get-local-var "nick" buffer-ptr))
           (weechat-reset-buffer-modified buffer-ptr))
          ;; General activity
@@ -923,7 +923,7 @@ text (technically, this shouldn't happen)."
                         "\n"))
 
               (when weechat-fill-text
-                ;; Filling is slightly misleading here. We use this
+                ;; Filling is slightly misleading here.  We use this
                 ;; awesome text property called `wrap-prefix'.
                 (let ((overlay (make-overlay text-start (point-max))))
                   (overlay-put overlay 'wrap-prefix prefix-string))))
@@ -951,7 +951,7 @@ text (technically, this shouldn't happen)."
           (goto-char p-to-go))
 
         ;; Recenter window if there are more lines than fit in the
-        ;; frame. This is borrowed from rcirc.
+        ;; frame.  This is borrowed from rcirc.
         (weechat-recenter-bottom-maybe)
 
         (set-marker-insertion-type weechat-prompt-start-marker nil)
@@ -1034,7 +1034,7 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
             (setq prefix (weechat-strip-formatting prefix))
             (setq message (weechat-strip-formatting message)))
 
-          ;; Nicklist handling. To be replaced with real nicklist
+          ;; Nicklist handling.  To be replaced with real nicklist
           ;; updates when WeeChat starts sending nicklist deltas
           (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
                   (eq line-type :irc/join))
@@ -1191,7 +1191,7 @@ the end of line."
 
 (defun weechat-return ()
   "Return key action.
-If point is in input field send message. If the point is in a chat line
+If point is in input field send message.  If the point is in a chat line
 copy the message.  Only the message text is copied unless the prefix argument
 is given (\\[universal-argument])."
   (interactive)
@@ -1420,7 +1420,7 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
     (dolist (channel (if (listp weechat-auto-monitor-buffers)
                          weechat-auto-monitor-buffers
                        (progn
-                         (weechat-message "Monitoring all available WeeChat buffers. Be patient...")
+                         (weechat-message "Monitoring all available WeeChat buffers.  Be patient...")
                          available-channels)))
       ;; Check if one of the available channels partially matches the
       ;; channel we want to monitor
@@ -1434,7 +1434,7 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
             (unless (weechat--emacs-buffer buffer-ptr)
               (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
               (weechat-monitor-buffer buffer-ptr nil))
-          (weechat-warn "Couldn't monitor channel '%s'. Not found." channel))))))
+          (weechat-warn "Couldn't monitor channel '%s'.  Not found." channel))))))
 
 
 (add-hook 'weechat-connect-hook 'weechat-auto-monitor 'append)
