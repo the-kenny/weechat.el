@@ -785,7 +785,7 @@ See `weechat-notifications-handler'.
 
 Supported actions:
 - read: switch to buffer."
-  (when (string= key "read")
+  (when (string= key "view")
     (let* ((buffer-ptr (cdr (assoc id weechat--notifications-id-to-msg))))
       (when buffer-ptr
         (weechat-switch-buffer buffer-ptr)))))
@@ -810,7 +810,7 @@ Supported actions:
                         ""))
             :body (when text (xml-escape-string text))
             :category "im.received"
-            :actions '("read" "Read")
+            :actions '("view" "View")
             :on-action #'weechat--notifications-action
             :app-icon (cl-typecase weechat-notification-icon
                         (string weechat-notification-icon)
