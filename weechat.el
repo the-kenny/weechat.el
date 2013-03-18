@@ -177,22 +177,13 @@ text-column will be increased for that line."
           (const :tag "Default" t))
   :group 'weechat)
 
-(defcustom weechat-notification-handler
-  (cond
-   ((featurep 'weechat-sauron) 'weechat-sauron-handler)
-   ((featurep 'weechat-notifications) 'weechat-notifications-handler))
-  "Function called to display notificiations."
-  :type '(choice
-          (const :tag "No Notifications" nil)
-          (const :tag "Sauron"           'weechat-sauron-handler)
-          (const :tag "notifications.el" 'weechat-notifications-handler)
-          (function :tag "Custom Function"))
-  :set (lambda (sym val)
-         (cl-case val
-          ('weechat-sauron-handler (require 'weechat-sauron))
-          ('weechat-notifications-hanlder (require 'weechat-notifications)))
-         (set sym val))
-  :group 'weechat)
+(defvar weechat-notification-handler-functions nil
+  "List of functions called to display notificiations.
+
+The functions are called with the following arguments:
+
+TYPE, a symbol from `weechat-notification-types' Other optional
+arguments are SENDER, TEXT, DATE, and BUFFER-PTR.")
 
 (defcustom weechat-notification-mode :monitored
   "When to notify the user.
@@ -295,6 +286,18 @@ returns a string, or nil."
 ;;; completely
 (eval-after-load 'weechat
   '(weechat-load-modules-maybe))
+
+;;; Add all hooks ending in -functions to
+;;; `unload-feature-special-hooks' to make `unload-feature' remove the
+;;; hooks on unload
+
+(eval-after-load 'loadhist
+  '(setq unload-feature-special-hooks
+         (append unload-feature-special-hooks
+                 '(weechat-buffer-opened-functions
+                   weechat-buffer-closed-functions
+                   weechat-notification-handler-functions
+                   weechat-message-post-receive-functions))))
 
 (defun weechat-connected-p ()
   (and (weechat-relay-connected-p)
@@ -747,12 +750,12 @@ frame."
 
 (cl-defun weechat-notify (type &key sender text date buffer-ptr)
   (when (and (memq type weechat-notification-types)
-             (functionp weechat-notification-handler)
              (or (eq weechat-notification-mode t)
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
-    (funcall weechat-notification-handler type sender text date buffer-ptr)))
+    (run-hook-with-args 'weechat-notification-handler-functions
+                        type sender text date buffer-ptr)))
 
 (defun weechat-buffer-p (&optional buffer)
   "Return non-nil if buffer is a WeeChat buffer."

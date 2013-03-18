@@ -111,13 +111,8 @@ Supported actions:
             (append (list (cons notifications-id buffer-ptr))
                     weechat--notifications-id-to-msg)))))
 
-(defvar weechat-notifications-old-handler weechat-notification-handler
-  "Save old handler.")
-(setq weechat-notification-handler #'weechat-notifications-handler)
-
-(defun weechat-notifications-unload-function ()
-  "Unload notification handler."
-  (setq weechat-notification-handler weechat-notifications-old-handler))
+(add-hook 'weechat-notification-handler-functions
+          #'weechat-notifications-handler)
 
 (provide 'weechat-notifications)
 

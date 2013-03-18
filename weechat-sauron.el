@@ -55,13 +55,8 @@
                       (when sender
                         (list :sender sender)))))
 
-(defvar weechat-sauron-old-handler weechat-notification-handler
-  "Save old handler.")
-(setq weechat-notification-handler 'weechat-sauron-handler)
-
-(defun weechat-sauron-unload-function ()
-  "Unload Sauron handler."
-  (setq weechat-notification-handler weechat-sauron-old-handler))
+(add-hook 'weechat-notification-handler-functions
+          'weechat-sauron-handler)
 
 (provide 'weechat-sauron)
 
