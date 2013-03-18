@@ -177,14 +177,6 @@ text-column will be increased for that line."
           (const :tag "Default" t))
   :group 'weechat)
 
-(defvar weechat-notification-handler-functions nil
-  "List of functions called to display notificiations.
-
-The functions are called with the following arguments:
-
-TYPE, a symbol from `weechat-notification-types' Other optional
-arguments are SENDER, TEXT, DATE, and BUFFER-PTR.")
-
 (defcustom weechat-notification-mode :monitored
   "When to notify the user.
 
@@ -200,9 +192,6 @@ buffers) and t (All buffers)."
   "Events for which a notification should be shown."
   :type '(repeat symbol)
   :group 'weechat)
-
-(defvar weechat-inhibit-notifications nil
-  "Non-nil means don't display any weechat notifications.")
 
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
   "Header line format.
@@ -274,6 +263,17 @@ returns a string, or nil."
 
 (defvar weechat-buffer-closed-functions nil
   "Hook ran when a WeeChat buffer closes.")
+
+(defvar weechat-notification-handler-functions nil
+  "List of functions called to display notificiations.
+
+The functions are called with the following arguments:
+
+TYPE, a symbol from `weechat-notification-types' Other optional
+arguments are SENDER, TEXT, DATE, and BUFFER-PTR.")
+
+(defvar weechat-inhibit-notifications nil
+  "Non-nil means don't display any weechat notifications.")
 
 (defun weechat-load-modules-maybe ()
   "Load all modules listed in `weechat-modules'"
