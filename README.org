@@ -93,6 +93,28 @@
     This module provides spelling support by using Emacs' =flyspell=.  You can
     customize the dictionary on a per channel/server basis by customizing
     =weechat-spelling-dictionaries=.
+*** Notifications
+    Weechat.el supports notifications for important messages, such as
+    highlights or queries.  The support is either based on =notifications.el=
+    which is shipped with Emacs since version 24 and uses the Freedesktop
+    notification spec.  Another solution is based on [[http://www.emacswiki.org/emacs/Sauron][Sauron]].
+
+    To activate notifications you have to load the matching module.  Either
+    =weechat-notifications= for =notifications.el= or =weechat-sauron= for
+    Sauron support.
+
+    To change the message types you want to receive notifications for customize
+    =weechat-notification-types=.
+**** notifications.el
+     Loading the =weechat-notifications= module uses =notifications.el=
+     to display notifications.  This uses the Freedesktop notification spec and
+     should work fine on most Linux systems.
+
+     You can customize =weechat-notifications-sound= to play a sound on
+     notification.  Setting =weechat-notifications-icon= allows to change the
+     notification icon.
+**** Sauron
+     The =weechat-sauron= module uses [[http://www.emacswiki.org/emacs/Sauron][Sauron]] for notifications.
 *** Smiley
     This module uses Gnus' =smiley-region= support to convert text smileys,
     such as :-), into a graphical representation.  See the documentation of
