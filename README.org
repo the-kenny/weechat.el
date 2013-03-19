@@ -71,14 +71,6 @@
    =t=.
 ** SSL
    See documentation in [[file:SSL.org][SSL.org]].
-** Tracking
-   To get tracking information in the mode line, similar to erc-track, you
-   should activate =M-x tracking-mode RET=.  You can do this automatically by
-   adding
-#+BEGIN_SRC emacs-lisp
-   (add-hook 'weechat-mode-hook #'tracking-mode)
-#+END_SRC
-   to your =init.el= file.
 ** Modules
    Weechat.el comes with module support.  Modules can be loaded by simply
    calling =load-library= and removed by using =unload-feature=.  The variable
@@ -124,6 +116,10 @@
      notification icon.
 **** Sauron
      The =weechat-sauron= module uses [[http://www.emacswiki.org/emacs/Sauron][Sauron]] for notifications.
+*** Tracking
+    The =weechat-tracking= module provides tracking information in the mode
+    line, similar to erc-track.  It uses the [[https://github.com/jorgenschaefer/circe/wiki/Tracking][Tracking]] library (available on
+    marmalade or el-get).
 *** Smiley
     This module uses Gnus' =smiley-region= support to convert text smileys,
     such as :-), into a graphical representation.  See the documentation of
