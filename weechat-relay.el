@@ -106,7 +106,7 @@ Currently unsupported."
     (when (and pass (stringp pass) (not (s-blank? pass)))
       (weechat--relay-send-message (format "init password=%s,compression=%s\n"
                                            pass
-                                           (if compression "on" "off"))))))
+                                           (if compression "zlib" "off"))))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int NUM to signed int.
