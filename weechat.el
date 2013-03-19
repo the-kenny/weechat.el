@@ -36,7 +36,6 @@
 (require 'weechat-color)
 (require 'cl-lib)
 (require 'format-spec)
-(require 'tracking)
 (require 's)
 
 (defcustom weechat-host-default "localhost"
@@ -192,13 +191,6 @@ buffers) and t (All buffers)."
 (defcustom weechat-notification-types '(:highlight :disconnect :query)
   "Events for which a notification should be shown."
   :type '(repeat symbol)
-  :group 'weechat)
-
-(defcustom weechat-faces-priorities '(weechat-highlight-face) ;; TODO
-  "A list of faces which should show up in the tracking.
-The first face is kept if the new message has only lower faces,
-or faces that don't show up at all."
-  :type '(repeat face)
   :group 'weechat)
 
 (defcustom weechat-header-line-format "%n on %c/%s: %t"
@@ -1335,8 +1327,6 @@ Default is current buffer."
     (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
     (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
     (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
-
-    (set (make-local-variable 'tracking-faces-priorities) weechat-faces-priorities)
 
     ;; Start with empty user list
     (set (make-local-variable 'weechat-user-list) nil)
