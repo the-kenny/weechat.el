@@ -4,16 +4,17 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.1 [0/4]
+* 0.2 [0/4]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
 ** TODO Don't kill undo-history on buffer change (annoying when you're typing sth.)
-
 ** TODO Mode-Line Tracking Indicator [0/2]
    - [ ] Store more change-metadata in buffer-hash
    - [ ] Merge branch 'tracking'
    
-** TODO Create a NEWS file
+** TODO Update a NEWS file
+** TODO Clean pointers on disconnect
+   ...to prevent horrible WeeChat crashes
 
 * Short-Term [16/23]
 ** TODO Handle 'sync' events [7/15]
@@ -73,7 +74,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [9/24]
+* Nice to have [9/23]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** DONE Speedbar integration
@@ -93,8 +94,6 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
-** TODO Clean pointers on disconnect
-   ...to prevent horrible WeeChat crashes
 ** DONE Tracking support similar to erc-track.
    Using circe's tracking.el is probably a good way to implement this
    https://github.com/jorgenschaefer/circe/blob/master/lisp/tracking.el
