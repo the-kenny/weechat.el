@@ -11,6 +11,7 @@
 
   : M-x package-install RET weechat RET
 
+  See [[file:NEWS.org][NEWS.org]] for major changes in releases.
 ** Manual Installation
    - Install dependencies via package.el:
 

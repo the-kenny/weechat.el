@@ -1,0 +1,17 @@
+# -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
+* 0.2
+** Incompatible Changes
+*** Notification moved to modules
+    Notification support is now handled by modules.  For =notifications.el= based
+    notifications load the =weechat-notifications= module and for Sauron based
+    notifications the =weechat-sauron= module.
+** New Features
+*** keepalive
+    This should improve disconnect detection.
+** New Modules
+*** LaTeX Previews: =weechat-latex=
+*** Corrector: =weechat-corrector=
+*** Speedbar support: =weechat-speedbar=
+*** Image Previews: =weechat-image=
+* 0.1 <2013-02-26 Tue>
+  Initial release
