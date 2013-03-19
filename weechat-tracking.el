@@ -53,6 +53,8 @@ or faces that don't show up at all."
 (weechat-do-buffers (weechat-tracking-setup))
 (add-hook 'weechat-mode-hook #'weechat-tracking-setup)
 
+(tracking-mode 1)
+
 (provide 'weechat-tracking)
 
 ;; weechat-tracking.el ends here
