@@ -48,7 +48,7 @@ or faces that don't show up at all."
 
 (defun weechat-tracking-setup ()
   "Set up tracking in weechat buffer."
-  (set (make-local-variable 'tracking-faces-priorities) weechat-faces-priorities))
+  (set (make-local-variable 'tracking-faces-priorities) weechat-tracking-faces-priorities))
 
 (weechat-do-buffers (weechat-tracking-setup))
 (add-hook 'weechat-mode-hook #'weechat-tracking-setup)
