@@ -355,7 +355,7 @@ arguments are SENDER, TEXT, DATE, and BUFFER-PTR.")
          (value (car (weechat--hdata-values hdata)))
          (buffer-ptr (car (weechat--hdata-value-pointer-path value))))
     (when (weechat-buffer-hash buffer-ptr)
-      (error "Received '_buffer_opened' event for '%s' but the buffer exists already!" buffer-ptr))
+      (error "Received '_buffer_opened' event for '%s' but the buffer exists already" buffer-ptr))
     (weechat--store-buffer-hash buffer-ptr (weechat--hdata-value-alist value))
 
     (when weechat-auto-monitor-new-buffers
@@ -687,7 +687,7 @@ frame."
         (hash (weechat-buffer-hash buffer-ptr))
         (emacs-buffer (weechat--emacs-buffer buffer-ptr)))
     (unless (hash-table-p hash)
-      (error "Tried to update modification date for unknown buffer-ptr '%s'." buffer-ptr))
+      (error "Tried to update modification date for unknown buffer-ptr '%s'" buffer-ptr))
     (if (and (buffer-live-p emacs-buffer)
              (cl-find emacs-buffer (weechat-visible-buffers) :test 'equal))
         ;; Buffer is visible.  Reset modification dates
