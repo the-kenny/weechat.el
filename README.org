@@ -151,6 +151,9 @@
 * Contact
   Feel free to contact us via Github, Email, or IRC (#weechat.el on Freenode)
 
+  We appreciate every comment, suggestion, or nagging for missing features.
+  Tell us your story!
+
 * Contributors
   Please add yourself to this list when you contribute code!
   
