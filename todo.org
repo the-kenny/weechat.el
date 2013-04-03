@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.2 [0/4]
+* 0.2 [0/6]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
@@ -17,6 +17,8 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Update a NEWS file
    Close this right before 0.2 release so it's consistent.
 
+** TODO Add a prefix-arg to weechat-reload-buffer
+   ...to load prefix-argument lines
 * Short-Term [16/23]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
