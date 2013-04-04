@@ -103,10 +103,17 @@ Currently unsupported."
   (let ((pass (if (functionp password)
                   (funcall password)
                 password)))
-    (when (and pass (stringp pass) (not (s-blank? pass)))
-      (weechat--relay-send-message (format "init password=%s,compression=%s\n"
-                                           pass
-                                           (if compression "zlib" "off"))))))
+    (setq pass (if (s-blank? (s-trim pass))
+                   nil
+                 (s-trim pass)))
+    (weechat--relay-send-message
+     (concat "init "
+             (s-join ","
+                     (remove-if #'s-blank?
+                                (list
+                                 (if pass (format "password=%s" (s-trim pass)))
+                                 (format "compression=%s" (if compression "zlib" "off")))))
+             "\n"))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int NUM to signed int.
