@@ -674,13 +674,42 @@ frame."
 (defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
 
-(defun weechat-reset-buffer-modified (buffer-ptr)
-  (let ((hash (weechat-buffer-hash buffer-ptr)))
-    (when (hash-table-p hash)
-      (when (fboundp 'tracking-remove-buffer)
-       (tracking-remove-buffer (weechat--emacs-buffer buffer-ptr)))
-      (remhash :background-message-date hash)
-      (remhash :background-highlight-date hash))))
+;;; The following functions handle buffer-hash-entries storing the
+;;; last highlight and the last message. The entries will be cleared
+;;; automatically when the buffer becomes visible. This is useful for
+;;; a mode-line display of modified buffers etc.
+
+(defvar weechat-buffer-background-message-hook nil
+  "Hook called when a message was received in a weechat buffer
+  which isn't currently visible. Called with the corresponding
+  buffer active.")
+(defvar weechat-buffer-background-highlight-hook nil
+  "Same as `weechat-buffer-background-message-hook', only for highlights.")
+(defvar weechat-buffer-visited-hook nil
+  "Hook called when a weechat-buffer is visited and the
+  background-data is reset.")
+
+(defun weechat-buffer-last-background-message (&optional buffer)
+  (with-current-buffer (or buffer (current-buffer))
+    (assert (eq major-mode 'weechat-mode))
+    (gethash :background-message (weechat-buffer-hash weechat-buffer-ptr))))
+
+(defun weechat-reset-buffer-modified (&optional buffer)
+  (with-current-buffer (or buffer (current-buffer))
+    (assert (eq major-mode 'weechat-mode))
+    (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
+      (when (hash-table-p hash)
+        (run-hooks 'weechat-buffer-visited-hook)
+        ;; (when (fboundp 'tracking-remove-buffer)
+        ;;   (tracking-remove-buffer (weechat--emacs-buffer weechat-buffer-ptr)))
+        (remhash :background-message hash)
+        (remhash :background-highlight hash)))))
+
+(defun weechat-buffer-modified-make-hash (line-data)
+  (let ((hash (make-hash-table)))
+    (puthash :date (assoc-default "date" line-data))
+    (puthash :sender (weechat--get-nick-from-line-data line-data))
+    hash))
 
 (defun weechat-update-buffer-modified (buffer-ptr line-data)
   (let ((line-type (weechat-line-type line-data))
@@ -692,29 +721,35 @@ frame."
       (error "Tried to update modification date for unknown buffer-ptr '%s'" buffer-ptr))
     (if (and (buffer-live-p emacs-buffer)
              (cl-find emacs-buffer (weechat-visible-buffers) :test 'equal))
-        ;; Buffer is visible.  Reset modification dates
-        (weechat-reset-buffer-modified buffer-ptr)
-      ;; Buffer invisible.  Store modifications
+        ;; Buffer is visible. Reset modification
+        (weechat-reset-buffer-modified emacs-buffer)
+      ;; Buffer invisible. Store modifications.
       (when (and line-type line-date nick)
         (cond
-         ;; Message from ourself.  Reset modification times
+         ;; Message from ourself. Reset.
          ((string= nick (weechat-get-local-var "nick" buffer-ptr))
-          (weechat-reset-buffer-modified buffer-ptr))
+          (weechat-reset-buffer-modified emacs-buffer))
          ;; General activity
          ((memq line-type weechat-buffer-activity-types)
-          (puthash :background-message-date line-date hash)))
+          (puthash :background-message
+                   (weechat-buffer-modified-make-hash line-data)
+                   hash)
+          (run-hooks 'weechat-buffer-background-message-hook)))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
-          (when (fboundp 'tracking-add-buffer)
-            (with-current-buffer emacs-buffer
-             (tracking-add-buffer emacs-buffer '(weechat-highlight-face))))
-          (puthash :background-highlight-date line-date hash))))))
+          ;; (when (fboundp 'tracking-add-buffer)
+          ;;   (with-current-buffer emacs-buffer
+          ;;     (tracking-add-buffer emacs-buffer '(weechat-highlight-face))))
+          (puthash :background-highlight (weechat-buffer-modified-make-hash line-data)
+                   hash)
+          (with-current-buffer emacs-buffer
+            (run-hooks 'weechat-buffer-background-message-hook)))))))
 
 (defun weechat-window-configuration-change ()
   (dolist (b (weechat-visible-buffers))
     (with-current-buffer b
       ;; Reset modification date for all visible buffers
-      (weechat-reset-buffer-modified weechat-buffer-ptr))))
+      (weechat-reset-buffer-modified b))))
 
 (add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
 
