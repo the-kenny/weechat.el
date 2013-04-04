@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 'tracking)
+(require 'cl-lib)
 
 (defgroup weechat-tracking nil
   "Tracking support for Weechat.el."
@@ -39,7 +40,13 @@
   :prefix "weechat-tracking-"
   :group 'weechat)
 
-(defcustom weechat-tracking-faces-priorities '(weechat-highlight-face) ;; TODO
+(defcustom weechat-tracking-types '(:highlight)
+  "A list of message types which should show up in tracking.
+Supported values are :message and :highlight."
+  :type '(repeat symbol)
+  :group 'weechat-tracking)
+
+(defcustom weechat-tracking-faces-priorities '(weechat-highlight-face)
   "A list of faces which should show up in the tracking.
 The first face is kept if the new message has only lower faces,
 or faces that don't show up at all."
@@ -50,12 +57,29 @@ or faces that don't show up at all."
   "Set up tracking in weechat buffer."
   (set (make-local-variable 'tracking-faces-priorities) weechat-tracking-faces-priorities))
 
+(defun weechat-tracking-handle-highlight ()
+  (when (cl-find :highlight weechat-tracking-types)
+    (tracking-add-buffer (current-buffer) '(weechat-highlight-face))))
+
+(defun weechat-tracking-handle-message ()
+  (when (cl-find :message weechat-tracking-types)
+    (tracking-add-buffer (current-buffer))))
+
+(defun weechat-tracking-handle-reset ()
+  (tracking-remove-buffer (current-buffer)))
+
 (weechat-do-buffers (weechat-tracking-setup))
 (add-hook 'weechat-mode-hook #'weechat-tracking-setup)
+
+(add-hook 'weechat-buffer-background-message-hook
+          'weechat-tracking-handle-message)
+(add-hook 'weechat-buffer-background-highlight-hook
+          'weechat-tracking-handle-highlight)
+(add-hook 'weechat-buffer-visited-hook
+          'weechat-tracking-handle-reset)
 
 (tracking-mode 1)
 
 (provide 'weechat-tracking)
 
 ;; weechat-tracking.el ends here
-

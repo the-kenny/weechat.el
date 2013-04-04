@@ -700,15 +700,13 @@ frame."
     (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
       (when (hash-table-p hash)
         (run-hooks 'weechat-buffer-visited-hook)
-        ;; (when (fboundp 'tracking-remove-buffer)
-        ;;   (tracking-remove-buffer (weechat--emacs-buffer weechat-buffer-ptr)))
         (remhash :background-message hash)
         (remhash :background-highlight hash)))))
 
 (defun weechat-buffer-modified-make-hash (line-data)
   (let ((hash (make-hash-table)))
-    (puthash :date (assoc-default "date" line-data))
-    (puthash :sender (weechat--get-nick-from-line-data line-data))
+    (puthash :date (assoc-default "date" line-data) hash)
+    (puthash :sender (weechat--get-nick-from-line-data line-data) hash)
     hash))
 
 (defun weechat-update-buffer-modified (buffer-ptr line-data)
@@ -734,16 +732,16 @@ frame."
           (puthash :background-message
                    (weechat-buffer-modified-make-hash line-data)
                    hash)
-          (run-hooks 'weechat-buffer-background-message-hook)))
+          (when (buffer-live-p emacs-buffer)
+           (with-current-buffer emacs-buffer
+             (run-hooks 'weechat-buffer-background-message-hook)))))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
-          ;; (when (fboundp 'tracking-add-buffer)
-          ;;   (with-current-buffer emacs-buffer
-          ;;     (tracking-add-buffer emacs-buffer '(weechat-highlight-face))))
           (puthash :background-highlight (weechat-buffer-modified-make-hash line-data)
                    hash)
-          (with-current-buffer emacs-buffer
-            (run-hooks 'weechat-buffer-background-message-hook)))))))
+          (when (buffer-live-p emacs-buffer)
+           (with-current-buffer emacs-buffer
+             (run-hooks 'weechat-buffer-background-highlight-hook))))))))
 
 (defun weechat-window-configuration-change ()
   (dolist (b (weechat-visible-buffers))
