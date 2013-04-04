@@ -1120,6 +1120,10 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
   '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
 
 (defun weechat-request-initial-lines (buffer-ptr)
+  (weechat-relay-log
+   (format "Requesting %i lines for buffer %s"
+           weechat-initial-lines
+           buffer-ptr))
   (weechat-relay-send-command
    (format "hdata buffer:%s/lines/last_line(-%i)/data %s"
            buffer-ptr
@@ -1394,12 +1398,15 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
         (switch-to-buffer buffer)
       (weechat-monitor-buffer buffer-ptr 'show))))
 
-(defun weechat-reload-buffer (&optional buffer)
-  (interactive (list (current-buffer)))
+(defun weechat-reload-buffer (&optional buffer line-count)
+  (interactive (list (current-buffer)
+                     current-prefix-arg))
   (with-current-buffer (or buffer (current-buffer))
     (weechat-relay-log
      (format "Re-monitoring buffer %s" (buffer-name buffer)))
-    (weechat-monitor-buffer weechat-buffer-ptr)))
+    (let ((weechat-initial-lines (or line-count
+                                     weechat-initial-lines)))
+     (weechat-monitor-buffer weechat-buffer-ptr))))
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
