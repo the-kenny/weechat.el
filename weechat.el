@@ -999,8 +999,9 @@ text (technically, this shouldn't happen)."
       (weechat-truncate-buffer)
 
       ;; Drop undo information (borrowed from weechat)
-      (buffer-disable-undo)
-	  (buffer-enable-undo))))
+      (when (not (s-blank? (weechat-get-input)))
+        (buffer-disable-undo)
+        (buffer-enable-undo)))))
 
 (defun weechat-line-type (line-hdata)
   (let ((tags (cdr (assoc-string "tags_array" line-hdata))))
