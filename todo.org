@@ -9,14 +9,14 @@ org-ruby). Please use the 'Raw' link on the right.
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
 ** TODO Don't kill undo-history on buffer change (annoying when you're typing sth.)
-** TODO Mode-Line Tracking Indicator [0/2]
-   - [ ] Store more change-metadata in buffer-hash
+** TODO Mode-Line Tracking Indicator [2/3]
+   - [X] Store more change-metadata in buffer-hash
+   - [X] Don't use faces in weechat-tracking.el
    - [ ] Merge branch 'tracking'
 ** TODO Clean pointers on disconnect
    ...to prevent horrible WeeChat crashes
 ** TODO Update a NEWS file
    Close this right before 0.2 release so it's consistent.
-
 ** DONE Add a prefix-arg to weechat-reload-buffer
    ...to load prefix-argument lines
 * Short-Term [16/23]
@@ -77,7 +77,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [8/24]
+* Nice to have [9/23]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** DONE Speedbar integration
@@ -97,7 +97,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
-** TODO Tracking support similar to erc-track.
+** DONE Tracking support similar to erc-track.
    Using circe's tracking.el is probably a good way to implement this
    https://github.com/jorgenschaefer/circe/blob/master/lisp/tracking.el
 ** DONE Module for applying s/foo/bar/ message corrections
