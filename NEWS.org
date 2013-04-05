@@ -1,0 +1,29 @@
+# -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
+* 0.2
+** Incompatible Changes
+*** Notification moved to modules
+    Notification support is now handled by modules.  For =notifications.el= based
+    notifications load the =weechat-notifications= module and for Sauron based
+    notifications the =weechat-sauron= module.
+** New Features
+*** SSL Support
+*** Color-Handling
+*** Timestamps and Highlighted Messages
+*** Input-History
+*** keepalive-ping
+    Weechat.el will periodically ping the relay server if no data was received,
+    improving disconnect-detection.
+*** Various other improvements!
+    Check =M-x customize-group RET weechat RET= or experience it yourself!
+** New Modules
+*** LaTeX Previews: =weechat-latex=
+    Renders LaTeX snippets in the chat buffer.
+*** Corrector: =weechat-corrector=
+    Correct previous messages with s/foo/bar/ regular expressions.
+*** Speedbar support: =weechat-speedbar=
+    Use Emacs' =M-x speedbar= to switch between weechat buffers.
+*** Image Previews: =weechat-image=
+    Preview image links in the chat buffer.
+*** Mode-line Activity Indicator: =weechat-tracking=
+* 0.1 <2013-02-26 Tue>
+  Initial release

@@ -1,5 +1,5 @@
 NAME  := weechat
-DESCRIPTION := Chat via WeeChat's relay protocol in Emacs
+DESCRIPTION := Chat via WeeChat\'s relay protocol in Emacs
 
 EMACS := emacs
 BATCH := $(EMACS) -Q --batch --eval '(add-to-list '"'"'load-path ".")'
@@ -7,7 +7,7 @@ BATCH := $(EMACS) -Q --batch --eval '(add-to-list '"'"'load-path ".")'
 TESTS   := $(wildcard *-test.el)
 EL 	:= $(wildcard weechat*.el)
 SOURCES := $(filter-out $(TESTS),$(EL))
-DEPS    := ((s \"1.3.1\"))
+DEPS    := ((s \"1.3.1\") (tracking \"1.2\"))
 
 DATE := $(shell date +%Y%m%d)
 

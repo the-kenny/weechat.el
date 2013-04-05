@@ -44,8 +44,8 @@
 (defcustom weechat-button-url-regexp
   (concat "\\(www\\.\\|\\(s?https?\\|"
           "ftp\\|file\\|gopher\\|news\\|telnet\\|wais\\|mailto\\):\\)"
-          "\\(//[-a-zA-Z0-9_.]+:[0-9]*\\)?"
-          "[-a-zA-Z0-9_=!?#$@~`%&*+\\/:;.,()]+[-a-zA-Z0-9_=#$@~`%&*+\\/()]")
+          "\\(//[-[:alnum:]_.]+:[0-9]*\\)?"
+          "[-[:alnum:]_=!?#$@~`%&*+\\/:;.,()]+[-[:alnum:]_=#$@~`%&*+\\/()]")
   "Regexp to match URLs.
 Copied from erc-button.el."
   :type 'regexp
@@ -53,32 +53,40 @@ Copied from erc-button.el."
 
 (defcustom weechat-button-default-log-buffer "*WeeChat URL Log*"
   "Buffer name for URL log.
-
 Valid values include a string describing a buffer name or nil to
 disable url logging (except when an explicit buffer name is
 defined in `weechat-button-list')"
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "No Log" nil)
+                 (string :tag "Buffer Name")))
 
 (defcustom weechat-button-buttonize-url t
   "Buttonize url links?"
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-channels t
   "Buttonize channel links?"
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-symbols t
   "Buttonize symbol links?"
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-emails nil
   "Buttonize e-mail link?"
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-buttonize-man nil
   "Buttonize manpage links?
@@ -86,29 +94,49 @@ Format is man(1)."
   :group 'weechat-button
   :type 'boolen)
 
-(defcustom weechat-button-buttonize-info nil
+(defcustom weechat-button-buttonize-info '("#emacs" "#weechat\\.el")
   "Buttonize info links?
 Format is (info \"link\")."
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
+
+(defcustom weechat-button-rfc-url "http://www.faqs.org/rfcs/rfc%s.html"
+  "URL used to browse rfc references.
+%s is replaced by the number."
+  :group 'weechat-button
+  :type 'string)
+
+(defcustom weechat-button-buttonize-rfc nil
+  "Buttonize rfc links?"
+  :group 'weechat-button
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 ; temporarily disabled due to performance problems
 (defcustom weechat-button-buttonize-nicks nil
   "Buttonize nicknames?"
   :group 'weechat-button
-  :type 'boolean)
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Always" t)
+                 (repeat :tag "If regular expression matches buffer name" regexp)))
 
 (defcustom weechat-button-list
   '((weechat-button-url-regexp 0 weechat-button-buttonize-url t "Browse URL"
                                browse-url 0)
     ("#[-#+_.[:alnum:]]+" 0 weechat-button-buttonize-channels nil "Join Channel"
      weechat-join 0)
-    ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil "email" weechat-button--mailto 0)
+    ("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]\\{2,4\\}\\b" 0 weechat-button-buttonize-emails nil
+     "email" weechat-button--mailto 0)
     ("[`]\\([-_.[:alnum:]]+\\)[']" 1 weechat-button-buttonize-symbols nil "Describe Symbol"
      weechat-button--describe-symbol 1)
     ("[[:alpha:][:alnum:]]+([1-9])" 0 weechat-button-buttonize-man nil "Manpage" man 0)
     ("(info \"\\(([[:alnum:]]+) .+?\\)\"" 1 weechat-button-buttonize-info nil "info"
-     info 1))
+     info 1)
+    ("\\brfc[#: ]?\\([0-9]+\\)" 0 weechat-button-buttonize-rfc nil "RFC"
+     weechat-button--rfc 1))
   "List of potential buttons in WeeChat chat buffers.
 Each entry has the form (REGEXP BUTTON-MATCH BUTTONIZE? LOG HELP-ECHO ACTION
 DATA-MATCH...), where
@@ -118,8 +146,8 @@ REGEXP is a string or variable containing a regular expression to match buttons.
 BUTTON-MATCH is the number of the regexp grouping which represents the actual
   button.
 
-BUTTONIZE? is `eval'd and the button is only created if the return value is
-  non-nil.
+BUTTONIZE? determines if button should be buttonized.
+  See `weechat-button--buttonize?' for exact usage.
 
 LOG decides if `weechat-button-log-functions' gets called.
 
@@ -140,8 +168,10 @@ This is similar (but not identical) to `erc-button-alist' in ERC."
                        (integer :tag "Number of the regexp section that matches")
                        (choice :tag "When to buttonize"
                                (const :tag "Always" t)
-                               (const :tag "Never" t)
-                               (sexp :tag "Only when this evaluates to non-nil"))
+                               (const :tag "Never" nil)
+                               (repeat :tag "If regular expression matches buffer name"
+                                       regexp)
+                               (symbol :tag "Variable name"))
                        (choice :tag "Log match"
                                (const :tag "To default buffer" t)
                                (const :tag "Never" nil)
@@ -189,6 +219,22 @@ The function in property `weechat-function' gets called with `weechat-data'."
 
 (add-hook 'weechat-button-log-functions 'weechat-button--log-to-buffer)
 
+(defun weechat-button--buttonize? (buttonize?)
+  "Return non-nil if BUTTONIZE? says so.
+Return non-nil if BUTTONIZE?:
+- is t,
+- is a list of strings and one of the strings matches the channel name,
+- is a variable then apply the rules to the value of the variable."
+  (when (and (symbolp buttonize?) (boundp buttonize?))
+    (setq buttonize? (symbol-value buttonize?)))
+  (cond
+   ((listp buttonize?)
+    (let ((name (buffer-name)) ret)
+      (dolist (i buttonize? ret)
+        (when (s-matches? i name)
+          (setq ret t)))))
+   (t t)))
+
 (defvar weechat-button-log-buffer-last-log nil)
 (defun weechat-button--add-do (entry &optional text-buttons)
   "Handle each button ENTRY.
@@ -216,8 +262,7 @@ If TEXT-BUTTONS is non-nil then use `make-text-button instead of `make-button'."
                   (button-data-no-properties
                    (match-string-no-properties button-match))
                   (data (mapcar #'match-string data-match)))
-              (when (or (eq buttonize? t)
-                        (eval buttonize?))
+              (when (weechat-button--buttonize? buttonize?)
                 (let ((properties (list 'action #'weechat-button--handler
                                         'help-echo help-echo
                                         'follow-link t
@@ -274,6 +319,10 @@ and `apropos' for other symbols."
 (defun weechat-button--mailto (email)
   "Call `browse-url' on email with \"mailto:\" prepend."
   (browse-url (concat "mailto:" email)))
+
+(defun weechat-button--rfc (rfc)
+  "Call `browse-url' on RFC using `weechat-button-rfc-url'."
+  (browse-url (format weechat-button-rfc-url rfc)))
 
 ;;; Module load/unload
 

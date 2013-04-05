@@ -70,6 +70,13 @@ man-in-the-middle attacks on your connection."
   :type 'boolean
   :group 'weechat-relay)
 
+(defcustom weechat-relay-ping-idle-seconds 60
+  "After how many seconds without messages weechat-relay should
+  send a ping."
+  :type '(choice integer
+                 (const nil))
+  :group 'weechat-relay)
+
 ;;; Code:
 
 (defvar weechat--relay-id-callback-hash (make-hash-table :test 'equal)
@@ -96,10 +103,17 @@ Currently unsupported."
   (let ((pass (if (functionp password)
                   (funcall password)
                 password)))
-    (when (and pass (stringp pass) (not (s-blank? pass)))
-      (weechat--relay-send-message (format "init password=%s,compression=%s\n"
-                                           pass
-                                           (if compression "on" "off"))))))
+    (setq pass (if (s-blank? (s-trim pass))
+                   nil
+                 (s-trim pass)))
+    (weechat--relay-send-message
+     (concat "init "
+             (s-join ","
+                     (cl-remove-if #'s-blank?
+                                   (list
+                                    (when pass (format "password=%s" (s-trim pass)))
+                                    (format "compression=%s" (if compression "zlib" "off")))))
+             "\n"))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
   "Convert an unsigned int NUM to signed int.
@@ -181,7 +195,7 @@ Optional second return value contains length of parsed data."
 DATA must be an unibyte string.  Return string-value and number
 of bytes consumed."
   (let ((obj (bindat-unpack weechat--relay-ptr-spec data)))
-    (cl-values (unless (string-equal "0" (bindat-get-field obj 'val))
+    (cl-values (unless (string= "0" (bindat-get-field obj 'val))
                  (concat "0x" (bindat-get-field obj 'val)))
                (bindat-length weechat--relay-ptr-spec obj))))
 
@@ -445,6 +459,31 @@ CALLBACK takes one argument (the response data) which is a list."
       (weechat-relay-add-id-callback id callback 'one-shot))
     (weechat--relay-send-message command id)))
 
+(defvar weechat-relay-last-receive nil
+  "Stores the time when the last message was received.")
+
+
+(defun weechat--relay-send-ping (&optional pong-callback)
+  (weechat-relay-send-command "info version" pong-callback))
+
+;;; TODO: Move this functionality to weechat.el
+(defvar weechat--relay-ping-timer nil)
+(defun weechat--relay-stop-ping-timer ()
+  (when (timerp weechat--relay-ping-timer)
+    (cancel-timer weechat--relay-ping-timer)
+    (setq weechat--relay-ping-timer nil)))
+
+(defun weechat--relay-start-ping-timer ()
+  (weechat--relay-stop-ping-timer)
+  (setq weechat--relay-ping-timer
+        (run-with-timer 0
+                        (/ weechat-relay-ping-idle-seconds 2)
+                        (lambda ()
+                          (when (>= (time-to-seconds (time-since weechat-relay-last-receive))
+                                    weechat-relay-ping-idle-seconds)
+                           (weechat--relay-send-ping))))))
+(add-hook 'weechat-relay-disconnect-hook 'weechat--relay-stop-ping-timer)
+
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
     (weechat-relay-log (format "Received %d bytes" (length string)) :debug)
@@ -455,6 +494,7 @@ CALLBACK takes one argument (the response data) which is a list."
     (while (weechat--message-available-p)
       (let* ((data (weechat--relay-parse-new-message))
              (id (weechat--message-id data)))
+        (setq weechat-relay-last-receive (current-time))
         ;; If buffer is available, log message
         (weechat-relay-log (pp-to-string data) :debug)
         ;; Call `weechat-relay-message-function'

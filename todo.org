@@ -4,7 +4,22 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* Short-Term [16/22]
+* 0.2 [3/6]
+** TODO Auto-Monitor 'old' buffers
+   Sometimes buffers from an earlier connection remain in Emacs, never
+   getting updated again
+** DONE Don't kill undo-history on buffer change (annoying when you're typing sth.)
+** DONE Mode-Line Tracking Indicator [3/3]
+   - [X] Store more change-metadata in buffer-hash
+   - [X] Don't use faces in weechat-tracking.el
+   - [X] Merge branch 'tracking'
+** TODO Clean pointers on disconnect
+   ...to prevent horrible WeeChat crashes
+** TODO Update a NEWS file
+   Close this right before 0.2 release so it's consistent.
+** DONE Add a prefix-arg to weechat-reload-buffer
+   ...to load prefix-argument lines
+* Short-Term [16/23]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -38,6 +53,8 @@ org-ruby). Please use the 'Raw' link on the right.
    - [ ] WHOIS
 ** TODO Check performance with >1000 lines and nick-buttons enabled
 ** TODO Request more backlog when scrolling / via shortcut
+** TODO Fix failed certificate when using gnutls-cli
+   See http://p.tarn-vedra.de/weechat-relay-cert-check-fail.html
 ** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
 *** DONE marmalade
@@ -59,7 +76,8 @@ org-ruby). Please use the 'Raw' link on the right.
 ** DONE Colors
    Thanks, Rüdiger
 ** DONE Module System
-* Nice to have [8/24]
+
+* Nice to have [9/23]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** DONE Speedbar integration
@@ -79,11 +97,9 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
-** TODO Auto-Monitor 'old' buffers
-   Sometimes buffers from an earlier connection remain in Emacs, never
-   to be updated again. A refresh (C-c C-r) should re-monitor them.
-** TODO Clean pointers on disconnect
-   ...to prevent horrible WeeChat crashes
+** DONE Tracking support similar to erc-track.
+   Using circe's tracking.el is probably a good way to implement this
+   https://github.com/jorgenschaefer/circe/blob/master/lisp/tracking.el
 ** DONE Module for applying s/foo/bar/ message corrections
 ** DONE SSL Connections
 ** DONE Sauron Integration
