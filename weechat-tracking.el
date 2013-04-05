@@ -58,11 +58,11 @@ or faces that don't show up at all."
   (set (make-local-variable 'tracking-faces-priorities) weechat-tracking-faces-priorities))
 
 (defun weechat-tracking-handle-highlight ()
-  (when (cl-find :highlight weechat-tracking-types)
+  (when (memq :highlight weechat-tracking-types)
     (tracking-add-buffer (current-buffer) '(weechat-highlight-face))))
 
 (defun weechat-tracking-handle-message ()
-  (when (cl-find :message weechat-tracking-types)
+  (when (memq :message weechat-tracking-types)
     (tracking-add-buffer (current-buffer))))
 
 (defun weechat-tracking-handle-reset ()
