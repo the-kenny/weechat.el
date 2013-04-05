@@ -109,10 +109,10 @@ Currently unsupported."
     (weechat--relay-send-message
      (concat "init "
              (s-join ","
-                     (remove-if #'s-blank?
-                                (list
-                                 (if pass (format "password=%s" (s-trim pass)))
-                                 (format "compression=%s" (if compression "zlib" "off")))))
+                     (cl-remove-if #'s-blank?
+                                   (list
+                                    (when pass (format "password=%s" (s-trim pass)))
+                                    (format "compression=%s" (if compression "zlib" "off")))))
              "\n"))))
 
 (defun weechat--relay-bindat-unsigned-to-signed (num bytes)
