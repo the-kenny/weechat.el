@@ -24,5 +24,6 @@
     Use Emacs' =M-x speedbar= to switch between weechat buffers.
 *** Image Previews: =weechat-image=
     Preview image links in the chat buffer.
+*** Mode-line Activity Indicator: =weechat-tracking=
 * 0.1 <2013-02-26 Tue>
   Initial release
