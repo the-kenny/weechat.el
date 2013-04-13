@@ -34,6 +34,8 @@
 (require 'tracking)
 (require 'cl-lib)
 
+(require 'weechat)
+
 (defgroup weechat-tracking nil
   "Tracking support for Weechat.el."
   :link '(url-link "https://github.com/the-kenny/weechat.el")

@@ -54,6 +54,7 @@
 ;;; Code:
 
 (require 'smiley)
+(require 'weechat)
 
 (defun weechat-smiley-buffer ()
   "Smiley the region."

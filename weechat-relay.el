@@ -479,9 +479,9 @@ CALLBACK takes one argument (the response data) which is a list."
         (run-with-timer 0
                         (/ weechat-relay-ping-idle-seconds 2)
                         (lambda ()
-                          (when (>= (time-to-seconds (time-since weechat-relay-last-receive))
+                          (when (>= (float-time (time-since weechat-relay-last-receive))
                                     weechat-relay-ping-idle-seconds)
-                           (weechat--relay-send-ping))))))
+                            (weechat--relay-send-ping))))))
 (add-hook 'weechat-relay-disconnect-hook 'weechat--relay-stop-ping-timer)
 
 (defun weechat--relay-process-filter (proc string)
