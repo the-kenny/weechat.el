@@ -257,6 +257,11 @@ returns a string, or nil."
   :type '(repeat :tag "List" symbol)
   :group 'weechat)
 
+(defcustom weechat-buffer-kill-buffers-on-disconnect nil
+  "Kill buffers if the connection is disconnected by the user."
+  :type 'boolean
+  :group 'weechat)
+
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
@@ -604,6 +609,8 @@ and port number respectively."
   ;; reconnects
   (let ((weechat-auto-reconnect-retries nil))
     (weechat-relay-disconnect)
+    (when weechat-buffer-kill-buffers-on-disconnect
+      (weechat-do-buffers (kill-buffer)))
     (clrhash weechat--buffer-hashes)
     (setq weechat--connected npil)))
 
