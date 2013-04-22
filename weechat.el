@@ -502,7 +502,10 @@ Return either a string, a function returning a string, or nil."
   "Weechat mode selection: Local keymap for minibuffer input with completion.")
 
 ;;;###autoload
-(defun weechat-connect (&optional host port password mode)
+(defun weechat-reset-reconnect-retries ()
+  (unintern 'weechat-auto-reconnect-retries-left))
+
+(defun weechat-connect (&optional host port password mode force-disconnect)
   "Connect to WeeChat.
 
 HOST is the relay host, `weechat-host-default' by default.
@@ -539,7 +542,8 @@ and port number respectively."
          (weechat-get-password host port))
        ;; Use lexical-let to scramble password lambda in *Backtrace*
        (read-passwd "Password: "))
-      mode)))
+      mode
+      nil)))
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
          (password (or password
@@ -547,7 +551,8 @@ and port number respectively."
          (mode (or mode weechat-mode-default)))
     (weechat-message "Weechat connecting to %s:%d" host port)
     (when (weechat-relay-connected-p)
-      (if (y-or-n-p "Already connected.  Disconnect other connection? ")
+      (if (or force-disconnect
+              (y-or-n-p "Already connected.  Disconnect other connection? "))
           (weechat-relay-disconnect)
         (error "Can't open two connections")))
     (when (and (stringp host)
@@ -562,15 +567,36 @@ and port number respectively."
           "info version"
           (lambda (data)
             (let ((version-str (cdar data)))
-             (weechat-message "Connected to '%s', version %s" host
-                              version-str)
-             (setq weechat-version version-str))
+              (weechat-message "Connected to '%s', version %s" host
+                               version-str)
+              (setq weechat-version version-str))
             (weechat-update-buffer-list
              (lambda ()
                (weechat-relay-send-command "sync")
                (setq weechat--connected t)
                (weechat--relay-start-ping-timer)
+               (weechat-reset-reconnect-retries)
                (run-hooks 'weechat-connect-hook))))))))))
+
+(defvar weechat-auto-reconnect-retries-left)
+(defun weechat-handle-reconnect-maybe ()
+  (if (boundp 'weechat-auto-reconnect-retries-left)
+      (when (> weechat-auto-reconnect-retries-left
+               0)
+        (let ((host (car weechat-host-history))
+              (port weechat-last-port))
+          (setq weechat-auto-reconnect-retries-left
+                (1- weechat-auto-reconnect-retries-left))
+          (weechat-connect
+           host
+           port
+           (weechat-password-auth-source-callback host port)
+           (car weechat-mode-history)
+           'force-disconnect)
+          t))
+    (setq weechat-auto-reconnect-retries-left
+          weechat-auto-reconnect-retries)
+    (weechat-handle-reconnect-maybe)))
 
 (defun weechat-disconnect ()
   (interactive)
@@ -579,23 +605,25 @@ and port number respectively."
   (let ((weechat-auto-reconnect-retries nil))
     (weechat-relay-disconnect)
     (clrhash weechat--buffer-hashes)
-    (setq weechat--connected nil)))
+    (setq weechat--connected npil)))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil
         weechat-version nil)
-  ;; Print 'disconnected' message to all channel buffers
-  (maphash (lambda (k v)
-             (when (bufferp (gethash :emacs/buffer v))
-               (with-current-buffer (gethash :emacs/buffer v)
-                 (weechat-print-line k
-                                     :prefix "!!!"
-                                     :text "Lost connection to relay server"
-                                     :date (current-time)
-                                     :line-type :irc/x-error))))
-           weechat--buffer-hashes)
-  (weechat-notify :disconnect
-                  :date (current-time)))
+  (unless (and weechat-auto-reconnect-retries
+               (weechat-handle-reconnect-maybe))
+    ;; Print 'disconnected' message to all channel buffers
+    (maphash (lambda (k v)
+               (when (bufferp (gethash :emacs/buffer v))
+                 (with-current-buffer (gethash :emacs/buffer v)
+                   (weechat-print-line k
+                                       :prefix "!!!"
+                                       :text "Lost connection to relay server"
+                                       :date (current-time)
+                                       :line-type :irc/x-error))))
+             weechat--buffer-hashes)
+    (weechat-notify :disconnect
+                    :date (current-time))))
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
