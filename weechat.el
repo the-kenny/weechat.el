@@ -577,9 +577,12 @@ and port number respectively."
 
 (defun weechat-disconnect ()
   (interactive)
-  (weechat-relay-disconnect)
-  (clrhash weechat--buffer-hashes)
-  (setq weechat--connected nil))
+  ;; It's safe to lexical-bind the retry limit to nil to disable
+  ;; reconnects
+  (let ((weechat-auto-reconnect-retries nil))
+    (weechat-relay-disconnect)
+    (clrhash weechat--buffer-hashes)
+    (setq weechat--connected nil)))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil
