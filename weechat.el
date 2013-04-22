@@ -263,9 +263,9 @@ returns a string, or nil."
 
 (defvar weechat-host-history nil
   "List of recently connected hosts.")
-(defvar weechat-last-port
+(defvar weechat-last-port nil
   "Last port connected to.")
-(defvar weechat-mode-history
+(defvar weechat-mode-history nil
   "List of recently used connection modes.")
 
 (defvar weechat-version nil)
