@@ -4,22 +4,23 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.2 [3/6]
+* 0.2 [3/7]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
+** TODO Clean pointers on disconnect
+   ...to prevent horrible WeeChat crashes
+** TODO Auto-Reconnect
+** TODO Update a NEWS file
+   Close this right before 0.2 release so it's consistent.
 ** DONE Don't kill undo-history on buffer change (annoying when you're typing sth.)
 ** DONE Mode-Line Tracking Indicator [3/3]
    - [X] Store more change-metadata in buffer-hash
    - [X] Don't use faces in weechat-tracking.el
    - [X] Merge branch 'tracking'
-** TODO Clean pointers on disconnect
-   ...to prevent horrible WeeChat crashes
-** TODO Update a NEWS file
-   Close this right before 0.2 release so it's consistent.
 ** DONE Add a prefix-arg to weechat-reload-buffer
    ...to load prefix-argument lines
-* Short-Term [16/23]
+* Short-Term [16/22]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -36,7 +37,6 @@ org-ruby). Please use the 'Raw' link on the right.
    - [ ] _nicklist
    - [ ] _upgrade
    - [ ] _upgrade_ended
-** TODO Auto-Reconnect
 ** TODO Mark channel as "read" from Emacs
    send command: "input 0x10f29d0 /input set_unread_current_buffer"
 *** This is currently broken on weechat's side. Waiting for FlashCode.
