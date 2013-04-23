@@ -90,8 +90,10 @@ Trim TEXT prior to sending it."
   (let ((msg (concat (when id (format "(%s) " id)) (s-trim text) "\n")))
     (weechat-relay-log (format "Sending msg: '%s'" (s-trim msg))
                        :debug)
-    (send-string (get-buffer-process weechat-relay-buffer-name)
-                 msg)))
+    (let ((process (get-buffer-process weechat-relay-buffer-name)))
+      (if process
+          (send-string process msg)
+        (weechat-warn "`get-buffer-process' returned nil for `weechat-relay-buffer-name'")))))
 
 (defun weechat-relay-authenticate (password &optional compression)
   "Authenticate to weechat with PASSWORD.
