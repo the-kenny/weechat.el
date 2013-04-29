@@ -51,7 +51,9 @@
   "IDs to ignore.")
 
 (defcustom weechat-relay-disconnect-hook nil
-  "Hook run when the relay disconnects."
+  "Hook run when the relay disconnects.
+It will NOT run when the user disconnects via
+`weechat-disconnect'."
   :type 'hook
   :group 'weechat-relay)
 
@@ -71,8 +73,7 @@ man-in-the-middle attacks on your connection."
   :group 'weechat-relay)
 
 (defcustom weechat-relay-ping-idle-seconds 60
-  "After how many seconds without messages weechat-relay should
-  send a ping."
+  "Idle time in seconds after weechat.el will ping the server."
   :type '(choice integer
                  (const nil))
   :group 'weechat-relay)
