@@ -508,8 +508,8 @@ CALLBACK takes one argument (the response data) which is a list."
 (defvar weechat--relay-connected-callback)
 
 (defun weechat--relay-handle-process-status (status)
-  (weechat-relay-log (format "Received event: %s\n" event))
-  (cl-case event
+  (weechat-relay-log (format "Received status event: %s\n" status))
+  (cl-case status
     ('closed (run-hooks 'weechat-relay-disconnect-hook))
     ('failed (progn (error "Failed to connect to weechat relay")
                     (weechat-relay-disconnect)))))
@@ -612,8 +612,11 @@ Optional argument CALLBACK Called after initialization is finished."
   (when (weechat-relay-connected-p)
     (weechat--relay-send-message "quit")
     (with-current-buffer weechat-relay-buffer-name
-      (delete-process
-       (get-buffer-process (current-buffer)))
+      (let ((proc (get-buffer-process (current-buffer))))
+        ;; When disconnecting interactively (e.g. when this function
+        ;; is called), prevent running any disconnect hooks.
+        (set-process-sentinel proc nil)
+        (delete-process proc))
       (kill-buffer))
     (when (get-buffer weechat-relay-log-buffer-name)
       (kill-buffer weechat-relay-log-buffer-name))))
