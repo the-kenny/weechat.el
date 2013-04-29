@@ -612,7 +612,7 @@ and port number respectively."
     (when weechat-buffer-kill-buffers-on-disconnect
       (weechat-do-buffers (kill-buffer)))
     (clrhash weechat--buffer-hashes)
-    (setq weechat--connected npil)))
+    (setq weechat--connected nil)))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil
