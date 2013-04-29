@@ -507,13 +507,15 @@ CALLBACK takes one argument (the response data) which is a list."
 
 (defvar weechat--relay-connected-callback)
 
+(defun weechat--relay-handle-process-status (status)
+  (weechat-relay-log (format "Received event: %s\n" event))
+  (cl-case event
+    ('closed (run-hooks 'weechat-relay-disconnect-hook))
+    ('failed (progn (error "Failed to connect to weechat relay")
+                    (weechat-relay-disconnect)))))
+
 (defun weechat--relay-process-sentinel (proc _)
-  (let ((event (process-status proc)))
-    (weechat-relay-log (format "Received event: %s\n" event))
-    (cl-case event
-      ('closed (run-hooks 'weechat-relay-disconnect-hook))
-      ('failed (progn (error "Failed to connect to weechat relay")
-                      (weechat-relay-disconnect))))))
+  (weechat--relay-handle-process-status (process-status proc)))
 
 (defun weechat--relay-open-socket (name buffer host service)
   (make-network-process :name name
