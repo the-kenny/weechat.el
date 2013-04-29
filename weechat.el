@@ -589,15 +589,21 @@ and port number respectively."
       (when (> weechat-auto-reconnect-retries-left
                0)
         (let ((host (car weechat-host-history))
-              (port weechat-last-port))
+              (port weechat-last-port)
+              (delay (expt 2 (- weechat-auto-reconnect-retries
+                                weechat-auto-reconnect-retries-left))))
+          (weechat-message "Reconnecting in %i..." delay)
           (setq weechat-auto-reconnect-retries-left
                 (1- weechat-auto-reconnect-retries-left))
-          (weechat-connect
-           host
-           port
-           (weechat-password-auth-source-callback host port)
-           (car weechat-mode-history)
-           'force-disconnect)
+          (run-with-timer
+           delay nil
+           (lambda ()
+             (weechat-connect
+              host
+              port
+              (weechat-password-auth-source-callback host port)
+              (car weechat-mode-history)
+              'force-disconnect)))
           t))
     (setq weechat-auto-reconnect-retries-left
           weechat-auto-reconnect-retries)
