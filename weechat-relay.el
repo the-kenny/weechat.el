@@ -482,7 +482,6 @@ CALLBACK takes one argument (the response data) which is a list."
                           (when (>= (float-time (time-since weechat-relay-last-receive))
                                     weechat-relay-ping-idle-seconds)
                             (weechat--relay-send-ping))))))
-(add-hook 'weechat-relay-disconnect-hook 'weechat--relay-stop-ping-timer)
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
@@ -616,7 +615,9 @@ Optional argument CALLBACK Called after initialization is finished."
         ;; When disconnecting interactively (e.g. when this function
         ;; is called), prevent running any disconnect hooks.
         (set-process-sentinel proc nil)
-        (delete-process proc))
+        (delete-process proc)
+        ;; Stop the ping timer
+        (weechat--relay-stop-ping-timer))
       (kill-buffer))
     (when (get-buffer weechat-relay-log-buffer-name)
       (kill-buffer weechat-relay-log-buffer-name))))
