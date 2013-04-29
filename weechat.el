@@ -603,17 +603,6 @@ and port number respectively."
           weechat-auto-reconnect-retries)
     (weechat-handle-reconnect-maybe)))
 
-(defun weechat-disconnect ()
-  (interactive)
-  ;; It's safe to lexical-bind the retry limit to nil to disable
-  ;; reconnects
-  (let ((weechat-auto-reconnect-retries nil))
-    (weechat-relay-disconnect)
-    (when weechat-buffer-kill-buffers-on-disconnect
-      (weechat-do-buffers (kill-buffer)))
-    (clrhash weechat--buffer-hashes)
-    (setq weechat--connected nil)))
-
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil
         weechat-version nil)
@@ -631,6 +620,22 @@ and port number respectively."
              weechat--buffer-hashes)
     (weechat-notify :disconnect
                     :date (current-time))))
+
+(defun weechat-disconnect ()
+  (interactive)
+  ;; It's safe to lexical-bind the retry limit to nil to disable
+  ;; reconnects
+  (let ((weechat-auto-reconnect-retries nil))
+    ;; Disconnect the relay. `weechat-relay-disconnect-hook' will NOT
+    ;; run.
+    (weechat-relay-disconnect)
+    ;; Run `weechat-handle-disconnect' to print 'disconnected from
+    ;; server' message etc.
+    (weechat-handle-disconnect)
+    (when weechat-buffer-kill-buffers-on-disconnect
+      (weechat-do-buffers (kill-buffer)))
+    (clrhash weechat--buffer-hashes)
+    (setq weechat--connected nil)))
 
 (add-hook 'weechat-relay-disconnect-hook 'weechat-handle-disconnect)
 
