@@ -586,31 +586,28 @@ and port number respectively."
 
 (defvar weechat-auto-reconnect-retries-left)
 (defun weechat-handle-reconnect-maybe ()
-  (if (boundp 'weechat-auto-reconnect-retries-left)
-      (when (> weechat-auto-reconnect-retries-left
-               0)
-        (let ((host (car weechat-host-history))
-              (port weechat-last-port)
-              (delay (expt 2 (- weechat-auto-reconnect-retries
-                                weechat-auto-reconnect-retries-left))))
-          (if (not (weechat-password-auth-source-callback host port))
-              (weechat-message "Not reconnecting: No password stored.")
-           (weechat-message "Reconnecting in %i..." delay)
-           (setq weechat-auto-reconnect-retries-left
-                 (1- weechat-auto-reconnect-retries-left))
-           (run-with-timer
-            delay nil
-            (lambda ()
-              (weechat-connect
-               host
-               port
-               (weechat-password-auth-source-callback host port)
-               (car weechat-mode-history)
-               'force-disconnect))))
-          t))
+  (unless (boundp 'weechat-auto-reconnect-retries-left)
     (setq weechat-auto-reconnect-retries-left
-          weechat-auto-reconnect-retries)
-    (weechat-handle-reconnect-maybe)))
+          weechat-auto-reconnect-retries))
+  (when (> weechat-auto-reconnect-retries-left 0)
+    (let ((host (car weechat-host-history))
+          (port weechat-last-port)
+          (delay (lsh 1 (- weechat-auto-reconnect-retries
+                           weechat-auto-reconnect-retries-left))))
+      (if (not (weechat-get-password host port))
+          (weechat-message "Not reconnecting: No password stored.")
+        (weechat-message "Reconnecting in %ds..." delay)
+        (cl-decf weechat-auto-reconnect-retries-left)
+        (run-with-timer
+         delay nil
+         (lambda ()
+           (weechat-connect
+            host
+            port
+            (weechat-get-password host port)
+            (car weechat-mode-history)
+            'force-disconnect))))
+      t)))
 
 (defun weechat-handle-disconnect ()
   (setq weechat--connected nil
