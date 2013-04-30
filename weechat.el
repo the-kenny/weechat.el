@@ -126,7 +126,8 @@ Use `weechat-toggle-hidden' to toggle hidden text in buffers."
 (defcustom weechat-auto-reconnect-retries 5
   "Number of max. retries when reconnecting"
   :type '(choice (integer :tag "Number of retries")
-                 (const :tag "No auto-reconnect" nil)))
+                 (const :tag "No auto-reconnect" nil))
+  :group 'weechat)
 
 (defcustom weechat-auto-monitor-buffers ()
   "List of buffer names to auto-monitor on connect.
@@ -508,7 +509,7 @@ Return either a string, a function returning a string, or nil."
 
 ;;;###autoload
 (defun weechat-reset-reconnect-retries ()
-  (unintern 'weechat-auto-reconnect-retries-left))
+  (unintern 'weechat-auto-reconnect-retries-left obarray))
 
 (defun weechat-connect (&optional host port password mode force-disconnect)
   "Connect to WeeChat.
