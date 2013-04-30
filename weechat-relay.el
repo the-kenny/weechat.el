@@ -480,9 +480,12 @@ CALLBACK takes one argument (the response data) which is a list."
         (run-with-timer 0
                         (/ weechat-relay-ping-idle-seconds 2)
                         (lambda ()
-                          (when (>= (float-time (time-since weechat-relay-last-receive))
-                                    weechat-relay-ping-idle-seconds)
-                            (weechat--relay-send-ping))))))
+                          (if (weechat-relay-connected-p)
+                           (when (>= (float-time (time-since weechat-relay-last-receive))
+                                     weechat-relay-ping-idle-seconds)
+                             (weechat--relay-send-ping))
+                           ;; Stop the ping timer if we aren't connected
+                           (weechat--relay-stop-ping-timer))))))
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
