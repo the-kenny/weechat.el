@@ -592,18 +592,20 @@ and port number respectively."
               (port weechat-last-port)
               (delay (expt 2 (- weechat-auto-reconnect-retries
                                 weechat-auto-reconnect-retries-left))))
-          (weechat-message "Reconnecting in %i..." delay)
-          (setq weechat-auto-reconnect-retries-left
-                (1- weechat-auto-reconnect-retries-left))
-          (run-with-timer
-           delay nil
-           (lambda ()
-             (weechat-connect
-              host
-              port
-              (weechat-password-auth-source-callback host port)
-              (car weechat-mode-history)
-              'force-disconnect)))
+          (if (not (weechat-password-auth-source-callback host port))
+              (weechat-message "Not reconnecting: No password stored.")
+           (weechat-message "Reconnecting in %i..." delay)
+           (setq weechat-auto-reconnect-retries-left
+                 (1- weechat-auto-reconnect-retries-left))
+           (run-with-timer
+            delay nil
+            (lambda ()
+              (weechat-connect
+               host
+               port
+               (weechat-password-auth-source-callback host port)
+               (car weechat-mode-history)
+               'force-disconnect))))
           t))
     (setq weechat-auto-reconnect-retries-left
           weechat-auto-reconnect-retries)
