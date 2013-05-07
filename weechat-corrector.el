@@ -64,10 +64,6 @@ If nil, parentheses must be quotedL s/a\(.\)c/\1/."
   :type 'boolean
   :group 'weechat-corrector)
 
-(defface weechat-corrector-regex-face '((t :inherit default))
-  "Face used to highlight matched regular expressions."
-  :group 'weechat-corrector)
-
 (defface weechat-corrector-corrected-face '((t :inherit default))
   "Face used to highlight corrected text."
   :group 'weechat-corrector)
@@ -86,16 +82,12 @@ If nil, parentheses must be quotedL s/a\(.\)c/\1/."
         (line (weechat-line-text)))
     (when (and (or weechat-corrector-correct-other
                    (string= (weechat-line-nick)
-                                 (weechat-get-local-var "nick")))
+                            (weechat-get-local-var "nick")))
                line
                (stringp line))
       (let* ((text-start (weechat-line-text-start))
              (match (s-match weechat-corrector-regex line)))
         (when (>= (length match) 3)
-          ;; Add `weechat-corrector-regex-face'
-          (add-text-properties (+ text-start (match-beginning 0))
-                               (+ text-start (match-end 0))
-                               '(face weechat-corrector-regex-face))
           (let ((re (weechat-corrector-quote-parentheses
                      (cadr match)))
                 (rp (caddr match)))
