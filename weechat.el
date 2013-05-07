@@ -696,19 +696,17 @@ frame."
   "Hook called when a weechat-buffer is visited and the
   background-data is reset.")
 
-(defun weechat-buffer-last-background-message (&optional buffer)
-  (with-current-buffer (or buffer (current-buffer))
-    (assert (eq major-mode 'weechat-mode))
-    (gethash :background-message (weechat-buffer-hash weechat-buffer-ptr))))
+(defun weechat-buffer-last-background-message (buffer-ptr)
+  (let ((hash (weechat-buffer-hash buffer-ptr)))
+    (and (hash-table-p hash)
+         (gethash :background-message hash))))
 
-(defun weechat-reset-buffer-modified (&optional buffer)
-  (with-current-buffer (or buffer (current-buffer))
-    (assert (eq major-mode 'weechat-mode))
-    (let ((hash (weechat-buffer-hash weechat-buffer-ptr)))
-      (when (hash-table-p hash)
-        (run-hooks 'weechat-buffer-visited-hook)
-        (remhash :background-message hash)
-        (remhash :background-highlight hash)))))
+(defun weechat-reset-buffer-modified (buffer-ptr)
+  (let ((hash (weechat-buffer-hash buffer-ptr)))
+    (when (hash-table-p hash)
+      (run-hooks 'weechat-buffer-visited-hook)
+      (remhash :background-message hash)
+      (remhash :background-highlight hash))))
 
 (defun weechat-buffer-modified-make-hash (line-data)
   (let ((hash (make-hash-table)))
@@ -727,13 +725,13 @@ frame."
     (if (and (buffer-live-p emacs-buffer)
              (cl-find emacs-buffer (weechat-visible-buffers) :test 'equal))
         ;; Buffer is visible. Reset modification
-        (weechat-reset-buffer-modified emacs-buffer)
+        (weechat-reset-buffer-modified buffer-ptr)
       ;; Buffer invisible. Store modifications.
       (when (and line-type line-date nick)
         (cond
          ;; Message from ourself. Reset.
          ((string= nick (weechat-get-local-var "nick" buffer-ptr))
-          (weechat-reset-buffer-modified emacs-buffer))
+          (weechat-reset-buffer-modified buffer-ptr))
          ;; General activity
          ((memq line-type weechat-buffer-activity-types)
           (puthash :background-message
@@ -751,10 +749,10 @@ frame."
              (run-hooks 'weechat-buffer-background-highlight-hook))))))))
 
 (defun weechat-window-configuration-change ()
+  "Resets modification dates for all visible buffers."
   (dolist (b (weechat-visible-buffers))
     (with-current-buffer b
-      ;; Reset modification date for all visible buffers
-      (weechat-reset-buffer-modified b))))
+      (weechat-reset-buffer-modified weechat-buffer-ptr))))
 
 (add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
 
