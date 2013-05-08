@@ -55,6 +55,9 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Request more backlog when scrolling / via shortcut
 ** TODO Fix failed certificate when using gnutls-cli
    See http://p.tarn-vedra.de/weechat-relay-cert-check-fail.html
+** TODO 'Garbage Collect' old ids in `weechat--relay-id-callback-hash'
+   Currently, if the server fails to response, the callback in this
+   hash is never removed. This can lead to a log of garbage data.
 ** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
 *** DONE marmalade
