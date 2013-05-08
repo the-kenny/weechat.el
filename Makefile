@@ -4,11 +4,6 @@ DESCRIPTION := Chat via WeeChat\'s relay protocol in Emacs
 EMACS := emacs
 BATCH := $(EMACS) -Q --batch --eval '(add-to-list '"'"'load-path ".")'
 
-TESTS   := $(wildcard *-test.el)
-EL 	:= $(wildcard weechat*.el)
-SOURCES := $(filter-out $(TESTS),$(EL))
-DEPS    := ((s \"1.3.1\") (tracking \"1.2\"))
-
 DATE := $(shell date +%Y%m%d)
 
 ifneq ($(wildcard .git),)
@@ -28,6 +23,11 @@ PACKAGE := $(NAME)-$(VERSION)
 TARBALL := $(PACKAGE).tar
 PACKAGE_CONTENT := $(SOURCES) Makefile README.org README.html
 PKG_EL := $(NAME)-pkg.el
+PKG_EL_IN := $(PKG_EL).in
+
+TESTS   := $(wildcard *-test.el)
+EL 	:= $(wildcard weechat*.el)
+SOURCES := $(filter-out $(PKG_EL),$(filter-out $(TESTS),$(EL)))
 
 .PHONY: all test doc package clean distclean
 all: package
@@ -51,8 +51,8 @@ README.html: README.org
 
 doc: README.html
 
-$(PKG_EL):
-	@echo "(define-package \"$(NAME)\" \"$(VERSION)\" \"$(DESCRIPTION)\" '$(DEPS))" > $@
+$(PKG_EL): $(PKG_EL_IN)
+	sed -e s/@VERSION@/$(VERSION)/ $< > $@
 
 $(TARBALL): $(PKG_EL) doc
 	$(info Creating package tarball $(TARBALL))
