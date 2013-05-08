@@ -1,4 +1,4 @@
-;;; weechat --- Chat via WeeChat's relay protocol in Emacs ;; -*- lexical-binding: t -*-
+;;; weechat.el --- Chat via WeeChat's relay protocol in Emacs ;; -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2013 Moritz Ulrich
 
@@ -7,6 +7,7 @@
 ;;         Aristid Breitkreuz <aristidb@gmail.com>
 ;; Keywords: irc chat network weechat
 ;; URL: https://github.com/the-kenny/weechat.el
+;; Package-Requires: ((emacs "24") (cl-lib "0.2") (s "1.4.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
