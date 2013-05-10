@@ -91,7 +91,7 @@ to :info"
     (display-warning 'weechat str)))
 
 (defun weechat-message (format-string &rest args)
-  "Log MESSAGE with log-level :info and call `message'"
+  "Log MESSAGE with log-level :info and call `message'."
   (let ((text (apply 'format format-string args)))
     (weechat-relay-log text :info)
     (message text)))
