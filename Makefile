@@ -21,13 +21,13 @@ endif
 
 PACKAGE := $(NAME)-$(VERSION)
 TARBALL := $(PACKAGE).tar
-PACKAGE_CONTENT := $(SOURCES) Makefile README.org README.html
 PKG_EL := $(NAME)-pkg.el
 PKG_EL_IN := $(PKG_EL).in
 
 TESTS   := $(wildcard *-test.el)
 EL 	:= $(wildcard weechat*.el)
 SOURCES := $(filter-out $(PKG_EL),$(filter-out $(TESTS),$(EL)))
+PACKAGE_CONTENT := $(SOURCES) Makefile README.org README.html
 
 .PHONY: all test doc package clean distclean
 all: package
