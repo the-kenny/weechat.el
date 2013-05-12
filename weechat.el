@@ -850,8 +850,9 @@ frame."
                  (and (eql weechat-notification-mode :monitored)
                       (local-variable-p 'weechat-buffer-ptr)
                       (buffer-live-p (weechat--emacs-buffer weechat-buffer-ptr)))))
-    (run-hook-with-args 'weechat-notification-handler-functions
-                        type sender text date buffer-ptr)))
+    (dolist (fn weechat-notification-handler-functions)
+      (with-demoted-errors
+        (funcall fn type sender text date buffer-ptr)))))
 
 (defun weechat-buffer-p (&optional buffer)
   "Return non-nil if buffer is a WeeChat buffer."
