@@ -29,34 +29,36 @@
 ;;; Code:
 
 (require 'weechat)
-(require 'sauron)
+(if (require 'sauron nil 'noerr)
+    (progn
+      (defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
+        (setq text (if text (weechat-strip-formatting text)))
+        (setq sender (if sender (weechat-strip-formatting sender)))
+        (let ((jump-position (point-max-marker)))
+          (sauron-add-event 'weechat 3
+                            (cl-case type
+                              (:highlight
+                               (format "%s in %s: %S"
+                                       sender
+                                       (weechat-buffer-name buffer-ptr)
+                                       text))
+                              (:query
+                               (format "Query from %s: %S"
+                                       sender
+                                       text))
+                              (:disconnect
+                               "Disconnected from WeeChat"))
+                            (lambda ()
+                              (when (fboundp 'sauron-switch-to-marker-or-buffer)
+                                (sauron-switch-to-marker-or-buffer jump-position)))
+                            ;; Flood protection based on sender
+                            (when sender
+                              (list :sender sender)))))
 
-(defun weechat-sauron-handler (type &optional sender text _date buffer-ptr)
-  (setq text (if text (weechat-strip-formatting text)))
-  (setq sender (if sender (weechat-strip-formatting sender)))
-  (let ((jump-position (point-max-marker)))
-    (sauron-add-event 'weechat 3
-                      (cl-case type
-                        (:highlight
-                         (format "%s in %s: %S"
-                                 sender
-                                 (weechat-buffer-name buffer-ptr)
-                                 text))
-                        (:query
-                         (format "Query from %s: %S"
-                                 sender
-                                 text))
-                        (:disconnect
-                         "Disconnected from WeeChat"))
-                      (lambda ()
-                        (when (fboundp 'sauron-switch-to-marker-or-buffer)
-                          (sauron-switch-to-marker-or-buffer jump-position)))
-                      ;; Flood protection based on sender
-                      (when sender
-                        (list :sender sender)))))
+      (add-hook 'weechat-notification-handler-functions
+                'weechat-sauron-handler))
+  (weechat-warn "Error while loading weechat-sauron. Sauron notifications are disabled."))
 
-(add-hook 'weechat-notification-handler-functions
-          'weechat-sauron-handler)
 
 (provide 'weechat-sauron)
 
