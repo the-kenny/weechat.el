@@ -57,7 +57,8 @@ Make sure to rebuild each buffer after changing this variable."
 for use on `completion-at-point-function'.
 
 Copied from `erc-pcompletions-at-point'."
-  (when (>= (point) weechat-prompt-end-marker)
+  (when (and (eq major-mode 'weechat-mode)
+             (>= (point) weechat-prompt-end-marker))
     (or (let ((pcomplete-default-completion-function #'ignore))
           (pcomplete-completions-at-point))
         (let ((c (pcomplete-completions-at-point)))
