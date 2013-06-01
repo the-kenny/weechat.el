@@ -199,3 +199,9 @@ Default property is `face'.  The returned format is ((START END (PROP VALUE)))."
     (should (equal weechat-user-list '("x")))
     (weechat--user-list-add "")
     (should (equal weechat-user-list '("x")))))
+
+(require 'weechat-complete)
+
+(ert-deftest weechat-pcomplete-return-nil
+    (with-temp-buffer
+      (should (eq (weechat-pcompletions-at-point) nil))))
