@@ -6,15 +6,20 @@ in {
     name = "weechat-el";
     src = ./.;
     
-    buildInputs = with pkgs; [ emacs24 git ];
+    buildInputs = with pkgs; with pkgs.emacs24Packages; [
+      emacs24
+      git
+      s
+      cl-lib
+      tracking];
 
-    phases = "unpackPhase buildPhase installPhsae testPhase";
+    phases = "unpackPhase buildPhase installPhase testPhase";
 
     buildPhase = ''
       make package
     '';
 
-    installPhsae = ''
+    installPhase = ''
       mkdir -p $out
       cp -r * $out/
     '';
