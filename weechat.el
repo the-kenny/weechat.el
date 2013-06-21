@@ -507,10 +507,10 @@ Return either a string, a function returning a string, or nil."
     map)
   "Weechat mode selection: Local keymap for minibuffer input with completion.")
 
-;;;###autoload
 (defun weechat-reset-reconnect-retries ()
   (unintern 'weechat-auto-reconnect-retries-left obarray))
 
+;;;###autoload
 (defun weechat-connect (&optional host port password mode force-disconnect)
   "Connect to WeeChat.
 
