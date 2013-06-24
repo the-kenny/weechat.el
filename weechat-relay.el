@@ -515,9 +515,9 @@ CALLBACK takes one argument (the response data) which is a list."
 (defun weechat--relay-handle-process-status (status)
   (weechat-relay-log (format "Received status event: %s\n" status))
   (cl-case status
-    ('closed (run-hooks 'weechat-relay-disconnect-hook))
-    ('failed (progn (error "Failed to connect to weechat relay")
-                    (weechat-relay-disconnect)))))
+    ((closed exit) (run-hooks 'weechat-relay-disconnect-hook))
+    (failed (error "Failed to connect to weechat relay")
+            (weechat-relay-disconnect))))
 
 (defun weechat--relay-process-sentinel (proc _)
   (weechat--relay-handle-process-status (process-status proc)))
