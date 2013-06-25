@@ -1326,7 +1326,9 @@ is given (\\[universal-argument])."
 (defun weechat-self-insert-command (n)
   "Like `self-insert-commands' with automatic cursor movement."
   (interactive "p")
-  (when weechat-auto-move-cursor-to-prompt
+  (when (and weechat-auto-move-cursor-to-prompt
+             weechat-read-only
+             (< (point) weechat-prompt-start-marker))
     (goto-char (point-max)))
   (self-insert-command n))
 
