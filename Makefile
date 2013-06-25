@@ -2,7 +2,7 @@ NAME  := weechat
 DESCRIPTION := Chat via WeeChat\'s relay protocol in Emacs
 
 EMACS := emacs
-BATCH := $(EMACS) -Q --batch --eval '(add-to-list '"'"'load-path ".")'
+BATCH := $(EMACS) --batch --eval '(progn (require (quote package)) (package-initialize) (add-to-list (quote load-path) "."))'
 
 DATE := $(shell date +%Y%m%d)
 
