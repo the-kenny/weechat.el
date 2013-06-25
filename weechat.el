@@ -100,6 +100,11 @@ empty."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-auto-move-cursor-to-prompt t
+  "Automatically move the cursor to the prompt when typing."
+  :type 'boolean
+  :group 'weechat)
+
 (defcustom weechat-auto-recenter t
   "Wether the prompt will always stay at the bottom"
   :type 'boolean
@@ -1318,6 +1323,19 @@ is given (\\[universal-argument])."
         (point-at-eol))))
     (goto-char (point-max)))))
 
+(defun weechat-self-insert-command (n)
+  "Like `self-insert-commands' with automatic cursor movement."
+  (interactive "p")
+  (when weechat-auto-move-cursor-to-prompt
+    (goto-char (point-max)))
+  (self-insert-command n))
+
+;;; Make `weechat-self-insert-command' work with some modes
+;;; Borrowed from org.el
+(put 'weechat-self-insert-command 'delete-selection t)
+(put 'weechat-self-insert-command 'flyspell-delayed t)
+(put 'weechat-self-insert-command 'pabbrev-expand-after-command t)
+
 (defun weechat-bol (&optional arg)
   "Go to the beginning of line, then skip past the prompt, if any.
 If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
@@ -1342,6 +1360,12 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     (define-key map (kbd "C-c C-m") 'weechat-monitor-buffer)
     map)
   "Keymap for weechat mode.")
+
+(substitute-key-definition
+ 'self-insert-command
+ 'weechat-self-insert-command
+ weechat-mode-map
+ global-map)
 
 (easy-menu-define weechat-mode-menu weechat-mode-map
   "Weechat menu"
