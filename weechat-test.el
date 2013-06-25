@@ -202,6 +202,6 @@ Default property is `face'.  The returned format is ((START END (PROP VALUE)))."
 
 (require 'weechat-complete)
 
-(ert-deftest weechat-pcomplete-return-nil
+(ert-deftest weechat-pcomplete-return-nil ()
     (with-temp-buffer
       (should (eq (weechat-pcompletions-at-point) nil))))
