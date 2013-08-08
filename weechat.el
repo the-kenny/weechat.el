@@ -157,6 +157,16 @@ nil, no action will be taken for new WeeChat buffers."
                  (const :tag "Do nothing" nil))
   :group 'weechat)
 
+(defcustom weechat-monitor-buffer-function 'message
+  "Function called when a new buffer is monitored. Useful to
+  display notifications.
+
+Value is either 'message or a function taking one argument (a
+buffer-ptr). "
+  :type '(choice (const :tag "Message in the mode line" 'message)
+                 hook)
+  :group 'weechat)
+
 (defcustom weechat-auto-close-buffers nil
   "Wether to auto-close closed WeeChat buffers."
   :type 'boolean
@@ -1498,8 +1508,16 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
       (unless (hash-table-p buffer-hash)
         (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
+      ;; Notify the user via `weechat-monitor-buffer-function'
+      (when weechat-monitor-buffer-function
+        (cond
+         ((eq 'message weechat-monitor-buffer-function)
+          (message "Monitoring new Buffer: %s" name))
+         ((functionp weechat-monitor-buffer-function)
+          (with-demoted-errors
+           (funcall weechat-monitor-buffer-function buffer-ptr)))))
+
       (with-current-buffer (get-buffer-create name)
-        ;; (fundamental-mode)
         (let ((inhibit-read-only t))
           (when (weechat-buffer-p)
             (delete-region (point-min) weechat-prompt-start-marker)))
