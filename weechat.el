@@ -278,6 +278,19 @@ returns a string, or nil."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-sync-active-buffer nil
+  "Sync currently visible buffer with the relay (one-way).
+
+When set to t, weechat.el will switch the currently active
+weechat buffer on the relay server when visiting a buffer in
+weechat.
+
+This is useful when setting irc.msgbuffer.* to 'current'.
+
+Syncing is done when sending a command/message to the buffer."
+  :type 'boolean
+  :group 'weechat)
+
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
@@ -1245,6 +1258,11 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
    #'weechat-add-initial-lines))
 
 (defun weechat-send-input (target input)
+  (when weechat-sync-active-buffer
+    ;; HACK: Switch active buffer on the relay server
+    ;; TODO: Only send when the active buffer is different
+    (weechat-relay-send-command
+     (format "input %s /buffer %s" target (weechat-buffer-name target))))
   (weechat-relay-send-command
    (format "input %s %s" target input)))
 
