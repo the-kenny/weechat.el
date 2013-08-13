@@ -1257,14 +1257,19 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
            (s-join "," weechat-initial-lines-buffer-properties))
    #'weechat-add-initial-lines))
 
+(defvar weechat-send-input-last-target nil
+  "Internal var used to track last message's target.")
 (defun weechat-send-input (target input)
-  (when weechat-sync-active-buffer
+  (when (and weechat-sync-active-buffer
+             (not (s-equals? weechat-send-input-last-target
+                             target)))
     ;; HACK: Switch active buffer on the relay server
     ;; TODO: Only send when the active buffer is different
     (weechat-relay-send-command
      (format "input %s /buffer %s" target (weechat-buffer-name target))))
   (weechat-relay-send-command
-   (format "input %s %s" target input)))
+   (format "input %s %s" target input))
+  (setq weechat-send-input-last-target target))
 
 (defun weechat-get-input ()
   (s-trim-right
