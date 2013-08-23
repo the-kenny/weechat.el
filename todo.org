@@ -13,6 +13,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Update a NEWS file
    Close this right before 0.2 release so it's consistent.
 ** TODO [#A] Fix missing highlights in Queries etc.
+** TODO Stop auto-reconnect after manual connect
 * 0.2 [4/7]
 ** DONE Auto-Reconnect
 ** DONE Don't kill undo-history on buffer change (annoying when you're typing sth.)
