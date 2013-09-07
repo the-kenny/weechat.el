@@ -23,7 +23,7 @@ org-ruby). Please use the 'Raw' link on the right.
    - [X] Merge branch 'tracking'
 ** DONE Add a prefix-arg to weechat-reload-buffer
    ...to load prefix-argument lines
-* Short-Term [17/24]
+* Short-Term [17/26]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -61,6 +61,8 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO 'Garbage Collect' old ids in `weechat--relay-id-callback-hash'
    Currently, if the server fails to response, the callback in this
    hash is never removed. This can lead to a log of garbage data.
+** TODO Different `weechat-tracking-types' for different channels
+** TODO Option to truncate long nicks
 ** DONE Notify users of new monitored buffers
 ** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
