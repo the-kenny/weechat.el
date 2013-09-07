@@ -84,4 +84,4 @@ or faces that don't show up at all."
 
 (provide 'weechat-tracking)
 
-;; weechat-tracking.el ends here
+;;; weechat-tracking.el ends here
