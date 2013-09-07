@@ -44,8 +44,16 @@
 
 (defcustom weechat-tracking-types '(:highlight)
   "A list of message types which should show up in tracking.
+
+List elements can either be one of :highlight or :message, or a
+cons-cell like (regex . level). The former will be applied to all
+buffers while the latter will apply to all buffers whose namesn
+matches `regex'.
+
 Supported values are :message and :highlight."
-  :type '(repeat symbol)
+  :type '(repeat (option
+                  symbol
+                  (cons string symbol)))
   :group 'weechat-tracking)
 
 (defcustom weechat-tracking-faces-priorities '(weechat-highlight-face)
@@ -59,12 +67,20 @@ or faces that don't show up at all."
   "Set up tracking in weechat buffer."
   (set (make-local-variable 'tracking-faces-priorities) weechat-tracking-faces-priorities))
 
+(defun weechat-tracking-show-buffer? (message-type &optional buffer)
+  (or (cl-find message-type weechat-tracking-types)
+      (cl-some (lambda (c)
+                 (and (consp c)
+                      (s-matches? (car c) (buffer-name buffer))
+                      (eq message-type (cdr c))))
+               weechat-tracking-types)))
+
 (defun weechat-tracking-handle-highlight ()
-  (when (cl-find :highlight weechat-tracking-types)
+  (when (weechat-tracking-show-buffer? :highlight (current-buffer))
     (tracking-add-buffer (current-buffer) '(weechat-highlight-face))))
 
 (defun weechat-tracking-handle-message ()
-  (when (cl-find :message weechat-tracking-types)
+  (when (weechat-tracking-show-buffer? :message (current-buffer))
     (tracking-add-buffer (current-buffer))))
 
 (defun weechat-tracking-handle-reset ()

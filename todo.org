@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.3 [0/3]
+* 0.3 [1/7]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
@@ -14,7 +14,9 @@ org-ruby). Please use the 'Raw' link on the right.
    Close this right before 0.2 release so it's consistent.
 ** TODO [#A] Fix missing highlights in Queries etc.
 ** TODO Stop auto-reconnect after manual connect
-* 0.2 [4/7]
+** DONE Different `weechat-tracking-types' for different channels
+** TODO Option to truncate long nicks
+* 0.2 [4/4]
 ** DONE Auto-Reconnect
 ** DONE Don't kill undo-history on buffer change (annoying when you're typing sth.)
 ** DONE Mode-Line Tracking Indicator [3/3]
@@ -23,7 +25,7 @@ org-ruby). Please use the 'Raw' link on the right.
    - [X] Merge branch 'tracking'
 ** DONE Add a prefix-arg to weechat-reload-buffer
    ...to load prefix-argument lines
-* Short-Term [17/26]
+* Short-Term [17/24]
 ** TODO Handle 'sync' events [7/15]
    - [X] _buffer_opened
    - [X] _buffer_closing
@@ -61,8 +63,6 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO 'Garbage Collect' old ids in `weechat--relay-id-callback-hash'
    Currently, if the server fails to response, the callback in this
    hash is never removed. This can lead to a log of garbage data.
-** TODO Different `weechat-tracking-types' for different channels
-** TODO Option to truncate long nicks
 ** DONE Notify users of new monitored buffers
 ** DONE package.el package [2/2]
 *** DONE Auto-Upload to melpa
