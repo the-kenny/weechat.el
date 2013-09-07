@@ -51,7 +51,7 @@ buffers while the latter will apply to all buffers whose namesn
 matches `regex'.
 
 Supported values are :message and :highlight."
-  :type '(repeat (option
+  :type '(repeat (choice
                   symbol
                   (cons string symbol)))
   :group 'weechat-tracking)
