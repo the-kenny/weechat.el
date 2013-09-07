@@ -185,6 +185,16 @@ text-column will be increased for that line."
   :type 'integer
   :group 'weechat)
 
+(defcustom weechat-max-nick-length nil
+  "Maximum length of nicknames. Longer nicks will be truncated.
+
+Note that this option will apply to all prefixes, not just
+nicknames."
+  :type '(choice
+          (integer :tag "Max length")
+          (const :tag "Off" nil))
+  :group 'weechat)
+
 (defcustom weechat-fill-text t
   "Wether weechat should fill text paragraphs automatically."
   :type 'boolean
@@ -1019,7 +1029,13 @@ text (technically, this shouldn't happen)."
                       " "))
 
             (unless (s-blank? (weechat-handle-color-codes prefix))
-              (insert (weechat-handle-color-codes prefix))
+              (let ((colorized-prefix (weechat-handle-color-codes prefix)))
+                (insert (if (and (integerp weechat-max-nick-length)
+                                 (> weechat-max-nick-length 0))
+                            (substring colorized-prefix 0
+                                       (min (length colorized-prefix)
+                                            weechat-max-nick-length))
+                          colorized-prefix)))
               (when (or (eq line-type :irc/privmsg)
                         (not line-type))
                 (insert ":")))
