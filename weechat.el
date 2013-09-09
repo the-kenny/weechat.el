@@ -1077,7 +1077,8 @@ text (technically, this shouldn't happen)."
             (weechat-line-add-properties nick date highlight invisible)
 
             ;; Important: Run the hook after everything else
-            (run-hooks 'weechat-insert-modify-hook)))
+            (save-restriction
+              (run-hooks 'weechat-insert-modify-hook))))
 
         ;; Restore old position
         (let ((p-to-go (if at-end weechat-prompt-end-marker old-point))
