@@ -86,16 +86,16 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [9/23]
+* Nice to have [11/23]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** DONE Speedbar integration
 ** TODO Faces based on message type
-** TODO Typing auto-focuses the "input field"
+** DONE Typing auto-focuses the "input field"
 ** TODO More Notification Handlers
    - `message'
 ** TODO Marker for away state
-** TODO Opening buffers in Emacs should update activation state on weechat side
+** DONE Opening buffers in Emacs should update activation state on weechat side
 ** TODO Buffer-local URL ring for easy access
 ** TODO Request all highlighted lines when coming back online
 ** TODO Get (max 100 (count unread)) lines
