@@ -94,23 +94,27 @@
 (ert-deftest weechat-relay-test-test-command ()
   (when (weechat-relay-connected-p)
     (let ((data (weechat-test-callback-value "test"))
-          (i -1))
+          (i -1)
+          (weechat-041 (list ?A
+                             123456
+                             -123456
+                             1234567890
+                             -1234567890
+                             "a string"
+                             ""
+                             ""
+                             (string-to-vector "buffer")
+                             []
+                             "0x1234abcd"
+                             nil
+                             (seconds-to-time 1321993456)
+                             (list "abc" "de")
+                             (list 123 456 789))))
       (cl-flet ((next-val () (nth (setq i (1+ i)) data)))
-        (should (equal ?A                           (next-val)))
-        (should (equal 123456                       (next-val)))
-        (should (equal 1234567890                   (next-val)))
-        (should (equal "a string"                   (next-val)))
-        (should (equal ""                           (next-val)))
-        (should (equal ""                           (next-val)))
-        (should (equal [98 117 102 102 101 114]     (next-val)))
-        (should (equal []                           (next-val)))
-        (when (version< "0.4.0" weechat-version)
-          (should (equal "0x1234abcd"               (next-val))))
-        (when (version<= weechat-version "0.4.1")
-          (should (equal nil                        (next-val))))
-        (should (equal (seconds-to-time 1321993456) (next-val)))
-        (should (equal '("abc" "de")                (next-val)))
-        (should (equal '(123 456 789)               (next-val)))))))
+        (cl-dolist (v (cond
+                       ((string= "0.4.1" weechat-version) weechat-041)
+                       (t (ert-fail (concat "No data for weechat-" weechat-version)))))
+          (should (equal v (next-val))))))))
 
 ;;; weechat.el
 
