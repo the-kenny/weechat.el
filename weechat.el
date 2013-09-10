@@ -689,6 +689,15 @@ and port number respectively."
         (gethash "full_name"   hash)
         (gethash "short_name"  hash))))
 
+(defun weechat-canonical-buffer-name (buffer-ptr)
+  "Returns the canonical (short) name of buffer behind
+`BUFFER-PTR'. Falls back to `weechat-buffer-name'."
+  (or (cdr (assoc-string
+            "channel"
+            (gethash "local_variables"
+                     (weechat-buffer-hash buffer-ptr))))
+      (weechat-buffer-name buffer-ptr)))
+
 (defun weechat--find-buffer (name)
   "Return buffer-ptr for channel NAME."
   (let (ret)
