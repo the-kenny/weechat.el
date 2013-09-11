@@ -136,6 +136,10 @@
             (switch-to-buffer buf)
           (weechat-monitor-buffer buffer-ptr 'show))))))
 
+(defun weechat-awareness-reload ()
+  (interactive)
+  (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name)))
+
 (defvar weechat-awareness-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-awareness-goto)
