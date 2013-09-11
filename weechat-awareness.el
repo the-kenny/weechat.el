@@ -74,9 +74,9 @@
         (org-table-create (format "%ix%i" columns rows))
         (org-table-begin)
         (when (> rows 1)
-         (next-line)
-         (kill-region (point-at-bol) (1+ (point-at-eol)))
-         (org-table-begin))
+          (next-line)
+          (kill-region (point-at-bol) (1+ (point-at-eol)))
+          (org-table-begin))
         (cl-dotimes (x columns)
           (cl-dotimes (y rows)
             (let ((buffer (nth (+ (* y columns) x)
@@ -141,8 +141,8 @@
   (let ((buffer (get-buffer-create
                  weechat-awareness-buffer-name)))
     (with-current-buffer buffer
-     (weechat-awareness-mode)
-     (weechat-awareness-update-buffer buffer))))
+      (weechat-awareness-mode)
+      (weechat-awareness-update-buffer buffer))))
 
 (provide 'weechat-awareness)
 
