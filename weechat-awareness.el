@@ -44,15 +44,19 @@
         (indicator (if weechat-awareness-show-unread
                        (weechat-awareness-indicator-string buffer-ptr)
                      "")))
-    (s-pad-right
-     pad
-     " "
-     (format " %s%s%s" bname (make-string (- pad
-                                             (length bname)
-                                             (length indicator)
-                                             2)
-                                          32)
-             indicator))))
+    (propertize
+     (s-pad-right
+      pad
+      " "
+      (format " %s%s%s"
+              bname
+              (make-string (- pad
+                              (length bname)
+                              (length indicator)
+                              2)
+                           32)
+              indicator))
+     'weechat-awareness-buffer-ptr buffer-ptr)))
 
 (defun weechat-awareness-update-buffer (buffer)
   (with-current-buffer buffer
