@@ -96,6 +96,30 @@
       (when (window-live-p (get-buffer-window buffer))
         (set-window-point (get-buffer-window buffer) pos)))))
 
+(defun weechat-awareness-next (pos)
+  (interactive "d")
+  (if (org-table-p)
+      (if (= pos (org-table-begin))
+          (goto-char (1+ (point)))
+        (let ((org-table-automatic-realign nil))
+          (org-table-next-field)))
+    (goto-char (1+ (point-min)))))
+
+(defun weechat-awareness-prev (pos)
+  (interactive "d")
+  (if (org-table-p)
+      (if (= (org-table-begin) pos)
+          (goto-char (1- (org-table-end)))
+        (let ((org-table-automatic-realign nil))
+          (org-table-previous-field)))
+    (let ((p (save-excursion
+               (goto-char (1+ (point-min)))
+               (org-table-end))))
+      (goto-char (1- p)))))
+
+(defun weechat-awareness-tab (pos)
+  (interactive "d"))
+
 (defvar weechat-awareness-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-awareness-goto)
