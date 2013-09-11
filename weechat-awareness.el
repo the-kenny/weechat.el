@@ -124,6 +124,18 @@
 (defun weechat-awareness-tab (pos)
   (interactive "d"))
 
+(defun weechat-awareness-goto (pos)
+  (interactive "d")
+  (let ((buffer-ptr (get-text-property
+                     (if (and (> pos 1) (equal "|" (buffer-substring pos (1+ pos))))
+                         (1- pos) pos)
+                     'weechat-awareness-buffer-ptr)))
+    (when (weechat-buffer-hash buffer-ptr)
+      (let ((buf (weechat--emacs-buffer buffer-ptr)))
+        (if (bufferp buf)
+            (switch-to-buffer buf)
+          (weechat-monitor-buffer buffer-ptr 'show))))))
+
 (defvar weechat-awareness-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-awareness-goto)
