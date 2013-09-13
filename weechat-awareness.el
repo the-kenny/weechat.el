@@ -140,9 +140,19 @@
   (interactive)
   (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name)))
 
+(defvar weechat-awareness-old-buffer-configuration nil)
+(defun weechat-awareness-restore-window-config ()
+  (when weechat-awareness-old-buffer-configuration
+    (let ((frame (selected-frame)))
+      (unwind-protect
+          (set-window-configuration
+           weechat-awareness-old-buffer-configuration)
+        (select-frame frame)))
+    (setq weechat-awareness-old-buffer-configuration nil)))
+
 (defun weechat-awareness-kill-window ()
   (interactive)
-  (quit-window nil (selected-window)))
+  (weechat-awareness-restore-window-config))
 
 (defvar weechat-awareness-mode-map
   (let ((map (make-sparse-keymap)))
@@ -161,13 +171,25 @@
   (use-local-map weechat-awareness-mode-map)
   (read-only-mode 1))
 
+(defun weechat-awareness-show-split (buffer)
+  (setq weechat-awareness-old-buffer-configuration
+        (current-window-configuration))
+  (select-window
+   (split-window-below
+    (- (window-height)
+       (+ 2 (with-current-buffer buffer
+              (count-lines (point-min) (point-max)))))))
+  (set-window-point (selected-window) 0)
+  (switch-to-buffer buffer))
+
 (defun weechat-awareness ()
   (interactive)
   (let ((buffer (get-buffer-create
                  weechat-awareness-buffer-name)))
     (with-current-buffer buffer
       (weechat-awareness-mode)
-      (weechat-awareness-update-buffer buffer))))
+      (weechat-awareness-update-buffer buffer))
+    (weechat-awareness-show-split buffer)))
 
 (provide 'weechat-awareness)
 
