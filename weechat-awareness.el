@@ -140,6 +140,10 @@
   (interactive)
   (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name)))
 
+(defun weechat-awareness-kill-window ()
+  (interactive)
+  (quit-window nil (selected-window)))
+
 (defvar weechat-awareness-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'weechat-awareness-goto)
@@ -147,6 +151,7 @@
     (define-key map (kbd "n")   'weechat-awareness-next)
     (define-key map (kbd "TAB") 'weechat-awareness-tab)
     (define-key map (kbd "r")   'weechat-awareness-reload)
+    (define-key map (kbd "q")   'weechat-awareness-kill-window)
     map)
   "Keymap for weechat.el's awareness plugin.")
 
