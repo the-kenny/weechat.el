@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.3 [3/8]
+* 0.3 [3/9]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
@@ -18,6 +18,9 @@ org-ruby). Please use the 'Raw' link on the right.
    We might have to move the ping stuff to weechat.el to implement
    this in a clean way
 ** DONE Test compatibility with 0.4.2
+** TODO Measure network delay and add configurable hooks for different delays
+   This is useful to trigger a reconnect or warn the user when the
+   delay gets too big.
 * 0.2 [4/4]
 ** DONE Auto-Reconnect
 ** DONE Don't kill undo-history on buffer change (annoying when you're typing sth.)
