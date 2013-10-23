@@ -56,9 +56,6 @@
          (setq ret (cons x ret)))))
     ret))
 
-(defun weechat-alias-command-yay (input)
-  "http://tarn-vedra.de/pics/yay.gif")
-
 (defun weechat-alias-apply (input)
   (if (s-prefix? weechat-alias-prefix input)
       (let* ((command (car
