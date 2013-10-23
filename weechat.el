@@ -111,9 +111,7 @@ empty."
   :group 'weechat)
 
 (defcustom weechat-hidden-text-hidden t
-  "Wether weechat.el should hide or show hidden text.
-
-Use `weechat-toggle-hidden' to toggle hidden text in buffers."
+  "Wether weechat.el should hide or show hidden text. "
   :type 'boolean
   :group 'weechat)
 
@@ -467,6 +465,9 @@ arguments are SENDER, TEXT, DATE, and BUFFER-PTR.")
 
 (weechat-relay-add-id-callback "_buffer_opened" #'weechat--handle-buffer-opened nil 'force)
 (weechat-relay-add-id-callback "_buffer_closing" #'weechat--handle-buffer-closed nil 'force)
+(weechat-relay-add-id-callback "_buffer_renamed" #'weechat--handle-buffer-renamed nil 'force)
+
+;;; Handle pong replies
 (weechat-relay-add-id-callback "_buffer_renamed" #'weechat--handle-buffer-renamed nil 'force)
 
 (defvar weechat-topic nil
@@ -932,35 +933,7 @@ Must be called with `weechat-narrow-to-line' active."
   ;; Make line read-only if `weechat-read-only' is t
   (when weechat-read-only
     (add-text-properties (point-min) (point-max)
-                         '(read-only t)))
-
-  ;; Make line invisible if `invisible' is t
-  (when invisible
-    (add-text-properties (point-min) (point-max)
-                         `(invisible ,weechat-hidden-text-hidden
-                                     weechat-hidden-text t))))
-
-(defun weechat-toggle-hidden (&optional buffer)
-  (interactive)
-  (setq weechat-hidden-text-hidden (not weechat-hidden-text-hidden))
-  (with-current-buffer (or buffer (current-buffer))
-    (unless (weechat-buffer-p buffer)
-      (error "Can only toggle hidden in weechat-mode buffers"))
-    (save-excursion
-      (goto-char (point-min))
-      (let ((inhibit-read-only t)
-            (start (or (when (get-text-property (point) 'weechat-hidden-text) (point))
-                       (next-single-property-change (point) 'weechat-hidden-text)))
-            end)
-        (while start
-          (setq end (next-single-property-change start 'weechat-hidden-text))
-          (when end
-            (when end
-              (if weechat-hidden-text-hidden
-                  (add-text-properties start end '(invisible t))
-                (remove-text-properties start end '(invisible t))))
-            (setq start (next-single-property-change end 'weechat-hidden-text))))))
-    (weechat-recenter-bottom-maybe nil 'force)))
+                         '(read-only t))))
 
 (defun weechat-recenter-bottom-maybe (&optional window force)
   (when weechat-auto-recenter
@@ -1170,76 +1143,77 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (line-type (weechat-line-type line-data))
           (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
           (nick (weechat--get-nick-from-line-data line-data)))
-      (setq highlight (= 1 highlight))
-      (when (bufferp (weechat--emacs-buffer buffer-ptr))
-        (with-current-buffer buffer
-          (when weechat-strip-formatting
-            (setq prefix (weechat-strip-formatting prefix))
-            (setq message (weechat-strip-formatting message)))
+      (unless invisible
+        (setq highlight (= 1 highlight))
+        (when (bufferp (weechat--emacs-buffer buffer-ptr))
+          (with-current-buffer buffer
+            (when weechat-strip-formatting
+              (setq prefix (weechat-strip-formatting prefix))
+              (setq message (weechat-strip-formatting message)))
 
-          ;; Nicklist handling.  To be replaced with real nicklist
-          ;; updates when WeeChat starts sending nicklist deltas
-          (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
-                  (eq line-type :irc/join))
-              (weechat--user-list-add nick)
-            (cl-case line-type
-              (:irc/nick
-               (let ((from-nick (weechat--get-nick-from-tag line-data "irc_nick1_"))
-                     (to-nick (weechat--get-nick-from-tag line-data "irc_nick2_")))
-                 (when (and from-nick to-nick)
-                   (weechat--user-list-remove from-nick)
-                   (weechat--user-list-add to-nick))))
-              ((:irc/part :irc/quit) (weechat--user-list-remove nick)))))
+            ;; Nicklist handling.  To be replaced with real nicklist
+            ;; updates when WeeChat starts sending nicklist deltas
+            (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
+                    (eq line-type :irc/join))
+                (weechat--user-list-add nick)
+              (cl-case line-type
+                (:irc/nick
+                 (let ((from-nick (weechat--get-nick-from-tag line-data "irc_nick1_"))
+                       (to-nick (weechat--get-nick-from-tag line-data "irc_nick2_")))
+                   (when (and from-nick to-nick)
+                     (weechat--user-list-remove from-nick)
+                     (weechat--user-list-add to-nick))))
+                ((:irc/part :irc/quit) (weechat--user-list-remove nick)))))
 
-        ;; Print the line
-        (cl-case line-type
-          (:irc/action
-           (let ((weechat-text-column 0))
+          ;; Print the line
+          (cl-case line-type
+            (:irc/action
+             (let ((weechat-text-column 0))
+               (weechat-print-line buffer-ptr
+                                   :text (concat prefix message)
+                                   :nick nick
+                                   :line-type line-type
+                                   :date date
+                                   :highlight highlight)))
+            (t
              (weechat-print-line buffer-ptr
-                                 :text (concat prefix message)
+                                 :prefix prefix
+                                 :text message
                                  :nick nick
-                                 :line-type line-type
                                  :date date
-                                 :highlight highlight)))
-          (t
-           (weechat-print-line buffer-ptr
-                               :prefix prefix
-                               :text message
-                               :nick nick
-                               :date date
-                               :line-type line-type
-                               :highlight highlight
-                               :invisible invisible))))
+                                 :line-type line-type
+                                 :highlight highlight
+                                 :invisible invisible))))
 
-      (weechat-update-buffer-modified buffer-ptr line-data)
+        (weechat-update-buffer-modified buffer-ptr line-data)
 
-      ;; TODO: Debug highlight for monitored and un-monitored channels
-      ;; (Maybe) notify the user
-      (with-current-buffer (or (and (buffer-live-p buffer) buffer)
-                               (get-buffer weechat-relay-log-buffer-name)
-                               (current-buffer))
-        (let* ((buftype (weechat-buffer-type buffer-ptr))
-               (highlight (cl-case buftype
-                            (:private t) ;always highlight queries
-                            (:server nil) ;never highlight server buffers
-                            (t highlight)))
-               (type (cl-case buftype
-                       (:private (unless (string=
-                                          (weechat-get-local-var
-                                           "nick"
-                                           buffer-ptr)
-                                          nick)
-                                   :query))
-                       (:channel :highlight))))
-          (when (and (not weechat-inhibit-notifications)
-                     highlight
-                     type)
-            (weechat-notify type
-                            :sender nick
-                            :text message
-                            :date date
-                            :buffer-ptr buffer-ptr))))
-      (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr))))
+        ;; TODO: Debug highlight for monitored and un-monitored channels
+        ;; (Maybe) notify the user
+        (with-current-buffer (or (and (buffer-live-p buffer) buffer)
+                                 (get-buffer weechat-relay-log-buffer-name)
+                                 (current-buffer))
+          (let* ((buftype (weechat-buffer-type buffer-ptr))
+                 (highlight (cl-case buftype
+                              (:private t) ;always highlight queries
+                              (:server nil) ;never highlight server buffers
+                              (t highlight)))
+                 (type (cl-case buftype
+                         (:private (unless (string=
+                                            (weechat-get-local-var
+                                             "nick"
+                                             buffer-ptr)
+                                            nick)
+                                     :query))
+                         (:channel :highlight))))
+            (when (and (not weechat-inhibit-notifications)
+                       highlight
+                       type)
+              (weechat-notify type
+                              :sender nick
+                              :text message
+                              :date date
+                              :buffer-ptr buffer-ptr))))
+        (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr)))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
@@ -1407,7 +1381,6 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     (define-key map (kbd "TAB") 'completion-at-point)
     (define-key map (kbd "C-a") 'weechat-bol)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
-    (define-key map (kbd "C-c C-t") 'weechat-toggle-hidden)
     (define-key map (kbd "C-c C-b") 'weechat-switch-buffer)
     (define-key map (kbd "C-c C-m") 'weechat-monitor-buffer)
     map)
@@ -1425,9 +1398,6 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     ["Previous Input" weechat-previous-input t]
     ["Next Input" weechat-next-input t]
     "-"
-    ["Show Hidden Lines" weechat-toggle-hidden
-     :style toggle
-     :selected (not weechat-hidden-text-hidden)]
     ["Narrow To Line" weechat-narrow-to-line
      :active (< (point) weechat-prompt-start-marker)]
     "-"
