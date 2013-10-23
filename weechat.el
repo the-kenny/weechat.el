@@ -261,6 +261,15 @@ Functions must take one argument: The buffer-ptr."
   :type 'hook
   :group 'weechat)
 
+(defcustom weechat-message-filter-functions nil
+  "List of functions called in sequence before a line will be sent to the server.
+
+The functions (a b c) are applied like (a (b (c input-string))).
+If a function returns nil, evaluation will stop and the line is
+ignored."
+  :type '(repeat :tag "List" function)
+  :group 'weechat)
+
 (defcustom weechat-complete-order-nickname t
   "If non-nil nicknames are completed in order of most recent speaker."
   :type 'boolean
@@ -1318,6 +1327,13 @@ the end of line."
           (weechat-replace-input "")
         (weechat-replace-input (ring-previous weechat-input-ring input)))))))
 
+(defun weechat-pipe-input (text)
+  (cl-reduce (lambda (s f)
+               (when (stringp s)
+                 (funcall f s)))
+             weechat-message-filter-functions
+             :initial-value text))
+
 (defun weechat-return ()
   "Return key action.
 If point is in input field send message.  If the point is in a chat line
@@ -1329,8 +1345,12 @@ is given (\\[universal-argument])."
     ;; Submit
     (let ((input (weechat-get-input)))
       (unless (s-blank? input)
-        (dolist (l (split-string input "\n"))
-          (weechat-send-input weechat-buffer-ptr l))
+        ;; Split multiple lines and send one-by-one
+        (cl-dolist (l (split-string input "\n"))
+          ;; Pipe the input through the message filter system
+          (let ((piped-input (weechat-pipe-input l)))
+            (when (stringp piped-input)
+              (weechat-send-input weechat-buffer-ptr piped-input))))
         (weechat-input-ring-insert input)
         (weechat-replace-input ""))))
    ((< (point) weechat-prompt-start-marker)
