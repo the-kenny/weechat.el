@@ -91,7 +91,7 @@ org-ruby). Please use the 'Raw' link on the right.
    Thanks, Rüdiger
 ** DONE Module System
 
-* Nice to have [11/23]
+* Nice to have [12/23]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
 ** DONE Speedbar integration
@@ -108,7 +108,7 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Re-Implement scrambling of passwords in lambdas
    Without lexical-let:
    - Pass symbols around: `make-symbol', `symbol-value'
-** TODO Custom commands (defun weechat-cmd-NAME ...)
+** DONE Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
 ** DONE Tracking support similar to erc-track.

@@ -1,4 +1,4 @@
-;;; weechat-alias.el --- Define local weechat commands in elisp
+;;; weechat-cmd.el --- Define local weechat commands in elisp
 
 ;; Copyright (C) 2013 Moritz Ulrich <moritz@tarn-vedra.de>
 
@@ -27,7 +27,7 @@
 ;; This modules allows the user to write Emacs Lisp functions which
 ;; are callable in weechat buffers via normal irc /command syntax.
 ;; 
-;; Function names must start with `weechat-alias-function-prefix' and
+;; Function names must start with `weechat-cmd-function-prefix' and
 ;; take one argument, the input of the user. 
 ;;
 ;; They might return either a string or nil. In case of string the
@@ -41,29 +41,29 @@
 (require 's)
 (require 'cl-lib)
 
-(defconst weechat-alias-function-prefix "weechat-alias-command-")
+(defconst weechat-cmd-function-prefix "weechat-command-")
 
-(defcustom weechat-alias-prefix "/"
-  "Prefix used for alias commands."
+(defcustom weechat-cmd-prefix "/"
+  "Prefix used for cmd commands."
   :type 'string
-  :group 'weechat-alias)
+  :group 'weechat-cmd)
 
-(defun weechat-alias-find-aliases ()
+(defun weechat-cmd-find-cmds ()
   (let (ret)
     (mapatoms
      (lambda (x)
-       (when (s-prefix? weechat-alias-function-prefix (symbol-name x))
+       (when (s-prefix? weechat-cmd-function-prefix (symbol-name x))
          (setq ret (cons x ret)))))
     ret))
 
-(defun weechat-alias-apply (input)
-  (if (s-prefix? weechat-alias-prefix input)
+(defun weechat-cmd-apply (input)
+  (if (s-prefix? weechat-cmd-prefix input)
       (let* ((command (car
                        (s-split-words
                         (s-chop-prefix
-                         weechat-alias-prefix
+                         weechat-cmd-prefix
                          input))))
-             (sym (intern-soft (concat weechat-alias-function-prefix
+             (sym (intern-soft (concat weechat-cmd-function-prefix
                                        command)))
              (fn (when (fboundp sym)
                    (symbol-function sym))))
@@ -72,8 +72,8 @@
           input))
     input))
 
-(add-hook 'weechat-message-filter-functions #'weechat-alias-apply)
+(add-hook 'weechat-message-filter-functions #'weechat-cmd-apply)
 
-(provide 'weechat-alias)
+(provide 'weechat-cmd)
 
-;;; weechat-alias.el ends here
+;;; weechat-cmd.el ends here
