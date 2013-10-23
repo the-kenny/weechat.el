@@ -43,30 +43,33 @@
 
 (defconst weechat-alias-function-prefix "weechat-alias-command-")
 
-(defcustom weechat-alias-command-prefix "/"
+(defcustom weechat-alias-prefix "/"
   "Prefix used for alias commands."
   :type 'string
   :group 'weechat-alias)
 
 (defun weechat-alias-find-aliases ()
-  (cl-remove-if-not
-   (lambda (s)
-     (s-prefix? weechat-alias-function-prefix (symbol-name s)))
-   obarray))
+  (let (ret)
+    (mapatoms
+     (lambda (x)
+       (when (s-prefix? weechat-alias-function-prefix (symbol-name x))
+         (setq ret (cons x ret)))))
+    ret))
 
 (defun weechat-alias-command-yay (input)
   "http://tarn-vedra.de/pics/yay.gif")
 
 (defun weechat-alias-apply (input)
-  (if (s-prefix? weechat-alias-command-prefix input)
-      ;; Try to search for an alias command
-      (let* ((command (car (s-split-words
-                            (s-chop-prefix
-                             weechat-alias-command-prefix
-                             input))))
-             (fn (symbol-function
-                  (intern (concat weechat-alias-function-prefix
-                                  command)))))
+  (if (s-prefix? weechat-alias-prefix input)
+      (let* ((command (car
+                       (s-split-words
+                        (s-chop-prefix
+                         weechat-alias-prefix
+                         input))))
+             (sym (intern-soft (concat weechat-alias-function-prefix
+                                       command)))
+             (fn (when (fboundp sym)
+                   (symbol-function sym))))
         (if (functionp fn)
             (funcall fn input)
           input))
