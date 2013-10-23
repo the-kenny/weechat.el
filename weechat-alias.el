@@ -24,7 +24,7 @@
 
 ;;; Commentary:
 ;; 
-;; This modules allows the user to write emacs lisp functions which
+;; This modules allows the user to write Emacs Lisp functions which
 ;; are callable in weechat buffers via normal irc /command syntax.
 ;; 
 ;; Function names must start with `weechat-alias-function-prefix' and
