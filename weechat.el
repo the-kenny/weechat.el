@@ -61,7 +61,7 @@ String: comand to run."
   :group 'weechat)
 
 (defcustom weechat-modules '(weechat-button weechat-complete)
-  "Modules that should always be loaded together with weechat.el
+  "Modules loaded when weechat.el is loaded.
 
 Each module must be in `load-path' and must have a call to
 provide in order to be loaded correctly.
