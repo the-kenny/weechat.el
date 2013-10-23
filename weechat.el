@@ -270,6 +270,14 @@ ignored."
   :type '(repeat :tag "List" function)
   :group 'weechat)
 
+(defcustom weechat-message-filter-require-double-ret nil
+  "If t, pressing RET once will show the result of the filter.
+
+If nil, filtering will take place transparently when sending the
+message."
+  :type 'boolean
+  :group 'weechat)
+
 (defcustom weechat-complete-order-nickname t
   "If non-nil nicknames are completed in order of most recent speaker."
   :type 'boolean
@@ -1350,9 +1358,17 @@ is given (\\[universal-argument])."
           ;; Pipe the input through the message filter system
           (let ((piped-input (weechat-pipe-input l)))
             (when (stringp piped-input)
-              (weechat-send-input weechat-buffer-ptr piped-input))))
-        (weechat-input-ring-insert input)
-        (weechat-replace-input ""))))
+              (if (and (not (s-equals? piped-input l))
+                       weechat-message-filter-require-double-ret)
+                  ;; Either filtered text is unchanged or we don't want double-ret anyway
+                  (progn
+                    ;; Replace text in-place and display a message
+                    (weechat-replace-input piped-input)
+                    (message "Input text was filtered..."))
+                ;; No change, just send it
+                (weechat-send-input weechat-buffer-ptr piped-input)
+                (weechat-replace-input "")))))
+        (weechat-input-ring-insert input))))
    ((< (point) weechat-prompt-start-marker)
     (when (or (s-blank? (weechat-get-input))
               weechat-return-always-replace-input)
