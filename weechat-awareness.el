@@ -106,7 +106,9 @@
       (if (= pos (org-table-begin))
           (goto-char (1+ (point)))
         (let ((org-table-automatic-realign nil))
-          (org-table-next-field)))
+          (org-table-next-field)
+          (when (s-blank? (org-table-get nil nil))
+            (weechat-awareness-next (point)))))
     (goto-char (1+ (point-min)))))
 
 (defun weechat-awareness-prev (pos)
@@ -115,7 +117,9 @@
       (if (= (org-table-begin) pos)
           (goto-char (1- (org-table-end)))
         (let ((org-table-automatic-realign nil))
-          (org-table-previous-field)))
+          (org-table-previous-field)
+          (when (s-blank? (org-table-get nil nil))
+            (weechat-awareness-prev (point)))))
     (let ((p (save-excursion
                (goto-char (1+ (point-min)))
                (org-table-end))))
