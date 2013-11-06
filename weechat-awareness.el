@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'weechat)
+(require 's)
 
 (defvar weechat-awareness-buffer-name "*weechat-awareness*")
 
