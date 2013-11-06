@@ -178,6 +178,7 @@
     (define-key map (kbd "n")   'weechat-awareness-next)
     (define-key map (kbd "TAB") 'weechat-awareness-tab)
     (define-key map (kbd "r")   'weechat-awareness-reload)
+    (define-key map (kbd "g")   'weechat-awareness-reload)
     (define-key map (kbd "q")   'weechat-awareness-kill-window)
     map)
   "Keymap for weechat.el's awareness plugin.")
