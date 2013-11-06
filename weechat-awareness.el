@@ -79,7 +79,6 @@
                                                   (if weechat-awareness-show-unread
                                                       6 0)
                                                   2))
-           (_ (message "%S" weechat-awareness-max-column-width))
            (columns (/ (window-width)
                        (+ 2 weechat-awareness-max-column-width)))
            (rows (ceiling
@@ -156,7 +155,7 @@
 (defun weechat-awareness-reload ()
   (interactive)
   (when (bufferp (get-buffer weechat-awareness-buffer-name))
-   (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name))))
+    (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name))))
 
 (defun weechat-awareness-reload-if-active ()
   (let ((buffer (get-buffer weechat-awareness-buffer-name)))
