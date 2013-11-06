@@ -228,12 +228,13 @@ indicators."
                (buffer-ptr (weechat--find-buffer buffer-name)))
           (weechat-speedbar--add-indicator
            (if buffer-ptr
-               (cond
-                ((weechat-last-background-highlight-date buffer-ptr)
-                 weechat-speedbar-highlight-indicator)
-                ((weechat-last-background-message-date buffer-ptr)
-                 weechat-speedbar-modified-indicator)
-                (t " "))
+               (let ((hash (weechat-buffer-hash buffer-ptr)))
+                (cond
+                 ((gethash :background-highlight hash)
+                  weechat-speedbar-highlight-indicator)
+                 ((gethash :background-message hash)
+                  weechat-speedbar-modified-indicator)
+                 (t " ")))
              " "))))
       (if (input-pending-p)
           nil                                    ; we are incomplete

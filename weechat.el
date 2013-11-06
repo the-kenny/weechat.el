@@ -788,11 +788,6 @@ frame."
   "Hook called when a weechat-buffer is visited and the
   background-data is reset.")
 
-(defun weechat-buffer-last-background-message (buffer-ptr)
-  (let ((hash (weechat-buffer-hash buffer-ptr)))
-    (and (hash-table-p hash)
-         (gethash :background-message hash))))
-
 (defun weechat-reset-buffer-modified (buffer-ptr)
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
@@ -847,16 +842,6 @@ frame."
       (weechat-reset-buffer-modified weechat-buffer-ptr))))
 
 (add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
-
-(defun weechat-last-background-message-date (&optional buffer-ptr)
-  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
-         (hash (weechat-buffer-hash buffer-ptr)))
-    (when hash (gethash :background-message-date hash))))
-
-(defun weechat-last-background-highlight-date (&optional buffer-ptr)
-  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
-         (hash (weechat-buffer-hash buffer-ptr)))
-    (when hash (gethash :background-highlight-date hash))))
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
