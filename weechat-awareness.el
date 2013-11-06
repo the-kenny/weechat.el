@@ -155,7 +155,8 @@
 
 (defun weechat-awareness-reload ()
   (interactive)
-  (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name)))
+  (when (bufferp (get-buffer weechat-awareness-buffer-name))
+   (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name))))
 
 (defvar weechat-awareness-old-buffer-configuration nil)
 (defun weechat-awareness-restore-window-config ()
@@ -208,6 +209,9 @@
       (weechat-awareness-mode)
       (weechat-awareness-update-buffer buffer))
     (weechat-awareness-show-split buffer)))
+
+(add-hook 'weechat-buffer-background-message-hook 'weechat-awareness-reload)
+(add-hook 'weechat-buffer-visited-hook 'weechat-awareness-reload)
 
 (provide 'weechat-awareness)
 
