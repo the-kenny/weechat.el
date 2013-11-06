@@ -797,11 +797,6 @@ frame."
   "Hook called when a weechat-buffer is visited and the
   background-data is reset.")
 
-(defun weechat-buffer-last-background-message (buffer-ptr)
-  (let ((hash (weechat-buffer-hash buffer-ptr)))
-    (and (hash-table-p hash)
-         (gethash :background-message hash))))
-
 (defun weechat-reset-buffer-modified (buffer-ptr)
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
@@ -809,10 +804,11 @@ frame."
       (remhash :background-message hash)
       (remhash :background-highlight hash))))
 
-(defun weechat-buffer-modified-make-hash (line-data)
-  (let ((hash (make-hash-table)))
+(defun weechat-buffer-modified-update-hash (hash line-data)
+  (let ((hash (or hash (make-hash-table))))
     (puthash :date (assoc-default "date" line-data) hash)
     (puthash :sender (weechat--get-nick-from-line-data line-data) hash)
+    (puthash :count (1+ (gethash :count hash 0)) hash)
     hash))
 
 (defun weechat-update-buffer-modified (buffer-ptr line-data)
@@ -836,18 +832,23 @@ frame."
          ;; General activity
          ((memq line-type weechat-buffer-activity-types)
           (puthash :background-message
-                   (weechat-buffer-modified-make-hash line-data)
+                   (weechat-buffer-modified-update-hash
+                    (gethash :background-message hash)
+                    line-data)
                    hash)
           (when (buffer-live-p emacs-buffer)
-           (with-current-buffer emacs-buffer
-             (run-hooks 'weechat-buffer-background-message-hook)))))
+            (with-current-buffer emacs-buffer
+              (run-hooks 'weechat-buffer-background-message-hook)))))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
-          (puthash :background-highlight (weechat-buffer-modified-make-hash line-data)
+          (puthash :background-highlight
+                   (weechat-buffer-modified-update-hash
+                    (gethash :background-highlight hash)
+                    line-data)
                    hash)
           (when (buffer-live-p emacs-buffer)
-           (with-current-buffer emacs-buffer
-             (run-hooks 'weechat-buffer-background-highlight-hook))))))))
+            (with-current-buffer emacs-buffer
+              (run-hooks 'weechat-buffer-background-highlight-hook))))))))
 
 (defun weechat-window-configuration-change ()
   "Resets modification dates for all visible buffers."
@@ -856,16 +857,6 @@ frame."
       (weechat-reset-buffer-modified weechat-buffer-ptr))))
 
 (add-hook 'window-configuration-change-hook 'weechat-window-configuration-change)
-
-(defun weechat-last-background-message-date (&optional buffer-ptr)
-  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
-         (hash (weechat-buffer-hash buffer-ptr)))
-    (when hash (gethash :background-message-date hash))))
-
-(defun weechat-last-background-highlight-date (&optional buffer-ptr)
-  (let* ((buffer-ptr (or buffer-ptr weechat-buffer-ptr))
-         (hash (weechat-buffer-hash buffer-ptr)))
-    (when hash (gethash :background-highlight-date hash))))
 
 ;;; Borrowed this behavior from rcirc
 (defvar weechat-prompt-start-marker)
@@ -1534,7 +1525,7 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
           (message "Monitoring new Buffer: %s" name))
          ((functionp weechat-monitor-buffer-function)
           (with-demoted-errors
-           (funcall weechat-monitor-buffer-function buffer-ptr)))))
+            (funcall weechat-monitor-buffer-function buffer-ptr)))))
 
       (with-current-buffer (get-buffer-create name)
         (let ((inhibit-read-only t))
@@ -1567,7 +1558,7 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
      (format "Re-monitoring buffer %s" (buffer-name buffer)))
     (let ((weechat-initial-lines (or line-count
                                      weechat-initial-lines)))
-     (weechat-monitor-buffer weechat-buffer-ptr))))
+      (weechat-monitor-buffer weechat-buffer-ptr))))
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
@@ -1636,8 +1627,8 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (defcustom weechat-nick-operations
   '(("DeOp" .  (weechat--send-cmd "/deop" nick))
     ("Kick" . (weechat--send-cmd "/kick" nick
-                                        (read-from-minibuffer
-                                         (concat "Kick " nick ", reason: "))))
+                                 (read-from-minibuffer
+                                  (concat "Kick " nick ", reason: "))))
     ("Query" . (weechat--send-cmd "/query" nick))
     ("Whois" . (weechat--send-cmd "/whois" nick))
     ("Op" . (weechat--send-cmd "/op" nick))
