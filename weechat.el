@@ -825,15 +825,15 @@ frame."
                    (weechat-buffer-modified-make-hash line-data)
                    hash)
           (when (buffer-live-p emacs-buffer)
-           (with-current-buffer emacs-buffer
-             (run-hooks 'weechat-buffer-background-message-hook)))))
+            (with-current-buffer emacs-buffer
+              (run-hooks 'weechat-buffer-background-message-hook)))))
         ;; Highlight
         (when (eq 1 (cdr (assoc-string "highlight" line-data)))
           (puthash :background-highlight (weechat-buffer-modified-make-hash line-data)
                    hash)
           (when (buffer-live-p emacs-buffer)
-           (with-current-buffer emacs-buffer
-             (run-hooks 'weechat-buffer-background-highlight-hook))))))))
+            (with-current-buffer emacs-buffer
+              (run-hooks 'weechat-buffer-background-highlight-hook))))))))
 
 (defun weechat-window-configuration-change ()
   "Resets modification dates for all visible buffers."
@@ -1510,7 +1510,7 @@ If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
           (message "Monitoring new Buffer: %s" name))
          ((functionp weechat-monitor-buffer-function)
           (with-demoted-errors
-           (funcall weechat-monitor-buffer-function buffer-ptr)))))
+            (funcall weechat-monitor-buffer-function buffer-ptr)))))
 
       (with-current-buffer (get-buffer-create name)
         (let ((inhibit-read-only t))
@@ -1543,7 +1543,7 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
      (format "Re-monitoring buffer %s" (buffer-name buffer)))
     (let ((weechat-initial-lines (or line-count
                                      weechat-initial-lines)))
-     (weechat-monitor-buffer weechat-buffer-ptr))))
+      (weechat-monitor-buffer weechat-buffer-ptr))))
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
@@ -1612,8 +1612,8 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (defcustom weechat-nick-operations
   '(("DeOp" .  (weechat--send-cmd "/deop" nick))
     ("Kick" . (weechat--send-cmd "/kick" nick
-                                        (read-from-minibuffer
-                                         (concat "Kick " nick ", reason: "))))
+                                 (read-from-minibuffer
+                                  (concat "Kick " nick ", reason: "))))
     ("Query" . (weechat--send-cmd "/query" nick))
     ("Whois" . (weechat--send-cmd "/whois" nick))
     ("Op" . (weechat--send-cmd "/op" nick))
