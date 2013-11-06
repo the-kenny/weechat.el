@@ -35,9 +35,21 @@
 (defvar weechat-awareness-show-unread t)
 
 (defun weechat-awareness-indicator-string (buffer-ptr)
-  (if (= 0 (random 2))
-      (format "(%i)" (random 42))
-    (format "(%i,%i)" (random 42) (random 42))))
+  (let* ((hash (weechat-buffer-hash buffer-ptr))
+         (message-hash (gethash :background-message hash))
+         (highlight-hash (gethash :background-highlight hash))
+         (messages (when (hash-table-p message-hash)
+                     (gethash :count message-hash)))
+         (highlights (when (hash-table-p highlight-hash)
+                       (gethash :count highlight-hash))))
+
+    (cond
+     ((and (null messages) (null highlights))
+      "")
+     ((or messages highlights)
+      (format "(%i)" (or messages highlights)))
+     (true
+      (format "(%i,%i)" messages highlights)))))
 
 (defun weechat-awareness-make-cell (buffer-ptr pad)
   (let ((bname (s-truncate weechat-awareness-name-length
