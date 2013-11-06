@@ -150,13 +150,19 @@
     (when (weechat-buffer-hash buffer-ptr)
       (let ((buf (weechat--emacs-buffer buffer-ptr)))
         (if (bufferp buf)
-            (switch-to-buffer buf)
+            (pop-to-buffer buf)
           (weechat-monitor-buffer buffer-ptr 'show))))))
 
 (defun weechat-awareness-reload ()
   (interactive)
   (when (bufferp (get-buffer weechat-awareness-buffer-name))
    (weechat-awareness-update-buffer (get-buffer weechat-awareness-buffer-name))))
+
+(defun weechat-awareness-reload-if-active ()
+  (let ((buffer (get-buffer weechat-awareness-buffer-name)))
+    (when (and (bufferp buffer)
+               (window-live-p (get-buffer-window buffer)))
+      (weechat-awareness-reload))))
 
 (defvar weechat-awareness-old-buffer-configuration nil)
 (defun weechat-awareness-restore-window-config ()
@@ -212,6 +218,7 @@
 
 (add-hook 'weechat-buffer-background-message-hook 'weechat-awareness-reload)
 (add-hook 'weechat-buffer-visited-hook 'weechat-awareness-reload)
+(add-hook 'window-configuration-change-hook 'weechat-awareness-reload-if-active)
 
 (provide 'weechat-awareness)
 
