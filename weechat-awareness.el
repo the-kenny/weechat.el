@@ -34,22 +34,40 @@
 
 (defvar weechat-awareness-show-unread t)
 
+(defcustom weechat-awareness-message-face 'default
+  "Face used for the number of messages in the weechat-awareness
+  buffer."
+  :group 'weechat
+  :type 'face)
+
+(defcustom weechat-awareness-highlight-face 'weechat-highlight-face
+  "Face used for the number of highlights in the
+  weechat-awareness buffer."
+  :group 'weechat
+  :type 'face)
+
 (defun weechat-awareness-indicator-string (buffer-ptr)
   (let* ((hash (weechat-buffer-hash buffer-ptr))
          (message-hash (gethash :background-message hash))
          (highlight-hash (gethash :background-highlight hash))
          (messages (when (hash-table-p message-hash)
-                     (gethash :count message-hash)))
+                     (propertize 
+                      (int-to-string
+                       (gethash :count message-hash))
+                      'face weechat-awareness-message-face)))
          (highlights (when (hash-table-p highlight-hash)
-                       (gethash :count highlight-hash))))
+                       (propertize 
+                        (int-to-string
+                         (gethash :count highlight-hash))
+                        'face weechat-awareness-highlight-face))))
 
     (cond
      ((and (null messages) (null highlights))
       "")
      ((or messages highlights)
-      (format "(%i)" (or messages highlights)))
+      (format "(%s)" (or messages highlights)))
      (true
-      (format "(%i,%i)" messages highlights)))))
+      (format "(%s,%s)" messages highlights)))))
 
 (defun weechat-awareness-make-cell (buffer-ptr pad)
   (let ((bname (s-truncate weechat-awareness-name-length
