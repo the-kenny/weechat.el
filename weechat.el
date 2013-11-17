@@ -546,7 +546,11 @@ Return either a string, a function returning a string, or nil."
     map)
   "Weechat mode selection: Local keymap for minibuffer input with completion.")
 
-(defun weechat-reset-reconnect-retries ()
+(defvar weechat-reconnect-timer nil)
+(defun weechat-cancel-reconnect ()
+  (when (timerp weechat-reconnect-timer)
+    (cancel-timer weechat-reconnect-timer)
+    (setq weechat-reconnect-timer nil))
   (unintern 'weechat-auto-reconnect-retries-left obarray))
 
 ;;;###autoload
@@ -589,6 +593,9 @@ and port number respectively."
        (read-passwd "Password: "))
       mode
       nil)))
+  ;; Cancel the reconnect timer to prevent surprises
+  (weechat-cancel-reconnect)
+  ;; Handle when the user is already connected etc.
   (let* ((host (or host weechat-host-default))
          (port (or port weechat-port-default))
          (password (or password
@@ -620,11 +627,12 @@ and port number respectively."
                (weechat-relay-send-command "sync")
                (setq weechat--connected t)
                (weechat--relay-start-ping-timer)
-               (weechat-reset-reconnect-retries)
+               (weechat-cancel-reconnect)
                (run-hooks 'weechat-connect-hook))))))))))
 
 (defvar weechat-auto-reconnect-retries-left)
 (defun weechat-handle-reconnect-maybe ()
+  (weechat-cancel-reconnect)
   (unless (boundp 'weechat-auto-reconnect-retries-left)
     (setq weechat-auto-reconnect-retries-left
           weechat-auto-reconnect-retries))
@@ -637,15 +645,16 @@ and port number respectively."
           (weechat-message "Not reconnecting: No password stored.")
         (weechat-message "Reconnecting in %ds..." delay)
         (cl-decf weechat-auto-reconnect-retries-left)
-        (run-with-timer
-         delay nil
-         (lambda ()
-           (weechat-connect
-            host
-            port
-            (weechat-get-password host port)
-            (car weechat-mode-history)
-            'force-disconnect))))
+        (setq weechat-reconnect-timer
+              (run-with-timer
+               delay nil
+               (lambda ()
+                 (weechat-connect
+                  host
+                  port
+                  (weechat-get-password host port)
+                  (car weechat-mode-history)
+                  'force-disconnect)))))
       t)))
 
 (defun weechat-handle-disconnect ()
@@ -674,8 +683,6 @@ and port number respectively."
     ;; Disconnect the relay. `weechat-relay-disconnect-hook' will NOT
     ;; run.
     (weechat-relay-disconnect)
-    ;; Run `weechat-handle-disconnect' to print 'disconnected from
-    ;; server' message etc.
     (weechat-handle-disconnect)
     (when weechat-buffer-kill-buffers-on-disconnect
       (weechat-do-buffers (kill-buffer)))
