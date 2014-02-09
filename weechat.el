@@ -697,7 +697,9 @@ and port number respectively."
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (or (gethash "name"        hash)
         (gethash "full_name"   hash)
-        (gethash "short_name"  hash))))
+        ;; NOTE: Short name isn't useful to identify the buffer
+        ;; (gethash "short_name" hash)
+        )))
 
 (defun weechat--find-buffer (name)
   "Return buffer-ptr for channel NAME."
