@@ -1253,16 +1253,18 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
 (defvar weechat-send-input-last-target nil
   "Internal var used to track last message's target.")
 (defun weechat-send-input (target input)
-  (when (and weechat-sync-active-buffer
-             (not (s-equals? weechat-send-input-last-target
-                             target)))
-    ;; HACK: Switch active buffer on the relay server
-    ;; TODO: Only send when the active buffer is different
+  (if (not (weechat-connected-p))
+      (error "Not connected")
+    (when (and weechat-sync-active-buffer
+               (not (s-equals? weechat-send-input-last-target
+                               target)))
+      ;; HACK: Switch active buffer on the relay server
+      ;; TODO: Only send when the active buffer is different
+      (weechat-relay-send-command
+       (format "input %s /buffer %s" target (weechat-buffer-name target))))
     (weechat-relay-send-command
-     (format "input %s /buffer %s" target (weechat-buffer-name target))))
-  (weechat-relay-send-command
-   (format "input %s %s" target input))
-  (setq weechat-send-input-last-target target))
+     (format "input %s %s" target input))
+    (setq weechat-send-input-last-target target)))
 
 (defun weechat-get-input ()
   (s-trim-right
@@ -1329,18 +1331,19 @@ copy the message.  Only the message text is copied unless the prefix argument
 is given (\\[universal-argument])."
   (interactive)
   (cond
+   ;; Submit
    ((>= (point) weechat-prompt-end-marker)
-    ;; Submit
     (let ((input (weechat-get-input)))
       (unless (s-blank? input)
         (dolist (l (split-string input "\n"))
           (weechat-send-input weechat-buffer-ptr l))
         (weechat-input-ring-insert input)
         (weechat-replace-input ""))))
+
+   ;; Copy current line to input line
    ((< (point) weechat-prompt-start-marker)
     (when (or (s-blank? (weechat-get-input))
-              weechat-return-always-replace-input)
-      ;; Copy current line to input line
+              weechat-return-always-replace-input) 
       (weechat-replace-input
        (buffer-substring-no-properties
         (if current-prefix-arg
