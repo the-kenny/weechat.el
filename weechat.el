@@ -1511,31 +1511,36 @@ Default is current buffer."
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   "Start monitoring BUFFER-PTR.
 If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
-  (interactive (list (weechat--read-channel-name) t))
-  (save-excursion
-    (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
-           (name (weechat-buffer-name buffer-ptr)))
-      (unless (hash-table-p buffer-hash)
-        (error "Couldn't find buffer %s on relay server" buffer-ptr))
+  (interactive (list
+                (when (weechat-connected-p)
+                  (weechat--read-channel-name))
+                t))
+  (if (not (weechat-connected-p))
+      (error "Can't monitor buffer, not connected.")
+    (save-excursion
+      (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
+             (name (weechat-buffer-name buffer-ptr)))
+        (unless (hash-table-p buffer-hash)
+          (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
-      ;; Notify the user via `weechat-monitor-buffer-function'
-      (when weechat-monitor-buffer-function
-        (cond
-         ((eq 'message weechat-monitor-buffer-function)
-          (message "Monitoring new Buffer: %s" name))
-         ((functionp weechat-monitor-buffer-function)
-          (with-demoted-errors
-            (funcall weechat-monitor-buffer-function buffer-ptr)))))
+        ;; Notify the user via `weechat-monitor-buffer-function'
+        (when weechat-monitor-buffer-function
+          (cond
+           ((eq 'message weechat-monitor-buffer-function)
+            (message "Monitoring new Buffer: %s" name))
+           ((functionp weechat-monitor-buffer-function)
+            (with-demoted-errors
+              (funcall weechat-monitor-buffer-function buffer-ptr)))))
 
-      (with-current-buffer (get-buffer-create name)
-        (let ((inhibit-read-only t))
-          (when (weechat-buffer-p)
-            (delete-region (point-min) weechat-prompt-start-marker)))
-        (weechat-mode (get-buffer-process weechat-relay-buffer-name)
-                      buffer-ptr
-                      buffer-hash)
-        (when show-buffer
-          (switch-to-buffer (current-buffer)))))))
+        (with-current-buffer (get-buffer-create name)
+          (let ((inhibit-read-only t))
+            (when (weechat-buffer-p)
+              (delete-region (point-min) weechat-prompt-start-marker)))
+          (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                        buffer-ptr
+                        buffer-hash)
+          (when show-buffer
+            (switch-to-buffer (current-buffer))))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
   "Like `switch-buffer' but limited to WeeChat buffers.
@@ -1553,12 +1558,14 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (defun weechat-reload-buffer (&optional buffer line-count)
   (interactive (list (current-buffer)
                      current-prefix-arg))
-  (with-current-buffer (or buffer (current-buffer))
-    (weechat-relay-log
-     (format "Re-monitoring buffer %s" (buffer-name buffer)))
-    (let ((weechat-initial-lines (or line-count
-                                     weechat-initial-lines)))
-      (weechat-monitor-buffer weechat-buffer-ptr))))
+  (if (not (weechat-connected-p))
+      (error "Can't reload buffer. Not connected.")
+   (with-current-buffer (or buffer (current-buffer))
+     (weechat-relay-log
+      (format "Re-monitoring buffer %s" (buffer-name buffer)))
+     (let ((weechat-initial-lines (or line-count
+                                      weechat-initial-lines)))
+       (weechat-monitor-buffer weechat-buffer-ptr)))))
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
