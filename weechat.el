@@ -136,11 +136,13 @@ empty."
   "List of buffer names to auto-monitor on connect.
 
 If value is a list, buffers corresponding the names will be
-monitored on connect.  A value of t will monitor all available
-buffers.  Be warned, a too long list will use much bandwidth on
-connect."
+monitored on connect. If value is a string, monitor all buffers
+matching the string as regexp. A value of t will monitor all
+available buffers. Be warned, a too long list will use much
+bandwidth on connect."
   :type '(choice (const :tag "All" t)
-                 (repeat :tag "List" string))
+                 (repeat :tag "List" string)
+                 string)
   :group 'weechat)
 
 (defcustom weechat-auto-monitor-new-buffers 'silent
@@ -712,7 +714,9 @@ and port number respectively."
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (or (gethash "name"        hash)
         (gethash "full_name"   hash)
-        (gethash "short_name"  hash))))
+        ;; NOTE: Short name isn't useful to identify the buffer
+        ;; (gethash "short_name" hash)
+        )))
 
 (defun weechat--find-buffer (name)
   "Return buffer-ptr for channel NAME."
@@ -1266,16 +1270,17 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
 (defvar weechat-send-input-last-target nil
   "Internal var used to track last message's target.")
 (defun weechat-send-input (target input)
-  (when (and weechat-sync-active-buffer
-             (not (s-equals? weechat-send-input-last-target
-                             target)))
-    ;; HACK: Switch active buffer on the relay server
-    ;; TODO: Only send when the active buffer is different
+  (if (not (weechat-connected-p))
+      (error "Not connected")
+    (when (and weechat-sync-active-buffer
+               (not (s-equals? weechat-send-input-last-target
+                               target)))
+      ;; HACK: Switch active buffer on the relay server
+      (weechat-relay-send-command
+       (format "input %s /buffer %s" target (weechat-buffer-name target))))
     (weechat-relay-send-command
-     (format "input %s /buffer %s" target (weechat-buffer-name target))))
-  (weechat-relay-send-command
-   (format "input %s %s" target input))
-  (setq weechat-send-input-last-target target))
+     (format "input %s %s" target input))
+    (setq weechat-send-input-last-target target)))
 
 (defun weechat-get-input ()
   (s-trim-right
@@ -1349,8 +1354,8 @@ copy the message.  Only the message text is copied unless the prefix argument
 is given (\\[universal-argument])."
   (interactive)
   (cond
+   ;; Submit
    ((>= (point) weechat-prompt-end-marker)
-    ;; Submit
     (let ((input (weechat-get-input)))
       (unless (s-blank? input)
         ;; Split multiple lines and send one-by-one
@@ -1369,10 +1374,11 @@ is given (\\[universal-argument])."
                 (weechat-send-input weechat-buffer-ptr piped-input)
                 (weechat-replace-input "")))))
         (weechat-input-ring-insert input))))
+
+   ;; Copy current line to input line
    ((< (point) weechat-prompt-start-marker)
     (when (or (s-blank? (weechat-get-input))
               weechat-return-always-replace-input)
-      ;; Copy current line to input line
       (weechat-replace-input
        (buffer-substring-no-properties
         (if current-prefix-arg
@@ -1545,31 +1551,36 @@ Default is current buffer."
 (defun weechat-monitor-buffer (buffer-ptr &optional show-buffer)
   "Start monitoring BUFFER-PTR.
 If SHOW-BUFFER is non-nil `switch-to-buffer' after monitoring it."
-  (interactive (list (weechat--read-channel-name) t))
-  (save-excursion
-    (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
-           (name (weechat-buffer-name buffer-ptr)))
-      (unless (hash-table-p buffer-hash)
-        (error "Couldn't find buffer %s on relay server" buffer-ptr))
+  (interactive (list
+                (when (weechat-connected-p)
+                  (weechat--read-channel-name))
+                t))
+  (if (not (weechat-connected-p))
+      (error "Can't monitor buffer, not connected.")
+    (save-excursion
+      (let* ((buffer-hash (weechat-buffer-hash buffer-ptr))
+             (name (weechat-buffer-name buffer-ptr)))
+        (unless (hash-table-p buffer-hash)
+          (error "Couldn't find buffer %s on relay server" buffer-ptr))
 
-      ;; Notify the user via `weechat-monitor-buffer-function'
-      (when weechat-monitor-buffer-function
-        (cond
-         ((eq 'message weechat-monitor-buffer-function)
-          (message "Monitoring new Buffer: %s" name))
-         ((functionp weechat-monitor-buffer-function)
-          (with-demoted-errors
-            (funcall weechat-monitor-buffer-function buffer-ptr)))))
+        ;; Notify the user via `weechat-monitor-buffer-function'
+        (when weechat-monitor-buffer-function
+          (cond
+           ((eq 'message weechat-monitor-buffer-function)
+            (message "Monitoring new Buffer: %s" name))
+           ((functionp weechat-monitor-buffer-function)
+            (with-demoted-errors
+              (funcall weechat-monitor-buffer-function buffer-ptr)))))
 
-      (with-current-buffer (get-buffer-create name)
-        (let ((inhibit-read-only t))
-          (when (weechat-buffer-p)
-            (delete-region (point-min) weechat-prompt-start-marker)))
-        (weechat-mode (get-buffer-process weechat-relay-buffer-name)
-                      buffer-ptr
-                      buffer-hash)
-        (when show-buffer
-          (switch-to-buffer (current-buffer)))))))
+        (with-current-buffer (get-buffer-create name)
+          (let ((inhibit-read-only t))
+            (when (weechat-buffer-p)
+              (delete-region (point-min) weechat-prompt-start-marker)))
+          (weechat-mode (get-buffer-process weechat-relay-buffer-name)
+                        buffer-ptr
+                        buffer-hash)
+          (when show-buffer
+            (switch-to-buffer (current-buffer))))))))
 
 (defun weechat-switch-buffer (buffer-ptr)
   "Like `switch-buffer' but limited to WeeChat buffers.
@@ -1587,12 +1598,14 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (defun weechat-reload-buffer (&optional buffer line-count)
   (interactive (list (current-buffer)
                      current-prefix-arg))
-  (with-current-buffer (or buffer (current-buffer))
-    (weechat-relay-log
-     (format "Re-monitoring buffer %s" (buffer-name buffer)))
-    (let ((weechat-initial-lines (or line-count
-                                     weechat-initial-lines)))
-      (weechat-monitor-buffer weechat-buffer-ptr))))
+  (if (not (weechat-connected-p))
+      (error "Can't reload buffer. Not connected.")
+   (with-current-buffer (or buffer (current-buffer))
+     (weechat-relay-log
+      (format "Re-monitoring buffer %s" (buffer-name buffer)))
+     (let ((weechat-initial-lines (or line-count
+                                      weechat-initial-lines)))
+       (weechat-monitor-buffer weechat-buffer-ptr)))))
 
 (defun weechat-re-monitor-buffers ()
   (when weechat-auto-reconnect-buffers
@@ -1607,14 +1620,20 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
 
 (defun weechat-auto-monitor ()
-  (let ((available-channels (weechat-channel-names)))
+  (let* ((available-channels (weechat-channel-names))
+         (chans (cond
+                 ((listp weechat-auto-monitor-buffers)
+                  weechat-auto-monitor-buffers)
+                 ((stringp weechat-auto-monitor-buffers)
+                  (cl-remove-if-not (lambda (b)
+                                      (s-matches? weechat-auto-monitor-buffers b))
+                                    available-channels))
+                 (t (progn
+                      (weechat-message "Monitoring all available WeeChat buffers.  Be patient...")
+                      available-channels)))))
     ;; Either iterate ALL available channels (for `t') or iterate
     ;; channels user wants to monitor
-    (dolist (channel (if (listp weechat-auto-monitor-buffers)
-                         weechat-auto-monitor-buffers
-                       (progn
-                         (weechat-message "Monitoring all available WeeChat buffers.  Be patient...")
-                         available-channels)))
+    (dolist (channel chans)
       ;; Check if one of the available channels partially matches the
       ;; channel we want to monitor
       (let* ((channel-name (cl-some

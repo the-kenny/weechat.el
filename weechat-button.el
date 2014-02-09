@@ -262,7 +262,13 @@ If TEXT-BUTTONS is non-nil then use `make-text-button instead of `make-button'."
                   (button-data-no-properties
                    (match-string-no-properties button-match))
                   (data (mapcar #'match-string data-match)))
-              (when (weechat-button--buttonize? buttonize?)
+              (when (and (weechat-button--buttonize? buttonize?)
+                         ;; Don't overlap buttons
+                         ;; Handles text-buttons and overlay-buttons
+                         (cl-every (lambda (o)
+                                     (null (overlay-get o 'button)))
+                                   (overlays-in start end))
+                         (not (text-property-not-all start end 'button nil)))
                 (let ((properties (list 'action #'weechat-button--handler
                                         'help-echo help-echo
                                         'follow-link t

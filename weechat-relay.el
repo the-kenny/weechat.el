@@ -103,12 +103,16 @@ PASSWORD can be a string, a function or nil.
 
 If COMPRESSION is non-nil, enable compression on this connection.
 Currently unsupported."
+  (cl-assert (or (null password)
+                 (stringp password)
+                 (functionp password)))
   (let ((pass (if (functionp password)
                   (funcall password)
                 password)))
-    (setq pass (if (s-blank? (s-trim pass))
-                   nil
-                 (s-trim pass)))
+    (when (stringp pass)
+      (setq pass (if (s-blank? (s-trim pass))
+                     nil
+                   (s-trim pass))))
     (weechat--relay-send-message
      (concat "init "
              (s-join ","

@@ -86,6 +86,10 @@ or faces that don't show up at all."
 (defun weechat-tracking-handle-reset ()
   (tracking-remove-buffer (current-buffer)))
 
+(defun weechat-tracking-clear-buffers ()
+  (interactive)
+  (mapcar #'tracking-remove-buffer (weechat-buffer-list)))
+
 (weechat-do-buffers (weechat-tracking-setup))
 (add-hook 'weechat-mode-hook #'weechat-tracking-setup)
 
