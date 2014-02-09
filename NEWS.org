@@ -1,5 +1,5 @@
 # -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
-* 0.3
+* 0.3 (In Progress)
 ** New Modules
 *** Commands: =weechat-cmd=
     Implement IRC commands (/command) in elisp
