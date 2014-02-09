@@ -4,23 +4,23 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.3 [3/9]
+* 0.3 [4/9]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
 ** TODO Update a NEWS file
    Close this right before 0.2 release so it's consistent.
 ** TODO [#A] Fix missing highlights in Queries etc.
-** TODO Stop auto-reconnect after manual connect
-** DONE Different `weechat-tracking-types' for different channels
-** DONE Option to truncate long nicks
 ** TODO Use new `ping' command for weechat 0.4.2
    We might have to move the ping stuff to weechat.el to implement
    this in a clean way
-** DONE Test compatibility with 0.4.2
 ** TODO Measure network delay and add configurable hooks for different delays
    This is useful to trigger a reconnect or warn the user when the
    delay gets too big.
+** DONE Stop auto-reconnect after manual connect
+** DONE Different `weechat-tracking-types' for different channels
+** DONE Option to truncate long nicks
+** DONE Test compatibility with 0.4.2
 * 0.2 [4/4]
 ** DONE Auto-Reconnect
 ** DONE Don't kill undo-history on buffer change (annoying when you're typing sth.)
@@ -94,13 +94,10 @@ org-ruby). Please use the 'Raw' link on the right.
 * Nice to have [11/23]
 ** TODO More Unit Tests (ert)
 ** TODO Compression
-** DONE Speedbar integration
 ** TODO Faces based on message type
-** DONE Typing auto-focuses the "input field"
 ** TODO More Notification Handlers
    - `message'
 ** TODO Marker for away state
-** DONE Opening buffers in Emacs should update activation state on weechat side
 ** TODO Buffer-local URL ring for easy access
 ** TODO Request all highlighted lines when coming back online
 ** TODO Get (max 100 (count unread)) lines
@@ -111,6 +108,9 @@ org-ruby). Please use the 'Raw' link on the right.
 ** TODO Custom commands (defun weechat-cmd-NAME ...)
 ** TODO Imenu support
    See http://www.emacswiki.org/emacs/ErcImenu
+** DONE Speedbar integration
+** DONE Typing auto-focuses the "input field"
+** DONE Opening buffers in Emacs should update activation state on weechat side
 ** DONE Tracking support similar to erc-track.
    Using circe's tracking.el is probably a good way to implement this
    https://github.com/jorgenschaefer/circe/blob/master/lisp/tracking.el
