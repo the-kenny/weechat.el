@@ -1259,7 +1259,6 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                (not (s-equals? weechat-send-input-last-target
                                target)))
       ;; HACK: Switch active buffer on the relay server
-      ;; TODO: Only send when the active buffer is different
       (weechat-relay-send-command
        (format "input %s /buffer %s" target (weechat-buffer-name target))))
     (weechat-relay-send-command
