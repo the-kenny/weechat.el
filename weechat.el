@@ -136,11 +136,13 @@ empty."
   "List of buffer names to auto-monitor on connect.
 
 If value is a list, buffers corresponding the names will be
-monitored on connect.  A value of t will monitor all available
-buffers.  Be warned, a too long list will use much bandwidth on
-connect."
+monitored on connect. If value is a string, monitor all buffers
+matching the string as regexp. A value of t will monitor all
+available buffers. Be warned, a too long list will use much
+bandwidth on connect."
   :type '(choice (const :tag "All" t)
-                 (repeat :tag "List" string))
+                 (repeat :tag "List" string)
+                 string)
   :group 'weechat)
 
 (defcustom weechat-auto-monitor-new-buffers 'silent
@@ -1571,14 +1573,20 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (add-hook 'weechat-connect-hook 'weechat-re-monitor-buffers)
 
 (defun weechat-auto-monitor ()
-  (let ((available-channels (weechat-channel-names)))
+  (let* ((available-channels (weechat-channel-names))
+         (chans (cond
+                 ((listp weechat-auto-monitor-buffers)
+                  weechat-auto-monitor-buffers)
+                 ((stringp weechat-auto-monitor-buffers)
+                  (cl-remove-if-not (lambda (b)
+                                      (s-matches? weechat-auto-monitor-buffers b))
+                                    available-channels))
+                 (t (progn
+                      (weechat-message "Monitoring all available WeeChat buffers.  Be patient...")
+                      available-channels)))))
     ;; Either iterate ALL available channels (for `t') or iterate
     ;; channels user wants to monitor
-    (dolist (channel (if (listp weechat-auto-monitor-buffers)
-                         weechat-auto-monitor-buffers
-                       (progn
-                         (weechat-message "Monitoring all available WeeChat buffers.  Be patient...")
-                         available-channels)))
+    (dolist (channel chans)
       ;; Check if one of the available channels partially matches the
       ;; channel we want to monitor
       (let* ((channel-name (cl-some
