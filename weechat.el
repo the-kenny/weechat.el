@@ -1528,7 +1528,8 @@ Default is current buffer."
     ;; Don't auto-add newlines on next-line
     (set (make-local-variable 'next-line-add-newlines) nil)
     ;; Fix scrolling
-    (setq scroll-conservatively 1000)
+    (set (make-local-variable 'scroll-conservatively) 1000)
+    (set (make-local-variable 'scroll-margin) 0)
 
     ;; Initialize buffer
     (weechat-request-initial-lines buffer-ptr)
