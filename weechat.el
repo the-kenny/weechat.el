@@ -259,7 +259,11 @@ This hook is useful in conjunction with
 `weechat-last-background-message-date' or
 `weechat-last-background-highlight-date'.
 
-Functions must take one argument: The buffer-ptr."
+Functions must take one argument: The buffer-ptr.
+
+If the weechat-buffer is currently associated with an emacs
+buffer, the functions will get called with the active buffer set
+to it."
   :type 'hook
   :group 'weechat)
 
@@ -1231,8 +1235,9 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                               :sender nick
                               :text message
                               :date date
-                              :buffer-ptr buffer-ptr))))
-        (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr)))))
+                              :buffer-ptr buffer-ptr)))
+
+          (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
