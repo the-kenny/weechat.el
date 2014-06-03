@@ -53,7 +53,7 @@
 
 Null or 'plain: Plain socket.
 t or 'ssl: TLS socket.
-String: comand to run."
+String: command to run."
   :type '(choice
           (const :tag "Plain" 'plain)
           (const :tag "SSL/TLS" 'ssl)
