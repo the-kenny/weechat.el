@@ -599,7 +599,12 @@ and port number respectively."
                                (format "Mode (`plain', `ssl' or command, default `%s'): "
                                        weechat-mode-default)
                                '("plain" "ssl" "ssh -W localhost:%p %h")
-                               nil nil nil 'weechat-mode-history weechat-mode-default)))
+                               nil nil nil 'weechat-mode-history
+                               ;; NOTE: `completing-read' is fine when
+                               ;; passed a symbol, but helm breaks.
+                               ;; The following ensures we always pass
+                               ;; a string.
+                               (format "%s" weechat-mode-default))))
                   (cond
                    ((string= modestr "") nil)
                    ((string= modestr "plain") 'plain)
