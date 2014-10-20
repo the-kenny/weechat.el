@@ -413,28 +413,23 @@ Return a list: (id data)."
     (cl-values (cons msg-id (if ignore-msg '(ignored) (reverse acc)))
                (bindat-get-field msg 'length))))
 
-(defun weechat--message-available-p (&optional buffer)
-  "Check if a weechat relay message available in BUFFER.
-BUFFER defaults to the current buffer."
-  (with-current-buffer (get-buffer (or buffer
-                                       weechat-relay-buffer-name))
-    (and (> (buffer-size) 5)
-         (>= (buffer-size)
-             (bindat-get-field
-              (bindat-unpack '((len u32))
-                             (buffer-string))
-              'len)))))
+(defun weechat--message-available-p ()
+  "Check if a weechat relay message available in current buffer."
+  (and (> (buffer-size) 5)
+       (>= (buffer-size)
+           (bindat-get-field
+            (bindat-unpack '((len u32))
+                           (buffer-string))
+            'len))))
 
-(defun weechat--relay-parse-new-message (&optional buffer)
-  (with-current-buffer (get-buffer (or buffer
-                                       weechat-relay-buffer-name))
-    (when (weechat--message-available-p (current-buffer))
-      (cl-multiple-value-bind (ret len) (weechat-unpack-message
-                                         (buffer-string))
-        (weechat-relay-log (format "Consumed %d bytes" len) :debug)
-        (let ((inhibit-read-only t))
-          (delete-region (point-min) (+ (point-min) len)))
-        ret))))
+(defun weechat--relay-parse-new-message ()
+  (when (weechat--message-available-p)
+    (cl-multiple-value-bind (ret len) (weechat-unpack-message
+                                       (buffer-string))
+      (weechat-relay-log (format "Consumed %d bytes" len) :debug)
+      (let ((inhibit-read-only t))
+        (delete-region (point-min) (+ (point-min) len)))
+      ret)))
 
 (defun weechat-relay-get-id-callback (id)
   (gethash id weechat--relay-id-callback-hash))
@@ -500,19 +495,21 @@ CALLBACK takes one argument (the response data) which is a list."
     (goto-char (point-max))
     (let ((inhibit-read-only t))
       (insert (string-make-unibyte string)))
-    (while (weechat--message-available-p)
-      (let* ((data (weechat--relay-parse-new-message))
-             (id (weechat--message-id data)))
-        (setq weechat-relay-last-receive (current-time))
-        ;; If buffer is available, log message
-        (weechat-relay-log (pp-to-string data) :debug)
-        ;; Call `weechat-relay-message-function'
-        (when (functionp weechat-relay-message-function)
-          (funcall weechat-relay-message-function data))
-        ;; Call callback from `weechat--relay-id-callback-hash'
-        (if (functionp (weechat-relay-get-id-callback id))
-            (funcall (weechat-relay-get-id-callback id)
-                     (weechat--message-data data)))))))
+    (let ((inhibit-redisplay t))
+     (while (weechat--message-available-p)
+       (let* ((data (weechat--relay-parse-new-message))
+              (id (weechat--message-id data)))
+         (setq weechat-relay-last-receive (current-time))
+         ;; If buffer is available, log message.
+         (when (eq weechat-relay-log-level :debug)
+           (weechat-relay-log (pp-to-string data) :debug))
+         ;; Call `weechat-relay-message-function'
+         (when (functionp weechat-relay-message-function)
+           (funcall weechat-relay-message-function data))
+         ;; Call callback from `weechat--relay-id-callback-hash'
+         (if (functionp (weechat-relay-get-id-callback id))
+             (funcall (weechat-relay-get-id-callback id)
+                      (weechat--message-data data))))))))
 
 (defvar weechat--relay-connected-callback)
 
