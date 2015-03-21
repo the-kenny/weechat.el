@@ -1068,7 +1068,8 @@ text (technically, this shouldn't happen)."
                 ;; Filling is slightly misleading here.  We use this
                 ;; awesome text property called `wrap-prefix'.
                 (let ((overlay (make-overlay text-start (point-max))))
-                  (overlay-put overlay 'wrap-prefix prefix-string))))
+                  (overlay-put overlay 'wrap-prefix
+                               (propertize prefix-string 'face 'default)))))
 
             ;; Go to start of inserted line
             (goto-char (1- (point)))    ;skip newline
