@@ -4,7 +4,7 @@
 Note: This list is broken on Github (they should really update
 org-ruby). Please use the 'Raw' link on the right.
 
-* 0.3 [4/9]
+* Next [4/10]
 ** TODO Auto-Monitor 'old' buffers
    Sometimes buffers from an earlier connection remain in Emacs, never
    getting updated again
