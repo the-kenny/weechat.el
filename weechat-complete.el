@@ -110,10 +110,11 @@ Copied from `pcomplete-erc-command-name'."
 (defun pcomplete/weechat/complete-command ()
   "Complete the initial command argument."
   (pcomplete-here
-   (mapcar 'downcase
-           (append
-            (pcomplete-weechat-commands)
-            (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self)))))
+   (append
+    (pcomplete-weechat-commands)
+    (mapcar 'downcase (pcomplete-weechat-commands))
+    (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self)
+    (mapcar 'downcase (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self)))))
 
 (defun pcomplete/weechat-mode/WHOIS ()
   (pcomplete-here (pcomplete-weechat-all-nicks)))
