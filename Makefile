@@ -47,7 +47,7 @@ distclean: clean
 
 README.html: README.org
 	$(info Creating documentation: $@)
-	@$(BATCH) -l org.el --visit=$< -f org-export-as-html-batch
+	@$(BATCH) -l org.el --visit=$< -f org-html-export-to-html
 
 doc: README.html
 
