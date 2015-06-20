@@ -322,6 +322,19 @@ Syncing is done when sending a command/message to the buffer."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-completing-read-function 'weechat--try-ido
+  "Function to prompt for channel names.
+
+The function must comply to the interface of `completing-read'.
+
+Possible choices would be `ido-completing-read' or
+`completing-read'."
+  :type '(choice
+          (const :tag "Ido" weechat--try-ido)
+          (const :tag "Default" completing-read)
+          (function :tag "Other"))
+  :group 'weechat)
+
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
@@ -1551,12 +1564,17 @@ Default is current buffer."
     ;; Hooks
     (run-mode-hooks 'weechat-mode-hook)))
 
+(defun weechat--try-ido (&rest args)
+  "Complete with ido if available and `completing-read' otherwise."
+  (apply (or (and (featurep 'ido)
+                  (symbol-function 'ido-completing-read))
+             #'completing-read)
+         args))
+
 (defun weechat--read-channel-name (&optional only-monitored)
   "Read channel name from minibuffer in combination with `interactive'."
   (weechat--find-buffer
-   (funcall (or (and (featurep 'ido)
-                     (symbol-function 'ido-completing-read))
-                #'completing-read)
+   (funcall weechat-completing-read-function
             "Channel Name: "
             (weechat-channel-names only-monitored 'sort))))
 
