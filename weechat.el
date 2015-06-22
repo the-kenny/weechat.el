@@ -322,6 +322,21 @@ Syncing is done when sending a command/message to the buffer."
   :type 'boolean
   :group 'weechat)
 
+(defcustom weechat-sync-buffer-read-status nil
+  "Mark buffers as read in the relay, when read with weechat.el.
+
+When set to t, weechat will automatically mark buffers as read in
+the relay, when they are visited in the client.
+
+Be aware, that this setting can loose highlights: If the
+highlight occurred more than `weechat-initial-lines' before Emacs
+connects to the relay, reading the Emacs buffer will not show the
+highlight, but mark the buffer as read.
+
+Also, weechat >= 1.0 is required for this to work."
+  :type 'boolean
+  :group 'weechat)
+
 (defvar weechat--buffer-hashes (make-hash-table :test 'equal))
 
 (defvar weechat--connected nil)
@@ -825,9 +840,16 @@ frame."
   "Hook called when a weechat-buffer is visited and the
   background-data is reset.")
 
+(defun weechat--reset-relay-read-status (buffer-ptr)
+  (unless (or (version< weechat-version "1.0")
+              (not weechat-sync-buffer-read-status))
+    (weechat-relay-send-command (concat "input " buffer-ptr " /buffer set hotlist -1"))
+    (weechat-relay-send-command (concat "input " buffer-ptr " /input set_unread_current_buffer"))))
+
 (defun weechat-reset-buffer-modified (buffer-ptr)
   (let ((hash (weechat-buffer-hash buffer-ptr)))
     (when (hash-table-p hash)
+      (weechat--reset-relay-read-status buffer-ptr)
       (run-hooks 'weechat-buffer-visited-hook)
       (remhash :background-message hash)
       (remhash :background-highlight hash))))
