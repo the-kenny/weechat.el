@@ -854,8 +854,10 @@ frame."
   background-data is reset.")
 
 (defun weechat--reset-relay-read-status (buffer-ptr)
-  (unless (or (version< weechat-version "1.0")
-              (not weechat-sync-buffer-read-status))
+  "Mark the buffer BUFFER-PTR as read in the relay."
+  (when (and weechat-version
+             (not (version< weechat-version "1.0"))
+             weechat-sync-buffer-read-status)
     (weechat-relay-send-command (concat "input " buffer-ptr " /buffer set hotlist -1"))
     (weechat-relay-send-command (concat "input " buffer-ptr " /input set_unread_current_buffer"))))
 
