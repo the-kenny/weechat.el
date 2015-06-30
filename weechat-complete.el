@@ -112,9 +112,7 @@ Copied from `pcomplete-erc-command-name'."
   (pcomplete-here
    (append
     (pcomplete-weechat-commands)
-    (mapcar 'downcase (pcomplete-weechat-commands))
-    (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self)
-    (mapcar 'downcase (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self)))))
+    (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self))))
 
 (defun pcomplete/weechat-mode/WHOIS ()
   (pcomplete-here (pcomplete-weechat-all-nicks)))
