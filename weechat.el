@@ -1690,7 +1690,12 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
       ;; channel we want to monitor
       (let* ((channel-name (cl-some
                             (lambda (ac)
-                              (when (s-contains? channel ac) ac))
+                              ;; NOTE: We use `s-suffix?' as we need
+                              ;; to ignore the server-prefix in
+                              ;; `channel'. `s-contains?' causes
+                              ;; errors if two channels share the same
+                              ;; prefix.
+                              (when (s-suffix? channel ac) ac))
                             available-channels))
              (buffer-ptr (weechat--find-buffer channel-name)))
         ;; Only auto-connect if it there isn't already a buffer monitoring the channel
