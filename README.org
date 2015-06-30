@@ -88,8 +88,11 @@
 
     You can use =weechat-button-list= to simply add your own button types.
 *** Complete
-    This module provides support for nickname and command completion.  It uses
+    This module provides support for nickname and command completion. It uses
     Emacs' =pcomplete= framework and is default loaded.
+    
+    If you want case-insensitive completion, set =completion-ignore-case= to
+    =t=.
 *** Spelling
     This module provides spelling support by using Emacs' =flyspell=.  You can
     customize the dictionary on a per channel/server basis by customizing
