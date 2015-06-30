@@ -1692,7 +1692,7 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
                             (lambda (ac)
                               (when (s-contains? channel ac) ac))
                             available-channels))
-             (buffer-ptr (and (weechat--find-buffer channel-name))))
+             (buffer-ptr (weechat--find-buffer channel-name)))
         ;; Only auto-connect if it there isn't already a buffer monitoring the channel
         (if buffer-ptr
             (unless (weechat--emacs-buffer buffer-ptr)
