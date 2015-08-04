@@ -39,6 +39,14 @@
 (defvar weechat-user-list)
 (defvar weechat-prompt-end-marker)
 
+(defcustom weechat-complete-nick-prefix ""
+  "Prefix to nick completions at the beginning of the prompt.
+One common case is that a messaging service provides an IRC
+server (e.g. Flowdock and Gitter), but the mentions have to be
+prefixed with '@' to be highlighted in the other clients."
+  :type 'string
+  :group 'weechat)
+
 (defcustom weechat-complete-nick-postfix ":"
   "Postfix to nick completions at the beginning of the prompt."
   :type 'string
@@ -112,7 +120,7 @@ Copied from `pcomplete-erc-command-name'."
   (pcomplete-here
    (append
     (pcomplete-weechat-commands)
-    (pcomplete-weechat-nicks weechat-complete-nick-postfix weechat-complete-nick-ignore-self))))
+    (pcomplete-weechat-nicks weechat-complete-nick-prefix weechat-complete-nick-postfix weechat-complete-nick-ignore-self))))
 
 (defun pcomplete/weechat-mode/WHOIS ()
   (pcomplete-here (pcomplete-weechat-all-nicks)))
@@ -127,16 +135,19 @@ Copied from `pcomplete-erc-command-name'."
   "Return a list of user commands."
   '("/NICK" "/JOIN" "/PART" "/WHOIS" "/QUERY")) ;; TODO
 
-(defun pcomplete-weechat-nicks (&optional postfix ignore-self)
+(defun pcomplete-weechat-nicks (&optional prefix postfix ignore-self)
   "Return a list of nicks in the current channel.
+PREFIX is an optional string to prefix to the nickname.
 POSTFIX is an optional string to append to the nickname.
 If IGNORE-SELF is non-nil the users nick is ignored."
   (let ((users weechat-user-list))
     (when ignore-self
       (setq users (delete (weechat-get-local-var "nick") users)))
-    (if (stringp postfix)
-        (mapcar (lambda (nick) (concat nick postfix)) users)
-      users)))
+    (mapcar (lambda (nick) (concat
+                            (when (stringp prefix) prefix)
+                            nick
+                            (when (stringp postfix) postfix)))
+            users)))
 
 (defun pcomplete-weechat-all-nicks ()
   "Return nick list of all weechat buffers."
