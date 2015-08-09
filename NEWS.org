@@ -3,6 +3,8 @@
 ** New Modules
 *** Commands: =weechat-cmd=
     Implement IRC commands (/command) in elisp
+** New Features
+*** Nick prefix support  =weechat-complete-nick-prefix-alist=
 
 * 0.2
 ** Incompatible Changes
