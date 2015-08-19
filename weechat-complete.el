@@ -8,6 +8,7 @@
 ;; Author: Rüdiger Sonderfeld <ruediger@c-plusplus.de>
 ;;         Moritz Ulrich <moritz@tarn-vedra.de>
 ;;         Aristid Breitkreuz <aristidb@gmail.com>
+;;         Martin Yrjölä <martin.yrjola@gmail.com>
 ;; Keywords: irc chat network weechat
 ;; URL: https://github.com/the-kenny/weechat.el
 
@@ -39,19 +40,21 @@
 (defvar weechat-user-list)
 (defvar weechat-prompt-end-marker)
 
-(defcustom weechat-complete-nick-prefix-alist nil
-  "Alist of nick prefixes to use for certain buffers
-Each element looks like (BUFFER-NAME-REGEXP . NICK-PREFIX). If
-BUFFER-NAME-REGEXP matches the current buffer, then NICK-PREFIX
-is appended to each nick in `weechat-user-list'. One common use
-case is that a messaging service provides an IRC server (e.g.
-Flowdock and Gitter), but the mentions have to be prefixed with
-'@' to be highlighted in the other clients."
-  :type '(alist :key-type regexp :value-type string)
+(defcustom weechat-complete-nick-prefix-and-postfix-alist nil
+  "Alist of nick prefixes and postfixes to use for certain
+buffers Each element looks like (BUFFER-NAME-REGEXP
+. (NICK-PREFIX . NICK-POSTFIX). If BUFFER-NAME-REGEXP matches the
+current buffer, then NICK-PREFIX is pushed to the beginning of
+each nick in `weechat-user-list' and NICK-POSTFIX is appended to
+them. One common use case is that a messaging service provides an
+IRC server (e.g. Flowdock and Gitter), but the mentions have to
+be prefixed with '@' to be highlighted in the other clients."
+  :type '(alist :key-type regexp :value-type (cons string string))
   :group 'weechat)
 
 (defcustom weechat-complete-nick-postfix ":"
-  "Postfix to nick completions at the beginning of the prompt."
+  "Postfix to nick completions at the beginning of the prompt.
+Can be overriden by `weechat-complete-nick-prefix-and-postfix-alist'"
   :type 'string
   :group 'weechat)
 
@@ -142,26 +145,32 @@ Copied from `pcomplete-erc-command-name'."
   "Return a list of nicks in the current channel.
 POSTFIX is an optional string to append to the nickname.
 If IGNORE-SELF is non-nil the users nick is ignored."
-  (let ((users weechat-user-list)
-        (prefix (weechat-complete-nick-prefix-for-current-buffer)))
+  (let* ((users weechat-user-list)
+         (prefix-and-postfix
+          (weechat-complete-nick-prefix-and-postfix-for-current-buffer))
+         (nick-prefix (car prefix-and-postfix))
+         (nick-postfix (if prefix-and-postfix
+                      (cdr prefix-and-postfix)
+                    postfix)))
     (when ignore-self
       (setq users (delete (weechat-get-local-var "nick") users)))
     (mapcar (lambda (nick)
               (concat
-               prefix
+               nick-prefix
                nick
-               postfix)) users)))
+               nick-postfix)) users)))
 
-(defun weechat-complete-nick-prefix-for-current-buffer ()
-  "Returns the nick-prefix for the current buffer."
-  (let ((found-nick-prefix nil))
+(defun weechat-complete-nick-prefix-and-postfix-for-current-buffer ()
+  "Returns the nick-prefix-and-postfix for the current buffer.
+The format is (nick-prefix . nick-postfix)."
+  (let ((found-nick-prefix-and-postfix nil))
     (mapc (lambda (element)
             (let ((buffer-name-regexp (car element))
-                  (nick-prefix (cdr element)))
+                  (nick-prefix-and-postfix (cdr element)))
               (when (string-match buffer-name-regexp (buffer-name))
-                (setq found-nick-prefix nick-prefix))))
-          weechat-complete-nick-prefix-alist)
-    found-nick-prefix))
+                (setq found-nick-prefix-and-postfix nick-prefix-and-postfix))))
+          weechat-complete-nick-prefix-and-postfix-alist)
+    found-nick-prefix-and-postfix))
 
 (defun pcomplete-weechat-all-nicks ()
   "Return nick list of all weechat buffers."
