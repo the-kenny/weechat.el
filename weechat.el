@@ -1475,6 +1475,7 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
+    (define-key map (kbd "C-c C-g") 'weechat-get-more-lines)
     (define-key map (kbd "TAB") 'completion-at-point)
     (define-key map (kbd "C-a") 'weechat-bol)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
