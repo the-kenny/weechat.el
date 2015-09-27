@@ -80,6 +80,11 @@ To unload modules, use (unload-feature FEATURE)."
   :type 'integer
   :group 'weechat)
 
+(defcustom weechat-more-lines-amount 10
+  "Number of extra lines `weechat-get-more-lines' will retieve."
+  :type 'integer
+  :group 'weechat)
+
 (defcustom weechat-prompt "[%n] "
   "The Weechat prompt."
   :type 'string
@@ -837,6 +842,7 @@ frame."
 (defvar weechat-server-buffer)
 (defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
+(defvar weechat-lines-received)
 
 ;;; The following functions handle buffer-hash-entries storing the
 ;;; last highlight and the last message. The entries will be cleared
@@ -1209,6 +1215,9 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (line-type (weechat-line-type line-data))
           (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
           (nick (weechat--get-nick-from-line-data line-data)))
+      ;; Handle lines printed to weechat buffers that aren't in weechat-mode
+      (when (boundp 'weechat-lines-received)
+        (setq weechat-lines-received (+ weechat-lines-received 1)))
       (unless invisible
         (setq highlight (= 1 highlight))
         (when (bufferp (weechat--emacs-buffer buffer-ptr))
@@ -1558,6 +1567,7 @@ Default is current buffer."
     (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
     (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
     (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+    (set (make-local-variable 'weechat-lines-received) 0)
 
     ;; Start with empty user list
     (set (make-local-variable 'weechat-user-list) nil)
@@ -1652,6 +1662,18 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (defun weechat-reload-buffer (&optional buffer line-count)
   (interactive (list (current-buffer)
                      current-prefix-arg))
+  (weechat-load-buffer (current-buffer) buffer line-count))
+
+(defun weechat-get-more-lines (&optional buffer line-count)
+  (interactive (list (current-buffer)
+                     current-prefix-arg))
+  (weechat-load-buffer (current-buffer)
+                       buffer
+                       (max (+ weechat-lines-received
+                               (or line-count weechat-more-lines-amount))
+                            0)))
+
+(defun weechat-load-buffer (current-buffer &optional buffer line-count)
   (if (not (weechat-connected-p))
       (error "Can't reload buffer. Not connected.")
    (with-current-buffer (or buffer (current-buffer))
