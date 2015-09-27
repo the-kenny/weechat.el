@@ -1500,6 +1500,7 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
      :active (< (point) weechat-prompt-start-marker)]
     "-"
     ["Reload Buffer" weechat-reload-buffer t]
+    ["Get More Lines" weechat-get-more-lines t]
     ["Close Buffer" kill-buffer t]
     ["Switch Buffer" weechat-switch-buffer t]
     ["Monitor Buffer" weechat-monitor-buffer t]
