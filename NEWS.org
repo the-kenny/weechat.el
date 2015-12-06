@@ -3,7 +3,7 @@
 ** New Modules
 *** Commands: =weechat-cmd=
     Implement IRC commands (/command) in elisp
-
+*** Read Marker: =weechat-read-marker=
 * 0.2
 ** Incompatible Changes
 *** Notification moved to modules
