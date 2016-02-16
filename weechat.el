@@ -351,6 +351,7 @@ Possible choices would be `ido-completing-read' or
 `completing-read'."
   :type '(choice
           (const :tag "Ido" weechat--try-ido)
+          (const :tag "Ivy" weechat--try-ivy)
           (const :tag "Default" completing-read)
           (function :tag "Other"))
   :group 'weechat)
@@ -1596,6 +1597,13 @@ Default is current buffer."
   "Complete with ido if available and `completing-read' otherwise."
   (apply (or (and (featurep 'ido)
                   (symbol-function 'ido-completing-read))
+             #'completing-read)
+         args))
+
+(defun weechat--try-ivy (&rest args)
+  "Complete with ivy if available and `completing-read' otherwise."
+  (apply (or (and (featurep 'ivy)
+                  (symbol-function 'ivy-read))
              #'completing-read)
          args))
 
