@@ -5,7 +5,7 @@
     Implement IRC commands (/command) in elisp
 ** New Features
 *** Nick prefix support  =weechat-complete-nick-prefix-alist=
-
+*** Read Marker: =weechat-read-marker=
 * 0.2
 ** Incompatible Changes
 *** Notification moved to modules

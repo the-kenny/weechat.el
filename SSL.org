@@ -46,3 +46,7 @@
    Now you should be able to connect via SSL on the port configured
    earlier.  If you get any errors, re-check the location of your
    =relay.cert= file.
+   The password is the password you set in weechat using:
+   #+BEGIN_SRC
+     /set relay.network.password "your-secret-password"
+   #+END_SRC

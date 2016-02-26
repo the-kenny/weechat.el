@@ -80,6 +80,11 @@ To unload modules, use (unload-feature FEATURE)."
   :type 'integer
   :group 'weechat)
 
+(defcustom weechat-more-lines-amount 10
+  "Number of extra lines `weechat-get-more-lines' will retieve."
+  :type 'integer
+  :group 'weechat)
+
 (defcustom weechat-prompt "[%n] "
   "The Weechat prompt."
   :type 'string
@@ -346,6 +351,7 @@ Possible choices would be `ido-completing-read' or
 `completing-read'."
   :type '(choice
           (const :tag "Ido" weechat--try-ido)
+          (const :tag "Ivy" weechat--try-ivy)
           (const :tag "Default" completing-read)
           (function :tag "Other"))
   :group 'weechat)
@@ -837,6 +843,7 @@ frame."
 (defvar weechat-server-buffer)
 (defvar weechat-buffer-number)
 (defvar weechat-local-prompt)
+(defvar weechat-lines-received)
 
 ;;; The following functions handle buffer-hash-entries storing the
 ;;; last highlight and the last message. The entries will be cleared
@@ -1197,90 +1204,85 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
           (nick-match (s-match "\x19\F[[:digit:]][[:digit:]]\\([^\x19]+\\)$" prefix)))
      (or (cadr nick-match) prefix ""))))
 
-(defun weechat-print-line-data (line-data)
-  (let* ((buffer-ptr (assoc-default "buffer" line-data))
-         (buffer (weechat--emacs-buffer buffer-ptr)))
-    (unless (weechat-buffer-hash buffer-ptr)
-      (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
-    (let ((prefix (assoc-default "prefix" line-data))
-          (message (assoc-default "message" line-data))
-          (date (assoc-default "date" line-data))
-          (highlight (assoc-default "highlight" line-data nil 0))
-          (line-type (weechat-line-type line-data))
-          (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
-          (nick (weechat--get-nick-from-line-data line-data)))
-      (unless invisible
-        (setq highlight (= 1 highlight))
-        (when (bufferp (weechat--emacs-buffer buffer-ptr))
-          (with-current-buffer buffer
-            (when weechat-strip-formatting
-              (setq prefix (weechat-strip-formatting prefix))
-              (setq message (weechat-strip-formatting message)))
+(defun weechat-print-line-data (buffer-ptr line-data)
+  (unless (weechat-buffer-hash buffer-ptr)
+    (error "Received new line for '%s' but the buffer doesn't exist in local cache" buffer-ptr))
+  (let ((prefix (assoc-default "prefix" line-data))
+        (message (assoc-default "message" line-data))
+        (date (assoc-default "date" line-data))
+        (highlight (assoc-default "highlight" line-data nil 0))
+        (line-type (weechat-line-type line-data))
+        (invisible (not (= 1 (assoc-default "displayed" line-data nil 0))))
+        (nick (weechat--get-nick-from-line-data line-data)))
+    ;; Handle lines printed to weechat buffers that aren't in weechat-mode
+    (when (boundp 'weechat-lines-received)
+      (setq weechat-lines-received (+ weechat-lines-received 1)))
+    (unless invisible
+      (setq highlight (= 1 highlight))
+      (when (bufferp (weechat--emacs-buffer buffer-ptr))
+        (when weechat-strip-formatting
+          (setq prefix (weechat-strip-formatting prefix))
+          (setq message (weechat-strip-formatting message)))
 
-            ;; Nicklist handling.  To be replaced with real nicklist
-            ;; updates when WeeChat starts sending nicklist deltas
-            (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
-                    (eq line-type :irc/join))
-                (weechat--user-list-add nick)
-              (cl-case line-type
-                (:irc/nick
-                 (let ((from-nick (weechat--get-nick-from-tag line-data "irc_nick1_"))
-                       (to-nick (weechat--get-nick-from-tag line-data "irc_nick2_")))
-                   (when (and from-nick to-nick)
-                     (weechat--user-list-remove from-nick)
-                     (weechat--user-list-add to-nick))))
-                ((:irc/part :irc/quit) (weechat--user-list-remove nick)))))
-
-          ;; Print the line
+        ;; Nicklist handling.  To be replaced with real nicklist
+        ;; updates when WeeChat starts sending nicklist deltas
+        (if (or (and weechat-complete-order-nickname (eq line-type :irc/privmsg))
+                (eq line-type :irc/join))
+            (weechat--user-list-add nick)
           (cl-case line-type
-            (:irc/action
-             (let ((weechat-text-column 0))
-               (weechat-print-line buffer-ptr
-                                   :text (concat prefix message)
-                                   :nick nick
-                                   :line-type line-type
-                                   :date date
-                                   :highlight highlight)))
-            (t
+            (:irc/nick
+             (let ((from-nick (weechat--get-nick-from-tag line-data "irc_nick1_"))
+                   (to-nick (weechat--get-nick-from-tag line-data "irc_nick2_")))
+               (when (and from-nick to-nick)
+                 (weechat--user-list-remove from-nick)
+                 (weechat--user-list-add to-nick))))
+            ((:irc/part :irc/quit) (weechat--user-list-remove nick))))
+
+        ;; Print the line
+        (cl-case line-type
+          (:irc/action
+           (let ((weechat-text-column 0))
              (weechat-print-line buffer-ptr
-                                 :prefix prefix
-                                 :text message
+                                 :text (concat prefix message)
                                  :nick nick
-                                 :date date
                                  :line-type line-type
-                                 :highlight highlight
-                                 :invisible invisible))))
+                                 :date date
+                                 :highlight highlight)))
+          (t
+           (weechat-print-line buffer-ptr
+                               :prefix prefix
+                               :text message
+                               :nick nick
+                               :date date
+                               :line-type line-type
+                               :highlight highlight
+                               :invisible invisible))))
 
-        (weechat-update-buffer-modified buffer-ptr line-data)
+      (weechat-update-buffer-modified buffer-ptr line-data)
 
-        ;; TODO: Debug highlight for monitored and un-monitored channels
-        ;; (Maybe) notify the user
-        (with-current-buffer (or (and (buffer-live-p buffer) buffer)
-                                 (get-buffer weechat-relay-log-buffer-name)
-                                 (current-buffer))
-          (let* ((buftype (weechat-buffer-type buffer-ptr))
-                 (highlight (cl-case buftype
-                              (:private t) ;always highlight queries
-                              (:server nil) ;never highlight server buffers
-                              (t highlight)))
-                 (type (cl-case buftype
-                         (:private (unless (string=
-                                            (weechat-get-local-var
-                                             "nick"
-                                             buffer-ptr)
-                                            nick)
-                                     :query))
-                         (:channel :highlight))))
-            (when (and (not weechat-inhibit-notifications)
-                       highlight
-                       type)
-              (weechat-notify type
-                              :sender nick
-                              :text message
-                              :date date
-                              :buffer-ptr buffer-ptr)))
-
-          (run-hook-with-args 'weechat-message-post-receive-functions buffer-ptr))))))
+      ;; TODO: Debug highlight for monitored and un-monitored channels
+      ;; (Maybe) notify the user
+      (let* ((buftype (weechat-buffer-type buffer-ptr))
+             (highlight (cl-case buftype
+                          (:private t) ;always highlight queries
+                          (:server nil) ;never highlight server buffers
+                          (t highlight)))
+             (type (cl-case buftype
+                     (:private (unless (string=
+                                        (weechat-get-local-var
+                                         "nick"
+                                         buffer-ptr)
+                                        nick)
+                                 :query))
+                     (:channel :highlight))))
+        (when (and (not weechat-inhibit-notifications)
+                   highlight
+                   type)
+          (weechat-notify type
+                          :sender nick
+                          :text message
+                          :date date
+                          :buffer-ptr buffer-ptr))))))
 
 (defun weechat-add-initial-lines (response)
   (let* ((lines-hdata (car response))
@@ -1291,14 +1293,14 @@ If NICK-TAG is nil then \"nick_\" as prefix else use NICK-TAG."
                       hdata-values
                       (car)
                       (weechat--hdata-value-pointer-path)
-                      (car))))
+                      (car)))
+            (weechat-inhibit-notifications t))
         ;; Need to get buffer-ptr from hdata pointer list
-        (with-current-buffer (weechat--emacs-buffer buf-ptr)
-          (save-excursion
-            (let ((weechat-inhibit-notifications t))
-              (dolist (line-hdata (weechat--hdata-values lines-hdata))
-                (weechat-print-line-data (weechat--hdata-value-alist line-hdata))))
-            (weechat-recenter-bottom-maybe nil 'force)))))))
+        (let* ((lines (weechat--hdata-values lines-hdata))
+               (buffer-ptr (assoc-default "buffer" (first lines))))
+          (with-current-buffer (weechat--emacs-buffer buffer-ptr)
+            (dolist (line-hdata lines)
+              (weechat-print-line-data buffer-ptr (weechat--hdata-value-alist line-hdata)))))))))
 
 (defvar weechat-initial-lines-buffer-properties
   '("message" "highlight" "prefix" "date" "buffer" "displayed" "tags_array"))
@@ -1466,6 +1468,7 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
     (define-key map (kbd "M-p") 'weechat-previous-input)
     (define-key map (kbd "M-n") 'weechat-next-input)
     (define-key map (kbd "C-c C-r") 'weechat-reload-buffer)
+    (define-key map (kbd "C-c C-g") 'weechat-get-more-lines)
     (define-key map (kbd "TAB") 'completion-at-point)
     (define-key map (kbd "C-a") 'weechat-bol)
     (define-key map (kbd "C-c n l") 'weechat-narrow-to-line)
@@ -1490,6 +1493,7 @@ If prefix argument is given (\\[universal-argument]) the prompt is not skipped."
      :active (< (point) weechat-prompt-start-marker)]
     "-"
     ["Reload Buffer" weechat-reload-buffer t]
+    ["Get More Lines" weechat-get-more-lines t]
     ["Close Buffer" kill-buffer t]
     ["Switch Buffer" weechat-switch-buffer t]
     ["Monitor Buffer" weechat-monitor-buffer t]
@@ -1558,6 +1562,7 @@ Default is current buffer."
     (set (make-local-variable 'weechat-server-buffer) (process-buffer process))
     (set (make-local-variable 'weechat-buffer-number) (gethash "number" buffer-hash))
     (set (make-local-variable 'weechat-topic) (gethash "title" buffer-hash))
+    (set (make-local-variable 'weechat-lines-received) 0)
 
     ;; Start with empty user list
     (set (make-local-variable 'weechat-user-list) nil)
@@ -1592,6 +1597,13 @@ Default is current buffer."
   "Complete with ido if available and `completing-read' otherwise."
   (apply (or (and (featurep 'ido)
                   (symbol-function 'ido-completing-read))
+             #'completing-read)
+         args))
+
+(defun weechat--try-ivy (&rest args)
+  "Complete with ivy if available and `completing-read' otherwise."
+  (apply (or (and (featurep 'ivy)
+                  (symbol-function 'ivy-read))
              #'completing-read)
          args))
 
@@ -1652,6 +1664,18 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 (defun weechat-reload-buffer (&optional buffer line-count)
   (interactive (list (current-buffer)
                      current-prefix-arg))
+  (weechat-load-buffer (current-buffer) buffer line-count))
+
+(defun weechat-get-more-lines (&optional buffer line-count)
+  (interactive (list (current-buffer)
+                     current-prefix-arg))
+  (weechat-load-buffer (current-buffer)
+                       buffer
+                       (max (+ weechat-lines-received
+                               (or line-count weechat-more-lines-amount))
+                            0)))
+
+(defun weechat-load-buffer (current-buffer &optional buffer line-count)
   (if (not (weechat-connected-p))
       (error "Can't reload buffer. Not connected.")
    (with-current-buffer (or buffer (current-buffer))
@@ -1712,8 +1736,10 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
 
 (defun weechat--handle-buffer-line-added (response)
   (let* ((hdata (car response))
-         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata)))))
-    (weechat-print-line-data line-data)))
+         (line-data (weechat--hdata-value-alist (car (weechat--hdata-values hdata))))
+         (buffer-ptr (assoc-default "buffer" line-data)))
+    (with-current-buffer (weechat--emacs-buffer buffer-ptr)
+      (weechat-print-line-data buffer-ptr line-data))))
 
 (weechat-relay-add-id-callback "_buffer_line_added" #'weechat--handle-buffer-line-added nil 'force)
 

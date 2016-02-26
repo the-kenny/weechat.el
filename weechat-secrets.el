@@ -68,7 +68,7 @@ A collection named after `weechat-secrets-collection' is created if required."
     (setq password (read-passwd "Password: " 'confirm)))
   (secrets-create-item weechat-secrets-collection
                        (weechat-secrets--to-item host port) password
-                       :host host :port port)
+                       :host host :port (number-to-string port))
   (clear-string password))
 
 (defun weechat-secrets-delete (host port &optional allow-empty-collection)

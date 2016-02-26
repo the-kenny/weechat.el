@@ -482,11 +482,11 @@ CALLBACK takes one argument (the response data) which is a list."
                         (/ weechat-relay-ping-idle-seconds 2)
                         (lambda ()
                           (if (weechat-relay-connected-p)
-                           (when (>= (float-time (time-since weechat-relay-last-receive))
-                                     weechat-relay-ping-idle-seconds)
-                             (weechat--relay-send-ping))
-                           ;; Stop the ping timer if we aren't connected
-                           (weechat--relay-stop-ping-timer))))))
+                              (when (>= (float-time (time-since weechat-relay-last-receive))
+                                        weechat-relay-ping-idle-seconds)
+                                (weechat--relay-send-ping))
+                            ;; Stop the ping timer if we aren't connected
+                            (weechat--relay-stop-ping-timer))))))
 
 (defun weechat--relay-process-filter (proc string)
   (with-current-buffer (process-buffer proc)
@@ -496,20 +496,20 @@ CALLBACK takes one argument (the response data) which is a list."
     (let ((inhibit-read-only t))
       (insert (string-make-unibyte string)))
     (let ((inhibit-redisplay t))
-     (while (weechat--message-available-p)
-       (let* ((data (weechat--relay-parse-new-message))
-              (id (weechat--message-id data)))
-         (setq weechat-relay-last-receive (current-time))
-         ;; If buffer is available, log message.
-         (when (eq weechat-relay-log-level :debug)
-           (weechat-relay-log (pp-to-string data) :debug))
-         ;; Call `weechat-relay-message-function'
-         (when (functionp weechat-relay-message-function)
-           (funcall weechat-relay-message-function data))
-         ;; Call callback from `weechat--relay-id-callback-hash'
-         (if (functionp (weechat-relay-get-id-callback id))
-             (funcall (weechat-relay-get-id-callback id)
-                      (weechat--message-data data))))))))
+      (while (weechat--message-available-p)
+        (let* ((data (weechat--relay-parse-new-message))
+               (id (weechat--message-id data)))
+          (setq weechat-relay-last-receive (current-time))
+          ;; If buffer is available, log message.
+          (when (eq weechat-relay-log-level :debug)
+            (weechat-relay-log (pp-to-string data) :debug))
+          ;; Call `weechat-relay-message-function'
+          (when (functionp weechat-relay-message-function)
+            (funcall weechat-relay-message-function data))
+          ;; Call callback from `weechat--relay-id-callback-hash'
+          (if (functionp (weechat-relay-get-id-callback id))
+              (funcall (weechat-relay-get-id-callback id)
+                       (weechat--message-data data))))))))
 
 (defvar weechat--relay-connected-callback)
 
