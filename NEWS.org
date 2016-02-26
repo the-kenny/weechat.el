@@ -1,5 +1,17 @@
 # -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
 * 0.3 (In Progress)
+** New Features
+*** Nick prefix support  =weechat-complete-nick-prefix=
+    If you need to add "@" before nicks, so that they see the mention you can
+    do it for certain channels with:
+
+    #+begin_src emacs-lisp
+    (add-hook 'weechat-mode-hook
+              (lambda ()
+                (when (equal (buffer-name) "gitter.#syl20bnr/spacemacs")
+                  (setq-local weechat-complete-nick-prefix "@"))))
+    #+end_src
+
 ** New Modules
 *** Commands: =weechat-cmd=
     Implement IRC commands (/command) in elisp
