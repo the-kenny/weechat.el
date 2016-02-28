@@ -6,6 +6,7 @@
 ** New Features
 *** Nick prefix support  =weechat-complete-nick-prefix-alist=
 *** Read Marker: =weechat-read-marker=
+*** Ivy Completion Support
 * 0.2
 ** Incompatible Changes
 *** Notification moved to modules
