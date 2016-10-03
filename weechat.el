@@ -1694,7 +1694,9 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
        (weechat-monitor-buffer weechat-buffer-ptr)))))
 
 (defun weechat-re-monitor-buffers ()
-  (when weechat-auto-reconnect-buffers
+  (interactive)
+  (when (or weechat-auto-reconnect-buffers
+            (interactive-p))
     (maphash (lambda (_ hash)
                (let ((buffer (and (gethash :emacs/buffer hash)
                                   (get-buffer (gethash :emacs/buffer hash)))))
@@ -1738,6 +1740,11 @@ called with prefix (\\[universal-argument]), otherwise only monitored buffers."
               (weechat-relay-log (format "Auto-monitoring buffer %S" channel-name) :info)
               (weechat-monitor-buffer buffer-ptr nil))
           (weechat-warn "Couldn't monitor channel '%s'.  Not found." channel))))))
+
+(defun weechat-monitor-all-buffers ()
+  (interactive)
+  (let ((weechat-auto-monitor-buffers  t))
+    (weechat-auto-monitor)))
 
 
 (add-hook 'weechat-connect-hook 'weechat-auto-monitor 'append)
