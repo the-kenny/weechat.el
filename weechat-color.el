@@ -117,11 +117,11 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                          (const :tag "Color" color)))
   :group 'weechat)
 
-(defvar weechat-color-attributes-alist '((?* . (:weight  bold))    ; bold
-                                         (?! . (:inverse-video t)) ; reverse??
-                                         (?/ . (:slant  italic))   ; italic
-                                         (?_ . (:underline t))     ; underline
-                                         (?| . keep))              ; keep
+(defvar weechat-color-attributes-alist '((?* . (:weight bold)) (?\1 . (:weight bold))         ; bold
+                                         (?! . (:inverse-video t)) (?\2 . (:inverse-video t)) ; reverse??
+                                         (?/ . (:slant italic)) (?\3 . (:slant italic))       ; italic
+                                         (?_ . (:underline t)) (?\4 . (:underline t))         ; underline
+                                         (?| . keep)))                                        ; keep
   "Map color attribute specifiers to Emacs face property.")
 
 (defun weechat--match-color-code (what str i)
