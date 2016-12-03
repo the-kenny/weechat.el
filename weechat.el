@@ -1076,10 +1076,12 @@ text (technically, this shouldn't happen)."
             (unless (s-blank? (weechat-handle-color-codes prefix))
               (let ((colorized-prefix (weechat-handle-color-codes prefix)))
                 (insert (if (and (integerp weechat-max-nick-length)
-                                 (> weechat-max-nick-length 0))
-                            (substring colorized-prefix 0
-                                       (min (length colorized-prefix)
-                                            weechat-max-nick-length))
+                                 (> weechat-max-nick-length 0)
+                                 (> (length colorized-prefix) weechat-max-nick-length))
+                            (store-substring
+                             (substring colorized-prefix 0 weechat-max-nick-length)
+                             (1- weechat-max-nick-length)
+                             ?\x2026)
                           colorized-prefix)))
               (when (or (eq line-type :irc/privmsg)
                         (not line-type))
