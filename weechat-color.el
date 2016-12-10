@@ -121,7 +121,7 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                                          (?! . (:inverse-video t)) (?\2 . (:inverse-video t)) ; reverse??
                                          (?/ . (:slant italic)) (?\3 . (:slant italic))       ; italic
                                          (?_ . (:underline t)) (?\4 . (:underline t))         ; underline
-                                         (?| . keep)))                                        ; keep
+                                         (?| . keep))                                         ; keep
   "Map color attribute specifiers to Emacs face property.")
 
 
