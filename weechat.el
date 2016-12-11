@@ -583,9 +583,9 @@ Returns either a string or a function.  See Info node `(auth) Top' for details."
     (weechat-message "Using auth-source to retrieve weechat relay password")
     (plist-get
      (car (auth-source-search
-           :max 1
            :host host
            :port port
+           :max 1
            :require '(:secret)))
      :secret)))
 
