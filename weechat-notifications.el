@@ -61,21 +61,21 @@ Either nil, a file-name, or a function which is called with (SENDER BUFFER-PTR).
   (when (boundp 'notifications-application-icon)
     notifications-application-icon))
 
-(defcustom weechat-notification-libnotify-timeout 5000
+(defcustom weechat-notifications-libnotify-timeout 5000
   "Timeout for the libnotify notification (millseconds)"
   :group 'weechat-notifications)
 
-(defcustom weechat-notification-default-handler #'weechat-notifications-dbus-handler
+(defcustom weechat-notifications-default-handler #'weechat-notifications-dbus-handler
   "The default notifications handler to be used as a hook to
 weechat-notification-handler-functions. The two possible values are:
 - #'weechat-nofifications-dbus-handler
 - #'weechat-notifications-libnotify-handler"
-  :type '(choice (const :tag "dbus" #'weechat-notifications-dbus-handler)
-				 (const :tag "libnotify" #'weechat-notifications-libnotify-handler)
-				 (function :tag "Function"))
+  :type '(choice (const :tag "libnotify" #'weechat-notifications-libnotify-handler)
+				 (const :tag "dbus" #'weechat-notifications-dbus-handler)
+				 (function :tag "Notification Handler function"))
   :group 'weechat-notifications)
 
-(defcustom weechat-notification-libnotify-urgency "low"
+(defcustom weechat-notifications-libnotify-urgency "low"
   "Urgency for the notification send via libnotify
 Values can be:
 - low
@@ -87,9 +87,9 @@ Values can be:
   "Send desktop notifications using libnotify."
   (call-process "notify-send" nil 0 nil
                 title (if (eq body nil) "" body)
-                "-t" (number-to-string weechat-notification-libnotify-timeout)
+                "-t" (number-to-string weechat-notifications-libnotify-timeout)
                 "-i" "emacs"
-                "-u" weechat-notification-libnotify-urgency
+                "-u" weechat-notifications-libnotify-urgency
                 "-c" "emacs.message"))
 
 (defvar weechat--notifications-id-to-msg nil
@@ -147,7 +147,7 @@ Supported actions:
    (if (eq text nil) nil (xml-escape-string text))))
 
 (add-hook 'weechat-notification-handler-functions
-          weechat-notification-default-handler)
+          #'weechat-notifications-default-handler)
 
 (provide 'weechat-notifications)
 
