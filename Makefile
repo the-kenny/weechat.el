@@ -34,7 +34,7 @@ all: package
 	$(info $(NAME) Version: $(VERSION))
 
 test: $(TESTS)
-	@$(BATCH) -l ert.el $(foreach file,$^,-l $(file)) -f ert-run-tests-batch-and-exit
+	@$(BATCH) -l ert $(foreach file,$^,-l $(file)) -f ert-run-tests-batch-and-exit
 
 clean:
 	$(info Cleaning up)
@@ -47,7 +47,7 @@ distclean: clean
 
 README.html: README.org
 	$(info Creating documentation: $@)
-	@$(BATCH) -l org.el --visit=$< -f org-html-export-to-html
+	@$(BATCH) -l org --visit=$< -f org-html-export-to-html
 
 doc: README.html
 
