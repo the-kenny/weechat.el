@@ -6,8 +6,8 @@
   weechat.el requires Emacs 24 and [[https://github.com/magnars/s.el][s.el]].  For Emacs versions below 24.3
   you also need [[http://elpa.gnu.org/packages/cl-lib.html][cl-lib]].  WeeChat version 0.4.0 or newer is recommended!
 
-  You can install weechat.el via package.el ([[http://marmalade-repo.org/][marmalade]] (stable releases) or
-  [[http://melpa.milkbox.net/#installing][melpa]] (development snapshot) required):
+  You can install weechat.el via package.el ([[https://stable.melpa.org/][melpa-stable]] (stable releases) or
+  [[http://melpa.milkbox.net/#installing][melpa]] (development snapshot)):
 
   : M-x package-install RET weechat RET
 
