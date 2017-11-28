@@ -529,7 +529,8 @@ CALLBACK takes one argument (the response data) which is a list."
                         :host host
                         :service service
                         :coding 'binary
-                        :keepalive t))
+                        :keepalive t
+                        :noquery t))
 
 (defun weechat--relay-open-gnutls-stream (name buffer host service)
   "Just like `open-gnutls-stream' with added validation."
