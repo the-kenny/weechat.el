@@ -54,7 +54,7 @@ E.g., for Wikipedia links starting with File:.  They do not link directly to the
 
 (defcustom weechat-image-display-func #'weechat-image-insert-inline
   "Function to call to insert image.
-The Function should accept the following paramter (URL IMAGE BUFFER MARKER)."
+The Function should accept the following parameter (URL IMAGE BUFFER MARKER)."
   :type '(choice (const :tag "Inline" weechat-image-insert-inline)
                  (const :tag "Other Buffer" weechat-image-insert-other-buffer)
                  (function :tag "Call function"))
