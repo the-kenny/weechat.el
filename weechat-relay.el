@@ -532,18 +532,17 @@ CALLBACK takes one argument (the response data) which is a list."
                         :keepalive t
                         :noquery t))
 
-(defun weechat--relay-open-gnutls-stream (name buffer host service)
+(defun weechat--relay-open-gnutls-stream (name buffer host service &optional nowait)
   "Just like `open-gnutls-stream' with added validation."
   (require 'gnutls)
   (gnutls-negotiate
    :process (weechat--relay-open-socket name buffer host service)
    :type 'gnutls-x509pki
    :hostname host
-   :verify-error weechat-relay-ssl-check-signatures
-   :verify-hostname-error weechat-relay-ssl-check-signatures))
+   :verify-error weechat-relay-ssl-check-signatures))
 
 (defadvice open-gnutls-stream (around weechat-verifying
-                                      (name buffer host service))
+                                      (name buffer host service &optional nowait))
   (setq ad-return-value
         (weechat--relay-open-gnutls-stream name buffer host service)))
 (ad-activate 'open-gnutls-stream)
