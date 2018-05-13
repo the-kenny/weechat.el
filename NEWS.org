@@ -1,5 +1,15 @@
 # -*- mode:org; mode:auto-fill; fill-column:80; coding:utf-8; -*-
-* 0.3 (In Progress)
+* 0.5 (in Progress)
+** Incompatible Changes
+*** Removal of `weechat-relay-ssl-check-signatures`
+    Previous versions used to advice `gnutls` functions to conditionally enable
+    hostname checking for tls connections. These advices were unstable and could
+    break easily.
+
+    If you want to keep this feature, you can revert commit bcf714e locally.
+* 0.4
+  Changelog is missing
+* 0.3
 ** New Modules
 *** Commands: =weechat-cmd=
     Implement IRC commands (/command) in elisp
