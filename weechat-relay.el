@@ -64,14 +64,6 @@ to the relay server."
   :type 'hook
   :group 'weechat-relay)
 
-(defcustom weechat-relay-ssl-check-signatures t
-  "Wether weechat-relay should check ssl certificate signatures.
-
-A value of nil will have strong security implications and enables
-man-in-the-middle attacks on your connection."
-  :type 'boolean
-  :group 'weechat-relay)
-
 (defcustom weechat-relay-ping-idle-seconds 60
   "Idle time in seconds after weechat.el will ping the server."
   :type '(choice integer
@@ -532,21 +524,6 @@ CALLBACK takes one argument (the response data) which is a list."
                         :keepalive t
                         :noquery t))
 
-(defun weechat--relay-open-gnutls-stream (name buffer host service &optional nowait)
-  "Just like `open-gnutls-stream' with added validation."
-  (require 'gnutls)
-  (gnutls-negotiate
-   :process (weechat--relay-open-socket name buffer host service)
-   :type 'gnutls-x509pki
-   :hostname host
-   :verify-error weechat-relay-ssl-check-signatures))
-
-(defadvice open-gnutls-stream (around weechat-verifying
-                                      (name buffer host service &optional nowait))
-  (setq ad-return-value
-        (weechat--relay-open-gnutls-stream name buffer host service)))
-(ad-activate 'open-gnutls-stream)
-
 (defun weechat--relay-plain-socket (bname host port)
   (weechat-relay-log (format "PLAIN %s:%d" host port) :info)
   (weechat--relay-open-socket "weechat-relay" bname host port))
@@ -554,16 +531,12 @@ CALLBACK takes one argument (the response data) which is a list."
 (defun weechat--relay-tls-socket (bname host port)
   (weechat-relay-log (format "TLS %s:%d" host port) :info)
   (require 'gnutls)
-  ;; Advice `open-gnutls-stream' to verify signatures
-  (ad-enable-advice 'open-gnutls-stream 'around 'weechat-verifying)
-  (unwind-protect
-      (open-network-stream "weechat-relay-tls"
-                           bname
-                           host
-                           port
-                           :type 'tls
-                           :coding 'binary)
-    (ad-disable-advice 'open-gnutls-stream 'around 'weechat-verifying)))
+  (open-network-stream "weechat-relay-tls"
+                       bname
+                       host
+                       port
+                       :type 'tls
+                       :coding 'binary))
 
 (defun weechat--relay-from-command (cmdspec)
   (lambda (bname host port)
