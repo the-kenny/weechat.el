@@ -319,21 +319,21 @@ See URL `http://www.weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_
                          (1+ i)))))
             ((= next ?*) ;; (A)STD | (A)EXT | (A)STD ?, (A)STD | ...
              (cl-multiple-value-setq (i face) (weechat--color-handle-F str i old-face))
-             (if (= (aref str i) ?,)
-                 (let* ((i (1+ i))
-                        (match-data (weechat--match-color-code 'std str i)))
+             (when (= (aref str i) ?,)
+               (setq i (1+ i))
+               (let ((match-data (weechat--match-color-code 'std str i)))
+                 (if match-data
+                     (setq face (append (list (list :background (nth (cl-third match-data)
+                                                                     weechat-color-list)))
+                                        face))
+                   (setq match-data (weechat--match-color-code 'ext str i))
                    (if match-data
-                       (setq face (append (list (list :background (nth (cl-third match-data)
-                                                                       weechat-color-list)))
-                                          face))
-                     (setq match-data (weechat--match-color-code 'ext str i))
-                     (if match-data
-                         t ;; TODO ext
-                       (weechat-relay-log (format "Broken color code (in ?* '%s' %s)" str i)
-                                          :warn)))
-                   (setq i (if match-data
-                               (cl-second match-data)
-                             (1+ i))))))
+                       t ;; TODO ext
+                     (weechat-relay-log (format "Broken color code (in ?* '%s' %s)" str i)
+                                        :warn)))
+                 (setq i (if match-data
+                             (cl-second match-data)
+                           (1+ i))))))
             ((= next ?b) 'b) ;; ignore for now
             ((= next ?\x1C)  ;; Clear color, leave attributes
              (setq face (weechat--color-keep-attributes old-face))))))
