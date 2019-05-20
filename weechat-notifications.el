@@ -61,6 +61,37 @@ Either nil, a file-name, or a function which is called with (SENDER BUFFER-PTR).
   (when (boundp 'notifications-application-icon)
     notifications-application-icon))
 
+(defcustom weechat-notifications-libnotify-timeout 5000
+  "Timeout for the libnotify notification (millseconds)"
+  :group 'weechat-notifications)
+
+(defcustom weechat-notifications-default-handler #'weechat-notifications-dbus-handler
+  "The default notifications handler to be used as a hook to
+weechat-notification-handler-functions. The two possible values are:
+- #'weechat-nofifications-dbus-handler
+- #'weechat-notifications-libnotify-handler"
+  :type '(choice (const :tag "libnotify" #'weechat-notifications-libnotify-handler)
+				 (const :tag "dbus" #'weechat-notifications-dbus-handler)
+				 (function :tag "Notification Handler function"))
+  :group 'weechat-notifications)
+
+(defcustom weechat-notifications-libnotify-urgency "low"
+  "Urgency for the notification send via libnotify
+Values can be:
+- low
+- normal
+- critical"
+  :group 'weechat-notifications)
+
+(defun notify-via-libnotify (title &optional body)
+  "Send desktop notifications using libnotify."
+  (call-process "notify-send" nil 0 nil
+                title (if (eq body nil) "" body)
+                "-t" (number-to-string weechat-notifications-libnotify-timeout)
+                "-i" "emacs"
+                "-u" weechat-notifications-libnotify-urgency
+                "-c" "emacs.message"))
+
 (defvar weechat--notifications-id-to-msg nil
   "Map notification ids to buffer-ptrs.")
 
@@ -75,22 +106,20 @@ Supported actions:
       (when buffer-ptr
         (weechat-switch-buffer buffer-ptr)))))
 
-(defun weechat-notifications-handler (type &optional sender text _date buffer-ptr)
+(defun weechat-notifications-get-title (type &optional sender)
+  (cl-case type
+    (:highlight
+     (concat "Weechat.el: Message from <" sender ">"))
+    (:query
+     (concat "Weechat.el: Query from <" sender ">"))
+    (:disconnect "Disconnected from WeeChat")
+    (t " Weechat.el Alert")))
+
+(defun weechat-notifications-dbus-handler (type &optional sender text _date buffer-ptr)
   "Notification handler using notifications.el."
   (let ((notifications-id
          (notifications-notify
-          :title (xml-escape-string
-                  (or (cl-case type
-                        (:highlight
-                         (concat "Weechat.el: Message from <"
-                                 (weechat-strip-formatting sender)
-                                 ">"))
-                        (:query
-                         (concat "Weechat.el: Query from <"
-                                 (weechat-strip-formatting sender)
-                                 ">"))
-                        (:disconnect "Disconnected from WeeChat"))
-                      ""))
+          :title (weechat-notifications-get-title type (weechat-strip-formatting sender))
           :body (when text (xml-escape-string text))
           :category "im.received"
           :actions '("view" "View")
@@ -111,8 +140,14 @@ Supported actions:
             (append (list (cons notifications-id buffer-ptr))
                     weechat--notifications-id-to-msg)))))
 
+(defun weechat-notifications-libnotify-handler (type &optional sender text _date buffer-ptr)
+  "Notification handler using libnotify."
+  (notify-via-libnotify
+   (weechat-notifications-get-title type sender)
+   (if (eq text nil) nil (xml-escape-string text))))
+
 (add-hook 'weechat-notification-handler-functions
-          #'weechat-notifications-handler)
+          #'weechat-notifications-default-handler)
 
 (provide 'weechat-notifications)
 

@@ -117,6 +117,10 @@
      You can customize =weechat-notifications-sound= to play a sound on
      notification.  Setting =weechat-notifications-icon= allows to change the
      notification icon.
+
+	=weechat-notifications= can also send notifications using [[https://wiki.ubuntu.com/NotifyOSD][notify-osd]]. To
+	enable sending notifications via notify-osd instead of dbus, set
+	=weechat-notifications-handler= to "libnotify".
 **** Sauron
      The =weechat-sauron= module uses [[http://www.emacswiki.org/emacs/Sauron][Sauron]] for notifications.
 *** Tracking
