@@ -92,7 +92,7 @@ This will look very bland!"
                                 (seq (or ,std ,astd ,ext ,aext)
                                      ","
                                      (or ,std ,astd ,ext ,aext))))
-                   (seq "b" (in "FDB_-#il"))
+                   (seq "b" (in "-FDB_#il"))
                    ""))
           (seq "" ,attr)
           (seq "" ,attr)
