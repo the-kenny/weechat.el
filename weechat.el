@@ -610,6 +610,14 @@ Return either a string, a function returning a string, or nil."
     (setq weechat-reconnect-timer nil))
   (unintern 'weechat-auto-reconnect-retries-left obarray))
 
+(defun weechat-get-mode (modestr)
+  "Get connection mode from string"
+  (cond
+   ((string= modestr "") nil)
+   ((string= modestr "plain") 'plain)
+   ((string= modestr "ssl") 'ssl)
+   (t modestr)))
+
 ;;;###autoload
 (defun weechat-connect (&optional host port password mode force-disconnect)
   "Connect to WeeChat.
@@ -639,11 +647,7 @@ and port number respectively."
                                ;; The following ensures we always pass
                                ;; a string.
                                (format "%s" weechat-mode-default))))
-                  (cond
-                   ((string= modestr "") nil)
-                   ((string= modestr "plain") 'plain)
-                   ((string= modestr "ssl") 'ssl)
-                   (t modestr)))))
+                  (weechat-get-mode modestr))))
      (setq weechat-last-port port)
      (list
       host port
@@ -715,7 +719,7 @@ and port number respectively."
                   host
                   port
                   (weechat-get-password host port)
-                  (car weechat-mode-history)
+                  (weechat-get-mode (car weechat-mode-history))
                   'force-disconnect)))))
       t)))
 
