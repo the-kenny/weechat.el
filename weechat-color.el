@@ -79,7 +79,7 @@ This will look very bland!"
          (astd `(seq ,attr (= 2 digit)))
          (ext  `(seq "@" (= 5 digit)))
          (aext `(seq "@" ,attr (= 5 digit))))
-    (rx-form
+    (rx--translate-form
      `(or (seq ""
                (or ,std
                    ,ext
