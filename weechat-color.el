@@ -73,30 +73,56 @@ This will look very bland!"
   :type 'boolean
   :group 'weechat-faces)
 
-(defvar weechat-formatting-regex
-  (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
-         (std  `(= 2 digit))
-         (astd `(seq ,attr (= 2 digit)))
-         (ext  `(seq "@" (= 5 digit)))
-         (aext `(seq "@" ,attr (= 5 digit))))
-    (rx-form
-     `(or (seq ""
-               (or ,std
-                   ,ext
-                   (seq "F" (or ,std ,astd ,ext ,aext))
-                   (seq "B" (or ,std ,ext))
-                   (seq "*" (or ,std
-                                ,astd
-                                ,ext
-                                ,aext
-                                (seq (or ,std ,astd ,ext ,aext)
-                                     ","
-                                     (or ,std ,astd ,ext ,aext))))
-                   (seq "b" (in "FDB_-#il"))
-                   ""))
-          (seq "" ,attr)
-          (seq "" ,attr)
-          ""))))
+
+(if (>= emacs-major-version 27)
+    (defvar weechat-formatting-regex
+      (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
+             (std  `(= 2 digit))
+             (astd `(seq ,attr (= 2 digit)))
+             (ext  `(seq "@" (= 5 digit)))
+             (aext `(seq "@" ,attr (= 5 digit))))
+        (rx--translate-form
+         `(or (seq ""
+                   (or ,std
+                       ,ext
+                       (seq "F" (or ,std ,astd ,ext ,aext))
+                       (seq "B" (or ,std ,ext))
+                       (seq "*" (or ,std
+                                    ,astd
+                                    ,ext
+                                    ,aext
+                                    (seq (or ,std ,astd ,ext ,aext)
+                                         ","
+                                         (or ,std ,astd ,ext ,aext))))
+                       (seq "b" (in "FDB_-#il"))
+                       ""))
+              (seq "" ,attr)
+              (seq "" ,attr)
+              ""))))
+  (defvar weechat-formatting-regex
+    (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
+           (std  `(= 2 digit))
+           (astd `(seq ,attr (= 2 digit)))
+           (ext  `(seq "@" (= 5 digit)))
+           (aext `(seq "@" ,attr (= 5 digit))))
+      (rx-form
+       `(or (seq ""
+                 (or ,std
+                     ,ext
+                     (seq "F" (or ,std ,astd ,ext ,aext))
+                     (seq "B" (or ,std ,ext))
+                     (seq "*" (or ,std
+                                  ,astd
+                                  ,ext
+                                  ,aext
+                                  (seq (or ,std ,astd ,ext ,aext)
+                                       ","
+                                       (or ,std ,astd ,ext ,aext))))
+                     (seq "b" (in "FDB_-#il"))
+                     ""))
+            (seq "" ,attr)
+            (seq "" ,attr)
+            "")))))
 
 (defun weechat-strip-formatting (string)
   "Strip weechat color codes from STRING."
