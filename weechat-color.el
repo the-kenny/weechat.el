@@ -74,28 +74,28 @@ This will look very bland!"
   :group 'weechat-faces)
 
 (defvar weechat-formatting-regex
-  (let* ((attr `(in "*!/_|"))   ;NOTE:  is not documented
-         (std  `(= 2 digit))
-         (astd `(seq ,attr (= 2 digit)))
-         (ext  `(seq "@" (= 5 digit)))
-         (aext `(seq "@" ,attr (= 5 digit))))
-    (rx-form
-     `(or (seq ""
-               (or ,std
-                   ,ext
-                   (seq "F" (or ,std ,astd ,ext ,aext))
-                   (seq "B" (or ,std ,ext))
-                   (seq "*" (or ,std
-                                ,astd
-                                ,ext
-                                ,aext
-                                (seq (or ,std ,astd ,ext ,aext)
+  (rx-let ((attr (in "*!/_|"))   ;NOTE:  is not documented
+         (std  (= 2 digit))
+         (astd (seq attr (= 2 digit)))
+         (ext  (seq "@" (= 5 digit)))
+         (aext (seq "@" attr (= 5 digit))))
+    (rx
+     (or (seq ""
+               (or std
+                   ext
+                   (seq "F" (or std astd ext aext))
+                   (seq "B" (or std ext))
+                   (seq "*" (or std
+                                astd
+                                ext
+                                aext
+                                (seq (or std astd ext aext)
                                      ","
-                                     (or ,std ,astd ,ext ,aext))))
-                   (seq "b" (in "FDB_-#il"))
+                                     (or std astd ext aext))))
+                   (seq "b" (in "-FDB#_il"))
                    ""))
-          (seq "" ,attr)
-          (seq "" ,attr)
+          (seq "" attr)
+          (seq "" attr)
           ""))))
 
 (defun weechat-strip-formatting (string)
